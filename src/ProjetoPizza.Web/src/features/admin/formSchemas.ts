@@ -68,6 +68,11 @@ export const cashMovementSchema = z.object({
   reason: requiredText('O motivo').max(200, 'O motivo deve ter no máximo 200 caracteres.'),
 })
 
+export const cashOpenSchema = z.object({
+  cashRegisterId: requiredText('O caixa'),
+  openingAmount: nonNegativeMoney,
+})
+
 export const cashCloseSchema = z.object({
   countedCashAmount: nonNegativeMoney,
   notes: z.string().trim().max(500, 'A observação deve ter no máximo 500 caracteres.').optional(),
@@ -105,6 +110,7 @@ export type PizzaFlavorFormData = z.infer<typeof pizzaFlavorSchema>
 export type PizzaSizeFormData = z.infer<typeof pizzaSizeSchema>
 export type OpenTableFormData = z.infer<typeof openTableSchema>
 export type CashMovementFormData = z.infer<typeof cashMovementSchema>
+export type CashOpenFormData = z.infer<typeof cashOpenSchema>
 export type CashCloseFormData = z.infer<typeof cashCloseSchema>
 export type PaymentFormData = z.infer<typeof paymentSchema>
 export type UserFormData = z.infer<typeof userSchema>

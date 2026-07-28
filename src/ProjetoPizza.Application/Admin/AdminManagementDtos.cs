@@ -54,6 +54,11 @@ public sealed record CashShiftDto(
     decimal? DifferenceAmount,
     IReadOnlyCollection<CashMovementDto> Movements);
 
+public sealed record CashRegisterDto(
+    Guid Id,
+    string Name,
+    string Code);
+
 public sealed record CashMovementDto(
     Guid Id,
     string Type,
@@ -216,6 +221,7 @@ public sealed record SplitPaymentPartCommand(
     string? ExternalReference);
 public sealed record RecordSplitPaymentCommand(Guid BillId, IReadOnlyCollection<SplitPaymentPartCommand> Payments);
 public sealed record RegisterCashMovementCommand(string Type, decimal Amount, string Description, string Reason);
+public sealed record OpenCashShiftCommand(Guid CashRegisterId, decimal OpeningAmount);
 public sealed record CloseCashShiftCommand(decimal CountedCashAmount, string? Notes);
 public sealed record UpdateDeviceCommand(
     string Status,

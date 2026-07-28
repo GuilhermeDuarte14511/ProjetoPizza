@@ -40,6 +40,12 @@ internal sealed class CashShiftConfiguration : IEntityTypeConfiguration<CashShif
         builder.Property(entity => entity.DifferenceAmount).HasPrecision(18, 2);
         builder.Property(entity => entity.ClosingNotes).HasMaxLength(500);
         builder.HasIndex(entity => new { entity.CashRegisterId, entity.Status });
+        builder.Property<int?>("ActiveSlot")
+            .HasColumnName("active_slot")
+            .HasComputedColumnSql("CASE WHEN status IN ('Open', 'Closing') THEN 1 ELSE NULL END", stored: true);
+        builder.HasIndex("ActiveSlot")
+            .IsUnique()
+            .HasDatabaseName("ix_cash_shifts_single_active");
         builder.HasOne<CashRegister>().WithMany().HasForeignKey(entity => entity.CashRegisterId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Employee>().WithMany().HasForeignKey(entity => entity.OperatorEmployeeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Employee>().WithMany().HasForeignKey(entity => entity.ClosedByEmployeeId).OnDelete(DeleteBehavior.Restrict);

@@ -12,6 +12,7 @@ import {
 } from '../mocks/adminData'
 import {
   mockAuditLogs,
+  mockCashRegisters,
   mockCashShift,
   mockCrusts,
   mockDevices,
@@ -30,6 +31,7 @@ import type {
   AdminUser,
   AuditLog,
   AuthenticationResult,
+  CashRegister,
   CashShift,
   Category,
   Dashboard,
@@ -88,7 +90,10 @@ export const adminService = {
   crusts: (signal?: AbortSignal) => fromApiOrMock(() => getJson<PizzaCrust[]>('/api/v1/admin/pizza-crusts', signal), mockCrusts),
   unitSettings: (signal?: AbortSignal) => fromApiOrMock(() => getJson<UnitSettings>('/api/v1/admin/settings/unit', signal), mockUnitSettings),
   operationSettings: (signal?: AbortSignal) => fromApiOrMock(() => getJson<OperationSettings>('/api/v1/admin/settings/operation', signal), mockOperationSettings),
-  cashShift: (signal?: AbortSignal) => fromApiOrMock(() => getJson<CashShift | undefined>('/api/v1/admin/cashier/current', signal), mockCashShift),
+  cashRegisters: (signal?: AbortSignal) =>
+    fromApiOrMock(() => getJson<CashRegister[]>('/api/v1/admin/cashier/registers', signal), mockCashRegisters),
+  cashShift: (signal?: AbortSignal): Promise<CashShift | null> =>
+    fromApiOrMock(() => getJson<CashShift | null>('/api/v1/admin/cashier/current', signal), mockCashShift),
   paymentMethods: (signal?: AbortSignal) => fromApiOrMock(() => getJson<PaymentMethod[]>('/api/v1/admin/payment-methods', signal), mockPaymentMethods),
   payments: (signal?: AbortSignal) => fromApiOrMock(() => getJson<Payment[]>('/api/v1/admin/payments', signal), mockPayments),
   financialReport: (from?: string, to?: string, signal?: AbortSignal) => {
@@ -145,6 +150,19 @@ export const adminService = {
     isApiConfigured ? postJson('/api/v1/admin/payments', command) : Promise.resolve({ ...demoResult, status: 'Paid' }),
   recordSplitPayment: (command: { billId: string; payments: Array<{ payer: string; paymentMethodId: string; amount: number; receivedAmount: number; externalReference?: string }> }) =>
     isApiConfigured ? postJson('/api/v1/admin/payments/split', command) : Promise.resolve({ ...demoResult, status: 'Paid' }),
+  openCashShift: (command: { cashRegisterId: string; openingAmount: number }): Promise<CashShift> =>
+    isApiConfigured
+      ? postJson('/api/v1/admin/cashier/open', command)
+      : Promise.resolve({
+          id: crypto.randomUUID(),
+          register: mockCashRegisters.find((register) => register.id === command.cashRegisterId)?.name ?? 'Caixa',
+          operator: 'Administrador',
+          status: 'Open',
+          openedAt: new Date().toISOString(),
+          openingAmount: command.openingAmount,
+          expectedCashAmount: command.openingAmount,
+          movements: [],
+        }),
   registerCashMovement: (command: { type: string; amount: number; description: string; reason: string }) =>
     isApiConfigured ? postJson('/api/v1/admin/cashier/movements', command) : Promise.resolve(demoResult),
   closeCashShift: (countedCashAmount: number, notes?: string) =>

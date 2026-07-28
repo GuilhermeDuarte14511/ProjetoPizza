@@ -167,6 +167,12 @@ export interface CashMovement {
   createdAt: string
 }
 
+export interface CashRegister {
+  id: string
+  name: string
+  code: string
+}
+
 export interface CashShift {
   id: string
   register: string

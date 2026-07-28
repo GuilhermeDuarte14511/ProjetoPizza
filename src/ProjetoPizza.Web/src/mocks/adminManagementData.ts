@@ -2,6 +2,7 @@ import type {
   AdminRole,
   AdminUser,
   AuditLog,
+  CashRegister,
   CashShift,
   Device,
   FinancialReport,
@@ -77,6 +78,10 @@ export const mockCashShift: CashShift = {
     { id: 'mov-2', type: 'Supply', amount: 100, description: 'Reforço de troco', reason: 'Suprimento', createdAt: new Date(Date.now() - 2 * 60 * 60_000).toISOString() },
   ],
 }
+
+export const mockCashRegisters: CashRegister[] = [
+  { id: '50000000-0000-0000-0000-000000000001', name: 'Caixa Principal', code: 'CX-01' },
+]
 
 export const mockPaymentMethods: PaymentMethod[] = [
   { id: '70000000-0000-0000-0000-000000000001', code: 'CASH', name: 'Dinheiro', requiresExternalReference: false, allowsChange: true, isActive: true },

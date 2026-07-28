@@ -24,7 +24,7 @@ function renderLayout() {
 
 describe('AdminLayout cash status', () => {
   it('exibe caixa fechado quando não existe turno atual', async () => {
-    vi.spyOn(adminService, 'cashShift').mockResolvedValue(undefined)
+    vi.spyOn(adminService, 'cashShift').mockResolvedValue(null)
     renderLayout()
 
     expect(await screen.findByRole('button', { name: 'Caixa fechado. Acessar caixa' })).toBeVisible()

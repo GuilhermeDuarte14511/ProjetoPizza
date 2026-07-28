@@ -57,6 +57,8 @@ public static class AdminEndpoints
             service.GetOperationSettingsAsync(cancellationToken));
         group.MapGet("/settings/pizza-rules", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.GetPizzaRulesAsync(cancellationToken));
+        group.MapGet("/cashier/registers", (IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.ListCashRegistersAsync(cancellationToken));
         group.MapGet("/cashier/current", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.GetCurrentCashShiftAsync(cancellationToken));
         group.MapGet("/payment-methods", (IAdminManagementService service, CancellationToken cancellationToken) =>
@@ -244,6 +246,13 @@ public static class AdminEndpoints
             IAdminManagementService service,
             CancellationToken cancellationToken) =>
             service.RecordSplitPaymentAsync(command, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("OperationsWrite");
+        group.MapPost("/cashier/open", (
+            OpenCashShiftCommand command,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.OpenCashShiftAsync(command, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("OperationsWrite");
         group.MapPost("/cashier/movements", (
             RegisterCashMovementCommand command,

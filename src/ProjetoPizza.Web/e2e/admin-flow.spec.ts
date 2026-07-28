@@ -74,3 +74,32 @@ test('exporta a lista de pedidos como PDF tabular', async ({ page }) => {
   expect((await stat(filePath!)).size).toBeGreaterThan(3_000)
   await expect(page.getByText('Relatório PDF gerado')).toBeVisible()
 })
+
+test('fecha e abre um novo turno de caixa pelo fluxo completo', async ({ page }, testInfo) => {
+  await page.goto('/login')
+  await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
+  await page.getByLabel('Senha', { exact: true }).fill('senha-local')
+  await page.getByRole('button', { name: 'Entrar no sistema' }).click()
+
+  await page.goto('/admin/cashier')
+  await page.getByRole('button', { name: 'Fechar caixa', exact: true }).click()
+  const confirmation = page.getByRole('alertdialog', { name: 'Confirmar fechamento do caixa?' })
+  await confirmation.getByRole('button', { name: 'Fechar caixa' }).click()
+
+  await expect(page.getByRole('heading', { name: 'Caixa fechado' })).toBeVisible()
+  if (testInfo.project.name === 'chromium') {
+    await expect(page.getByRole('button', { name: 'Caixa fechado. Acessar caixa' })).toBeVisible()
+  }
+  await page.getByRole('button', { name: 'Abrir caixa', exact: true }).click()
+
+  const opening = page.getByRole('dialog', { name: 'Abrir caixa' })
+  await expect(opening.getByLabel('Caixa')).toHaveValue('50000000-0000-0000-0000-000000000001')
+  await opening.getByLabel('Fundo inicial').fill('250,00')
+  await opening.getByRole('button', { name: 'Confirmar abertura' }).click()
+
+  await expect(page.locator('.status-pill', { hasText: 'Caixa aberto' })).toBeVisible()
+  if (testInfo.project.name === 'chromium') {
+    await expect(page.getByRole('button', { name: 'Caixa aberto. Acessar caixa' })).toBeVisible()
+  }
+  await expect(page.getByText('R$ 250,00', { exact: true }).first()).toBeVisible()
+})

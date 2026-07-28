@@ -19,7 +19,7 @@ Todas as referências administrativas inventariadas possuem rota e página concr
 | Configuração operacional | `/admin/settings/operation` | taxa, tolerância, sons e permissões operacionais |
 | Impressoras | `/admin/settings/printers` | consulta e atualização do dispositivo lógico |
 | Backup e sistema | `/admin/settings/backup` | snapshot administrativo exportado em JSON |
-| Caixa | `/admin/cashier` | conferência, suprimento/sangria, fechamento e indicador global sincronizado |
+| Caixa | `/admin/cashier` | abertura com caixa e fundo inicial, conferência, suprimento/sangria, fechamento, auditoria e indicador global sincronizado |
 | Pagamentos | `/admin/payments` e modal da comanda | consulta, PDF tabular e registro de recebimento |
 | Relatórios financeiros | `/admin/reports` | período, indicadores, canais, métodos e Excel gerencial com resumo, pedidos e pagamentos |
 | Tablets | `/admin/devices` | status, bateria, rede, vínculo e bloqueio |

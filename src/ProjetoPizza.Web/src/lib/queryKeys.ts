@@ -13,6 +13,7 @@ export const queryKeys = {
   crusts: ['admin', 'pizza-crusts'] as const,
   unitSettings: ['admin', 'settings', 'unit'] as const,
   operationSettings: ['admin', 'settings', 'operation'] as const,
+  cashRegisters: ['admin', 'cashier', 'registers'] as const,
   cashShift: ['admin', 'cashier', 'current'] as const,
   paymentMethods: ['admin', 'payment-methods'] as const,
   payments: ['admin', 'payments'] as const,

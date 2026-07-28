@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using ProjetoPizza.Application.Abstractions.Persistence;
 using ProjetoPizza.Domain.Audit;
 using ProjetoPizza.Domain.Billing;
@@ -14,6 +15,7 @@ using ProjetoPizza.Domain.Inventory;
 using ProjetoPizza.Domain.Notifications;
 using ProjetoPizza.Domain.Ordering;
 using ProjetoPizza.Domain.Production;
+using ProjetoPizza.Domain.SharedKernel;
 
 namespace ProjetoPizza.Infrastructure.Persistence;
 
@@ -102,6 +104,19 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     IQueryable<AuditLog> IProjetoPizzaDbContext.AuditLogs => AuditLogs;
 
     void IProjetoPizzaDbContext.Add<TEntity>(TEntity entity) => Add(entity);
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (
+            exception.InnerException is PostgresException { ConstraintName: "ix_cash_shifts_single_active" })
+        {
+            throw new BusinessRuleException("cash_shift.already_open", "An open cash shift already exists.");
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

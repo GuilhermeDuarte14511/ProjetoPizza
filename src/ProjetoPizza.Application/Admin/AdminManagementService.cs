@@ -93,6 +93,18 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
             settings.AllowRepeatedFlavors));
     }
 
+    public Task<IReadOnlyCollection<CashRegisterDto>> ListCashRegistersAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var result = context.CashRegisters
+            .Where(register => register.IsActive)
+            .OrderBy(register => register.Name)
+            .ToArray()
+            .Select(register => new CashRegisterDto(register.Id.Value, register.Name, register.Code))
+            .ToArray();
+        return Task.FromResult<IReadOnlyCollection<CashRegisterDto>>(result);
+    }
+
     public Task<CashShiftDto?> GetCurrentCashShiftAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -859,6 +871,44 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
         AddAudit(bill.UnitId, employee.Id, "Billing", "SplitPayment", nameof(Bill), bill.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return new CommandResultDto(bill.Id.Value, bill.Status.ToString());
+    }
+
+    public async Task<CashShiftDto> OpenCashShiftAsync(
+        OpenCashShiftCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        if (context.CashShifts.Any(shift =>
+                shift.Status == CashShiftStatus.Open ||
+                shift.Status == CashShiftStatus.Closing))
+        {
+            throw new BusinessRuleException("cash_shift.already_open", "An open cash shift already exists.");
+        }
+
+        var registerId = new CashRegisterId(command.CashRegisterId);
+        var register = context.CashRegisters
+            .SingleOrDefault(candidate => candidate.Id == registerId && candidate.IsActive);
+        if (register is null)
+        {
+            throw new BusinessRuleException("cash_register.unavailable", "Cash register is unavailable.");
+        }
+
+        var shift = new CashShift(CashShiftId.New(), register.Id, employee.Id, new Money(command.OpeningAmount));
+        context.Add(shift);
+        AddAudit(register.UnitId, employee.Id, "Cashier", "Open", nameof(CashShift), shift.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CashShiftDto(
+            shift.Id.Value,
+            register.Name,
+            employee.DisplayName,
+            shift.Status.ToString(),
+            shift.OpenedAt,
+            shift.OpeningAmount.Amount,
+            shift.ExpectedCashAmount.Amount,
+            null,
+            null,
+            []);
     }
 
     public async Task<CommandResultDto> RegisterCashMovementAsync(

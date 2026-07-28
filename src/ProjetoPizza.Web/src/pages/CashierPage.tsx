@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowDownToLine, ArrowUpFromLine, Calculator, LockKeyhole, Plus, WalletCards } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { CurrencyInput } from '../components/ui/CurrencyInput'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
@@ -8,7 +8,7 @@ import { FieldError } from '../components/ui/FieldError'
 import { Modal } from '../components/ui/Modal'
 import { PageHeader } from '../components/ui/PageHeader'
 import { useToast } from '../components/ui/toast'
-import { cashCloseSchema, cashMovementSchema, type CashCloseFormData, type CashMovementFormData } from '../features/admin/formSchemas'
+import { cashCloseSchema, cashMovementSchema, cashOpenSchema, type CashCloseFormData, type CashMovementFormData, type CashOpenFormData } from '../features/admin/formSchemas'
 import { useAdminQuery } from '../hooks/useAdminQuery'
 import { queryKeys } from '../lib/queryKeys'
 import { adminService } from '../services/adminService'
@@ -20,11 +20,18 @@ const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: '
 
 export function CashierPage() {
   const { data: shift, setData: setShift } = useAdminQuery(queryKeys.cashShift, adminService.cashShift)
+  const { data: cashRegisters } = useAdminQuery(queryKeys.cashRegisters, adminService.cashRegisters)
+  const [isOpenDialogOpen, setOpenDialogOpen] = useState(false)
   const [isMovementOpen, setMovementOpen] = useState(false)
   const [isCloseConfirmationOpen, setCloseConfirmationOpen] = useState(false)
+  const [opening, setOpening] = useState(false)
   const [savingMovement, setSavingMovement] = useState(false)
   const [closing, setClosing] = useState(false)
   const toast = useToast()
+  const openForm = useForm<CashOpenFormData>({
+    resolver: zodResolver(cashOpenSchema),
+    defaultValues: { cashRegisterId: cashRegisters[0]?.id ?? '', openingAmount: 0 },
+  })
   const movementForm = useForm<CashMovementFormData>({
     resolver: zodResolver(cashMovementSchema),
     defaultValues: { type: 'Supply', amount: 0, description: '', reason: '' },
@@ -34,6 +41,25 @@ export function CashierPage() {
     defaultValues: { countedCashAmount: shift?.expectedCashAmount ?? 0, notes: '' },
   })
   const counted = useWatch({ control: closeForm.control, name: 'countedCashAmount' }) ?? 0
+
+  useEffect(() => {
+    closeForm.reset({ countedCashAmount: shift?.expectedCashAmount ?? 0, notes: '' })
+  }, [closeForm, shift?.expectedCashAmount, shift?.id])
+
+  async function openShift(draft: CashOpenFormData) {
+    setOpening(true)
+    try {
+      const openedShift = await adminService.openCashShift(draft)
+      setShift(openedShift)
+      openForm.reset({ cashRegisterId: draft.cashRegisterId, openingAmount: 0 })
+      setOpenDialogOpen(false)
+      toast.success('Caixa aberto', `${openedShift.register} iniciou com ${currency.format(openedShift.openingAmount)} de fundo.`)
+    } catch (error) {
+      toast.error('Não foi possível abrir o caixa', getUserErrorMessage(error))
+    } finally {
+      setOpening(false)
+    }
+  }
 
   async function addMovement(draft: CashMovementFormData) {
     if (!shift) return
@@ -58,7 +84,7 @@ export function CashierPage() {
     setClosing(true)
     try {
       await adminService.closeCashShift(draft.countedCashAmount, draft.notes)
-      setShift({ ...shift, status: 'Closed', countedCashAmount: draft.countedCashAmount, differenceAmount: draft.countedCashAmount - shift.expectedCashAmount })
+      setShift(null)
       setCloseConfirmationOpen(false)
       toast.success('Caixa fechado', 'A conferência final foi registrada com sucesso.')
     } catch (error) {
@@ -68,7 +94,47 @@ export function CashierPage() {
     }
   }
 
-  if (!shift) return <><PageHeader title="Caixa" description="Nenhum turno de caixa está aberto." /><div className="empty-state"><WalletCards size={34} /><h2>Caixa fechado</h2><p>A abertura de um novo turno será disponibilizada na próxima etapa operacional.</p></div></>
+  if (!shift) return (
+    <>
+      <PageHeader
+        title="Caixa"
+        description="Nenhum turno de caixa está aberto."
+        actions={hasPermission('operations:write') &&
+          <button className="primary-button" disabled={!cashRegisters.length} onClick={() => setOpenDialogOpen(true)}>
+            <Plus size={16} /> Abrir caixa
+          </button>
+        }
+      />
+      <div className="empty-state">
+        <WalletCards size={34} />
+        <h2>Caixa fechado</h2>
+        <p>{cashRegisters.length ? 'Abra um novo turno e informe o fundo inicial disponível para troco.' : 'Nenhum caixa ativo está disponível. Revise o cadastro da unidade.'}</p>
+      </div>
+      {isOpenDialogOpen && <Modal open title="Abrir caixa" description="Inicie um novo turno com o fundo disponível na gaveta." isBusy={opening} onClose={() => setOpenDialogOpen(false)}>
+        <form onSubmit={openForm.handleSubmit(openShift)} noValidate>
+          <div className="modal-body">
+            <div className="form-grid two-columns">
+              <label className="field-label">Caixa
+                <select aria-invalid={Boolean(openForm.formState.errors.cashRegisterId)} {...openForm.register('cashRegisterId')}>
+                  {cashRegisters.map((register) => <option value={register.id} key={register.id}>{register.name} · {register.code}</option>)}
+                </select>
+                <FieldError message={openForm.formState.errors.cashRegisterId?.message} />
+              </label>
+              <label className="field-label">Fundo inicial
+                <Controller control={openForm.control} name="openingAmount" render={({ field }) => <CurrencyInput name={field.name} value={field.value} onBlur={field.onBlur} getInputRef={field.ref} aria-invalid={Boolean(openForm.formState.errors.openingAmount)} onCurrencyValueChange={field.onChange} />} />
+                <FieldError message={openForm.formState.errors.openingAmount?.message} />
+              </label>
+            </div>
+            <aside className="cash-opening-note"><WalletCards size={20} /><span><strong>Conferência de abertura</strong>O valor informado será o saldo inicial esperado do novo turno.</span></aside>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="secondary-button" disabled={opening} onClick={() => setOpenDialogOpen(false)}>Cancelar</button>
+            <button className="primary-button" disabled={opening} aria-busy={opening}>{opening ? 'Abrindo...' : 'Confirmar abertura'}</button>
+          </div>
+        </form>
+      </Modal>}
+    </>
+  )
 
   return (
     <>

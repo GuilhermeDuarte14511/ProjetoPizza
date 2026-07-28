@@ -53,11 +53,12 @@ Uma mesa não armazena o estado visual `Livre`, `Ocupada`, `Chamando`, `Conta so
 - Índices compostos cobrem as leituras operacionais por unidade, estado e data.
 - Agregados operacionais usam a coluna de sistema PostgreSQL `xmin` como token de concorrência otimista.
 - A Application impõe regras que dependem de leitura, como impedir associação simultânea de uma mesa a duas sessões abertas; o banco preserva a estrutura e o caso de uso coordena a transação.
+- `cash_shifts.active_slot` é uma coluna calculada: vale `1` apenas para estados `Open` ou `Closing`. O índice único `ix_cash_shifts_single_active` impede duas aberturas simultâneas, inclusive em concorrência entre requisições.
 - O campo `table_session_tables.unlinked_at` mantém o histórico de agrupamento e desagrupamento de mesas.
 
-## Migration inicial
+## Migrations
 
-A migration `InitialCreate` e seu snapshot ficam em `src/ProjetoPizza.Infrastructure/Persistence/Migrations`. Para recriar um banco local:
+As migrations `InitialCreate` e `AddCashShiftOpeningGuard`, com seu snapshot, ficam em `src/ProjetoPizza.Infrastructure/Persistence/Migrations`. Para recriar um banco local:
 
 ```powershell
 dotnet tool restore
@@ -71,4 +72,3 @@ dotnet run --project src/ProjetoPizza.Api -- --seed
 ```
 
 O seed é exclusivo para desenvolvimento e utiliza identificadores fixos. Ele inclui unidade, configurações, categorias, produtos, pizzas, estoque, 32 mesas, estações, formas de pagamento, dispositivos e amostras operacionais identificadas com `[DEV]`.
-

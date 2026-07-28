@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { categorySchema, paymentSchema, pizzaSizeSchema, productSchema } from './formSchemas'
+import { cashOpenSchema, categorySchema, paymentSchema, pizzaSizeSchema, productSchema } from './formSchemas'
 
 describe('schemas dos formulários administrativos', () => {
   it('rejeita produto sem nome, categoria e SKU', () => {
@@ -47,5 +47,17 @@ describe('schemas dos formulários administrativos', () => {
       externalReference: 'PIX-123',
     })
     expect(result.success).toBe(true)
+  })
+
+  it('aceita fundo zero e rejeita caixa ausente na abertura', () => {
+    expect(cashOpenSchema.safeParse({
+      cashRegisterId: crypto.randomUUID(),
+      openingAmount: 0,
+    }).success).toBe(true)
+
+    expect(cashOpenSchema.safeParse({
+      cashRegisterId: '',
+      openingAmount: 100,
+    }).success).toBe(false)
   })
 })

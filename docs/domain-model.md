@@ -51,4 +51,14 @@ A divisão por pessoas é persistida em `BillSplit`. Cada parte mantém nome, se
 
 ### Caixa
 
-`CashShift` nasce aberto, registra movimentos somente nesse estado e calcula o valor esperado. O fechamento calcula a diferença assinada entre valor contado e esperado e impede novo fechamento.
+`CashShift` nasce aberto para um `CashRegister` ativo, com o colaborador autenticado como operador e fundo inicial não negativo. A Application impede uma nova abertura enquanto existir turno `Open` ou `Closing`, e a persistência repete essa proteção para requisições concorrentes. Toda abertura gera auditoria.
+
+Movimentos são registrados somente durante um turno aberto e recalculam o valor esperado. O fechamento registra operador, valor contado, observação e diferença assinada entre valor contado e esperado, impedindo um segundo fechamento.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Open: abrir com fundo inicial
+    Open --> Open: venda, suprimento ou sangria
+    Open --> Closed: conferir e fechar
+    Closed --> [*]
+```

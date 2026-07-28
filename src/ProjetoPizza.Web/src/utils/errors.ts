@@ -6,6 +6,8 @@ const domainTranslations: Array<[RegExp, string]> = [
   [/table already belongs to an open session/i, 'A mesa já possui um atendimento aberto.'],
   [/a bill requires at least one valid order/i, 'A conta precisa ter ao menos um pedido válido.'],
   [/cash payments require an open cash shift/i, 'Abra o caixa antes de registrar pagamentos em dinheiro.'],
+  [/an open cash shift already exists/i, 'Já existe um turno de caixa aberto. Atualize a página para consultar o turno atual.'],
+  [/cash register is unavailable/i, 'O caixa selecionado não está disponível para abertura.'],
   [/split payment must contain between 2 and 50 people/i, 'Divida a conta entre 2 e 50 pessoas.'],
   [/split total must match the bill remaining amount/i, 'A soma das partes precisa corresponder ao saldo da conta. Recalcule a divisão.'],
   [/selected payment method is unavailable/i, 'Uma das formas de pagamento selecionadas não está disponível.'],

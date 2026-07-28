@@ -7,6 +7,7 @@ public interface IAdminManagementService
     Task<UnitSettingsDto> GetUnitSettingsAsync(CancellationToken cancellationToken);
     Task<OperationSettingsDto> GetOperationSettingsAsync(CancellationToken cancellationToken);
     Task<PizzaRulesDto> GetPizzaRulesAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<CashRegisterDto>> ListCashRegistersAsync(CancellationToken cancellationToken);
     Task<CashShiftDto?> GetCurrentCashShiftAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<PaymentMethodDto>> ListPaymentMethodsAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<PaymentDto>> ListPaymentsAsync(CancellationToken cancellationToken);
@@ -30,6 +31,7 @@ public interface IAdminManagementService
     Task<CommandResultDto> ResolveServiceCallAsync(Guid id, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RecordPaymentAsync(RecordPaymentCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RecordSplitPaymentAsync(RecordSplitPaymentCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CashShiftDto> OpenCashShiftAsync(OpenCashShiftCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RegisterCashMovementAsync(RegisterCashMovementCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> CloseCashShiftAsync(CloseCashShiftCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> UpdateDeviceAsync(Guid id, UpdateDeviceCommand command, Guid identityUserId, CancellationToken cancellationToken);
