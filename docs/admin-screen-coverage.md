@@ -21,7 +21,7 @@ Todas as referências administrativas inventariadas possuem rota e página concr
 | Backup e sistema | `/admin/settings/backup` | snapshot administrativo exportado em JSON |
 | Caixa | `/admin/cashier` | conferência, suprimento/sangria e fechamento |
 | Pagamentos | `/admin/payments` e modal da comanda | consulta, CSV e registro de recebimento |
-| Relatórios financeiros | `/admin/reports` | período, indicadores, canais, métodos e impressão |
+| Relatórios financeiros | `/admin/reports` | período, indicadores, canais, métodos e Excel gerencial com resumo, pedidos e pagamentos |
 | Tablets | `/admin/devices` | status, bateria, rede, vínculo e bloqueio |
 | Usuários e permissões | `/admin/users` e `/admin/roles` | cadastro/edição de usuários, perfis e claims |
 | Auditoria | `/admin/audit` | consulta, busca e exportação CSV |

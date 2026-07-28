@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { stat } from 'node:fs/promises'
 
 test('abre produto em modal e valida os campos em português', async ({ page }) => {
   await page.goto('/login')
@@ -34,4 +35,23 @@ test('mascara valores e divide a conta por forma de pagamento individual', async
   await expect(people.nth(2)).toContainText('R$ 46,16')
   await expect(dialog.getByLabel('Forma de pagamento de Pessoa 1')).toHaveValue('70000000-0000-0000-0000-000000000001')
   await expect(dialog.getByRole('button', { name: 'Confirmar 3 pagamentos' })).toBeVisible()
+})
+
+test('gera relatório financeiro como arquivo Excel', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
+  await page.getByLabel('Senha', { exact: true }).fill('senha-local')
+  await page.getByRole('button', { name: 'Entrar no sistema' }).click()
+
+  await page.goto('/admin/reports')
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Exportar Excel (.xlsx)' }).click(),
+  ])
+
+  expect(download.suggestedFilename()).toMatch(/^relatorio-financeiro-.+\.xlsx$/)
+  const filePath = await download.path()
+  expect(filePath).toBeTruthy()
+  expect((await stat(filePath!)).size).toBeGreaterThan(5_000)
+  await expect(page.getByText('Relatório Excel gerado')).toBeVisible()
 })
