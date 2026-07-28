@@ -47,8 +47,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .topbar { position: sticky; top: 0; z-index: 10; display: flex; min-height: 64px; align-items: center; gap: 14px; padding: 10px 24px; border-bottom: 1px solid #e4e7ec; background: rgba(255,255,255,.96); backdrop-filter: blur(12px); }
 .global-search { display: flex; max-width: 540px; flex: 1; align-items: center; gap: 9px; margin-right: auto; padding: 9px 12px; border: 1px solid #e2e6eb; border-radius: 8px; color: #89919d; background: #f8f9fb; }
 .global-search input, .toolbar-search input { width: 100%; border: 0; outline: 0; background: transparent; color: #20242a; font-size: 13px; }
-.topbar-status { display: flex; align-items: center; gap: 7px; color: #4c5663; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.topbar-status { display: flex; align-items: center; gap: 7px; border: 0; border-radius: 999px; padding: 7px 10px; background: transparent; color: #4c5663; font-size: 12px; font-weight: 600; white-space: nowrap; transition: background .18s ease, color .18s ease; }
+.topbar-status:hover { background: #f1f3f5; }
 .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #168650; box-shadow: 0 0 0 3px #dbf2e6; }
+.topbar-status.closed { color: #9f2d24; }
+.topbar-status.closed .status-dot { background: #c74435; box-shadow: 0 0 0 3px #f7dedb; }
+.topbar-status.loading { color: #776127; }
+.topbar-status.loading .status-dot { background: #c69721; box-shadow: 0 0 0 3px #f8edcf; animation: status-pulse 1s ease-in-out infinite; }
+@keyframes status-pulse { 50% { opacity: .45; } }
 .icon-button { position: relative; display: inline-flex; width: 36px; height: 36px; align-items: center; justify-content: center; border: 0; border-radius: 8px; background: transparent; color: #66707d; transition: color .18s ease, background .18s ease, transform .18s ease; }
 .icon-button:hover { background: #f0f2f5; color: #252b33; }
 .icon-button:active { transform: scale(.94); }
@@ -311,6 +317,8 @@ button:disabled { cursor: not-allowed; opacity: .58; transform: none !important;
 .report-period input { padding: 9px; border: 1px solid #dde2e7; border-radius: 7px; }
 .excel-export-button { border-color: #bad8c8; background: #f0faf5; color: #12623e; }
 .excel-export-button:hover:not(:disabled) { border-color: #79ba98; background: #e4f6ed; }
+.pdf-export-button { border-color: #e7c8bb; background: #fff7f3; color: #9f360d; }
+.pdf-export-button:hover:not(:disabled) { border-color: #d99b82; background: #ffede5; }
 .report-export-info { display: flex; align-items: center; gap: 12px; margin: -5px 0 18px; padding: 12px 15px; border: 1px solid #d6e8df; border-radius: 10px; background: linear-gradient(100deg, #f2fbf6, #fff); color: #176b45; }
 .report-export-info > div { display: grid; gap: 3px; }
 .report-export-info strong { font-size: 12px; }

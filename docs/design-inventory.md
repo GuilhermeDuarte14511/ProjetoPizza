@@ -18,7 +18,7 @@ Fonte analisada: `C:\teste\designs`. Foram lidos 40 arquivos HTML, 39 arquivos `
 | Mapa de mesas | `designs/mapa_de_mesas_forno_27/code.html` | Operar salão | filtros, busca, cards de mesa, abrir mesa, painel lateral de detalhes | RestaurantTable, TableSession, Order, ServiceCall, Bill | Estados visuais devem ser calculados, não persistidos. |
 | Detalhe da comanda | `designs/detalhe_da_comanda_forno_27/code.html` | Consultar atendimento | cabeçalho da comanda, pedidos, histórico, resumo, registrar pagamento | TableSession, Order, OrderItem, Bill, Payment | Mistura termos “mesa” e “comanda”; o domínio usa `TableSession`. |
 | Cozinha | `designs/cozinha_forno_27/code.html` | Kanban de produção | colunas novos/confirmados/em preparo, cards, cronômetro, confirmar/iniciar/finalizar | KitchenTicket, KitchenTicketItem, ProductionStation, OrderItem | Captura priorizada para a página administrativa inicial. |
-| Pedidos delivery/retirada | `designs/gest_o_de_pedidos_delivery_retirada_forno_27/code.html` | Operar canais externos | abas, filtros, cards, imprimir, avançar status | Order, OrderItem, SalesChannel | Valores divergem de outras telas e não foram copiados para o seed. |
+| Pedidos delivery/retirada | `designs/gest_o_de_pedidos_delivery_retirada_forno_27/code.html` | Operar canais externos | abas, filtros, cards, PDF tabular, avançar status | Order, OrderItem, SalesChannel | Valores divergem de outras telas e não foram copiados para o seed. |
 | Cardápio | `designs/card_pio_forno_27/code.html` | Gerenciar catálogo | abas, filtros, tabela, status, adicionar/editar/excluir | Category, Product, ProductVariant | “Excluir” visual não implica exclusão física de referências transacionais. |
 | Configurações gerais | `designs/configura_es_gerais_forno_27/code.html` | Dados da unidade | formulário, upload de logo, descartar/salvar | RestaurantUnit | CNPJ e contatos aparecem como dados de exemplo. |
 | Configurações de operação | `designs/configura_es_opera_o_forno_27/code.html` | Regras do atendimento | toggles, taxas, sons, tolerância, salvar | OperationSettings | Corresponde diretamente às configurações de domínio. |
@@ -30,7 +30,7 @@ Fonte analisada: `C:\teste\designs`. Foram lidos 40 arquivos HTML, 39 arquivos `
 | Relatórios financeiros | `designs/relat_rios_financeiros_forno_27/code.html` | Analisar resultado | período, métricas, gráficos, exportar | Order, Payment, CashMovement | Exportação implementada como Excel gerencial com resumo executivo e abas detalhadas. |
 | Tablets | `designs/gerenciamento_de_tablets_forno_27/code.html` | Monitorar dispositivos | indicadores, busca, tabela, bateria/rede, vincular | Device, DeviceSession, RestaurantTable | Tela conectada a status, vínculo e bloqueio de `Device`. |
 | Usuários e permissões | `designs/usu_rios_e_permiss_es_forno_27/code.html` | Gerenciar acesso | métricas, perfis, matriz, usuários, convites | IdentityUser, IdentityRole, Employee | Autenticação, usuários, perfis e claims administrativas estão conectados ao Identity. |
-| Auditoria | `designs/auditoria_e_hist_rico_de_logs_forno_27/code.html` | Rastrear ações | filtros, tabela, gravidade, exportar/imprimir | AuditLog, Employee | Logs são imutáveis por intenção. |
+| Auditoria | `designs/auditoria_e_hist_rico_de_logs_forno_27/code.html` | Rastrear ações | filtros, tabela, gravidade, PDF tabular | AuditLog, Employee | Logs são imutáveis por intenção. |
 
 ## Telas do tablet/cliente
 

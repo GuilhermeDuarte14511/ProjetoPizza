@@ -55,6 +55,10 @@ O histórico administrativo traduz ação, módulo e entidade para português. P
 
 A área financeira exporta um arquivo Excel (`.xlsx`) em vez de imprimir a página web. O gerador é carregado somente após a ação do usuário e cria três abas: resumo executivo, pedidos e pagamentos. A planilha preserva valores e datas como tipos nativos, aplica máscaras monetárias, totais, percentuais, cabeçalhos fixos, larguras adequadas e o período selecionado. A geração utiliza `write-excel-file`, escolhida por suportar navegador, múltiplas abas e estilos sem alertas conhecidos no `npm audit`.
 
+As listas operacionais de pedidos, mesas, pagamentos e auditoria são exportadas em PDF tabular, sem capturar a página web. O componente compartilhado inclui identidade da unidade, resumo dos filtros e indicadores, cabeçalho repetido, quebra automática de páginas, rodapé com autoria/data e numeração. A geração utiliza `jsPDF` e `jspdf-autotable`, carregados sob demanda para não aumentar o carregamento inicial das telas.
+
+O indicador de caixa do cabeçalho consome a mesma consulta e a mesma chave de cache da tela de caixa. Assim, ele mostra aberto somente quando existe um turno com status `Open` e permanece sincronizado após fechamento ou atualização em tempo real.
+
 ## Tempo real
 
 O endpoint autenticado é:

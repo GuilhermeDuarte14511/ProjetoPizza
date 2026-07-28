@@ -1,8 +1,10 @@
-import { CheckCircle2, Clock3, Printer, Search } from 'lucide-react'
+import { CheckCircle2, Clock3, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useAdminQuery } from '../hooks/useAdminQuery'
+import { usePdfTableExport } from '../hooks/usePdfTableExport'
 import { queryKeys } from '../lib/queryKeys'
 import { PageHeader } from '../components/ui/PageHeader'
+import { PdfExportButton } from '../components/ui/PdfExportButton'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { useToast } from '../components/ui/toast'
 import { adminService } from '../services/adminService'
@@ -25,6 +27,7 @@ export function OrdersPage() {
   const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get('search') ?? '')
   const [busy, setBusy] = useState<string>()
   const toast = useToast()
+  const { exportPdf, exporting } = usePdfTableExport()
 
   const visible = useMemo(() => orders.filter((order) =>
     (channel === 'Todos' || order.channel === channel) &&
@@ -46,9 +49,38 @@ export function OrdersPage() {
     }
   }
 
+  function exportOrders() {
+    const total = visible.reduce((sum, order) => sum + order.total, 0)
+    const items = visible.reduce((sum, order) => sum + order.items.reduce((quantity, item) => quantity + item.quantity, 0), 0)
+    void exportPdf({
+      title: 'Relatório de pedidos',
+      subtitle: `Canal: ${translateEnum(channel)}${search ? ` · Busca: ${search}` : ''}`,
+      fileName: `pedidos-${new Date().toISOString().slice(0, 10)}.pdf`,
+      orientation: 'landscape',
+      columns: ['Pedido', 'Data', 'Canal', 'Atendimento', 'Status', 'Itens', 'Descrição', 'Total'],
+      rows: visible.map((order) => [
+        `#${order.number}`,
+        new Date(order.createdAt).toLocaleString('pt-BR'),
+        translateEnum(order.channel),
+        translateEnum(order.fulfillment),
+        translateEnum(order.status),
+        String(order.items.reduce((sum, item) => sum + item.quantity, 0)),
+        order.items.map((item) => `${item.quantity}x ${item.name}`).join(' · ') || 'Sem itens',
+        currency.format(order.total),
+      ]),
+      metrics: [
+        { label: 'Pedidos', value: String(visible.length) },
+        { label: 'Itens', value: String(items) },
+        { label: 'Valor total', value: currency.format(total) },
+        { label: 'Ticket médio', value: currency.format(visible.length ? total / visible.length : 0) },
+      ],
+      rightAlignedColumns: [5, 7],
+    })
+  }
+
   return (
     <>
-      <PageHeader title="Gestão de pedidos" description="Acompanhe salão, delivery e retirada em uma única fila." actions={<button className="secondary-button" onClick={() => window.print()}><Printer size={16} /> Imprimir lista</button>} />
+      <PageHeader title="Gestão de pedidos" description="Acompanhe salão, delivery e retirada em uma única fila." actions={<PdfExportButton exporting={exporting} onClick={exportOrders} label="Exportar pedidos em PDF" />} />
       <div className="toolbar">
         <div className="filter-tabs" role="group" aria-label="Filtrar pedidos por canal">{['Todos', 'DineIn', 'Delivery', 'Takeaway'].map((item) => <button key={item} aria-pressed={channel === item} className={channel === item ? 'active' : ''} onClick={() => setChannel(item)}>{translateEnum(item)}</button>)}</div>
         <div className="toolbar-search"><Search size={17} /><input aria-label="Buscar pedido ou item" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar pedido ou item..." /></div>

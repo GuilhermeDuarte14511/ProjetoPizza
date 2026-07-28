@@ -6,9 +6,9 @@ Todas as referências administrativas inventariadas possuem rota e página concr
 |---|---|---|
 | Login | `/login` | autenticação Identity, JWT, bloqueio e rate limit |
 | Visão geral | `/admin/dashboard` | indicadores, pedidos recentes e atualização |
-| Mapa de mesas | `/admin/tables` | busca, filtros, estado derivado e abertura de mesa |
+| Mapa de mesas | `/admin/tables` | busca, filtros, estado derivado, abertura de mesa e PDF tabular |
 | Detalhe da comanda | `/admin/tables/:id` | pedidos, solicitação de conta e pagamento |
-| Pedidos | `/admin/orders` | busca, canal, impressão e transições de status |
+| Pedidos | `/admin/orders` | busca, canal, PDF tabular e transições de status |
 | Cozinha | `/admin/kitchen` | fila por etapa, atualização e transições de produção |
 | Produtos | `/admin/catalog/products` | consulta, busca, cadastro e edição |
 | Categorias | `/admin/catalog/categories` | consulta, cadastro e edição |
@@ -19,12 +19,12 @@ Todas as referências administrativas inventariadas possuem rota e página concr
 | Configuração operacional | `/admin/settings/operation` | taxa, tolerância, sons e permissões operacionais |
 | Impressoras | `/admin/settings/printers` | consulta e atualização do dispositivo lógico |
 | Backup e sistema | `/admin/settings/backup` | snapshot administrativo exportado em JSON |
-| Caixa | `/admin/cashier` | conferência, suprimento/sangria e fechamento |
-| Pagamentos | `/admin/payments` e modal da comanda | consulta, CSV e registro de recebimento |
+| Caixa | `/admin/cashier` | conferência, suprimento/sangria, fechamento e indicador global sincronizado |
+| Pagamentos | `/admin/payments` e modal da comanda | consulta, PDF tabular e registro de recebimento |
 | Relatórios financeiros | `/admin/reports` | período, indicadores, canais, métodos e Excel gerencial com resumo, pedidos e pagamentos |
 | Tablets | `/admin/devices` | status, bateria, rede, vínculo e bloqueio |
 | Usuários e permissões | `/admin/users` e `/admin/roles` | cadastro/edição de usuários, perfis e claims |
-| Auditoria | `/admin/audit` | consulta, busca e exportação CSV |
+| Auditoria | `/admin/audit` | consulta, busca e PDF tabular |
 
 ## Limites explícitos
 

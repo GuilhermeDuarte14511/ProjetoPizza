@@ -19,8 +19,11 @@ import {
 } from 'lucide-react'
 import type { FormEvent, ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useLocation } from 'wouter'
+import { queryKeys } from '../../lib/queryKeys'
 import { runViewTransition } from '../../lib/viewTransitions'
+import { adminService } from '../../services/adminService'
 import { getAuthenticatedUser, hasPermission, logout } from '../../services/authSession'
 import { ViewTransitionLink } from '../ui/ViewTransitionLink'
 
@@ -64,6 +67,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [globalSearch, setGlobalSearch] = useState('')
   const user = getAuthenticatedUser()
   const mainRef = useRef<HTMLElement>(null)
+  const { data: cashShift, isLoading: isCashShiftLoading } = useQuery({
+    queryKey: queryKeys.cashShift,
+    queryFn: ({ signal }) => adminService.cashShift(signal),
+  })
+  const isCashShiftOpen = cashShift?.status === 'Open'
 
   useEffect(() => {
     const currentLabel = navigation
@@ -137,7 +145,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <Menu size={20} />
           </button>
           <form className="global-search" onSubmit={search}><Search size={18} /><input aria-label="Busca global" value={globalSearch} onChange={(event) => setGlobalSearch(event.target.value)} placeholder="Buscar pedidos, mesas e clientes..." /></form>
-          <div className="topbar-status"><span className="status-dot" /> Caixa aberto</div>
+          <button
+            type="button"
+            className={`topbar-status ${isCashShiftLoading ? 'loading' : isCashShiftOpen ? 'open' : 'closed'}`}
+            aria-label={isCashShiftLoading ? 'Verificando situação do caixa' : isCashShiftOpen ? 'Caixa aberto. Acessar caixa' : 'Caixa fechado. Acessar caixa'}
+            onClick={() => runViewTransition(() => navigate('/admin/cashier'))}
+          >
+            <span className="status-dot" /> {isCashShiftLoading ? 'Verificando caixa' : isCashShiftOpen ? 'Caixa aberto' : 'Caixa fechado'}
+          </button>
           <button className="icon-button" aria-label="Ver auditoria" onClick={() => runViewTransition(() => navigate('/admin/audit'))}><Bell size={19} /><span className="notification-dot" /></button>
           <button className="user-menu" aria-label="Sair" onClick={signOut}><span className="avatar">{user?.displayName.slice(0, 2).toUpperCase() ?? 'AD'}</span><span>{user?.displayName ?? 'Admin'}</span><LogOut size={14} /></button>
         </header>

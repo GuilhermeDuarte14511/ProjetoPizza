@@ -55,3 +55,22 @@ test('gera relatório financeiro como arquivo Excel', async ({ page }) => {
   expect((await stat(filePath!)).size).toBeGreaterThan(5_000)
   await expect(page.getByText('Relatório Excel gerado')).toBeVisible()
 })
+
+test('exporta a lista de pedidos como PDF tabular', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
+  await page.getByLabel('Senha', { exact: true }).fill('senha-local')
+  await page.getByRole('button', { name: 'Entrar no sistema' }).click()
+
+  await page.goto('/admin/orders')
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Exportar pedidos em PDF' }).click(),
+  ])
+
+  expect(download.suggestedFilename()).toMatch(/^pedidos-\d{4}-\d{2}-\d{2}\.pdf$/)
+  const filePath = await download.path()
+  expect(filePath).toBeTruthy()
+  expect((await stat(filePath!)).size).toBeGreaterThan(3_000)
+  await expect(page.getByText('Relatório PDF gerado')).toBeVisible()
+})
