@@ -8,7 +8,13 @@ type CurrencyInputProps = Omit<
   onCurrencyValueChange: (value: number) => void
 }
 
-export function CurrencyInput({ value, onCurrencyValueChange, ...props }: CurrencyInputProps) {
+export function CurrencyInput({
+  value,
+  onCurrencyValueChange,
+  onFocus,
+  onMouseUp,
+  ...props
+}: CurrencyInputProps) {
   return (
     <NumericFormat
       {...props}
@@ -22,6 +28,17 @@ export function CurrencyInput({ value, onCurrencyValueChange, ...props }: Curren
       fixedDecimalScale
       allowNegative={false}
       onValueChange={({ floatValue }) => onCurrencyValueChange(floatValue ?? 0)}
+      onFocus={(event) => {
+        onFocus?.(event)
+        if (value === 0) event.currentTarget.select()
+      }}
+      onMouseUp={(event) => {
+        onMouseUp?.(event)
+        if (value === 0) {
+          event.preventDefault()
+          event.currentTarget.select()
+        }
+      }}
     />
   )
 }
