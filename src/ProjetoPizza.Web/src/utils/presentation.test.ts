@@ -7,6 +7,10 @@ describe('translateEnum', () => {
     ['InProduction', 'Em preparo'],
     ['HighestFlavorPrice', 'Maior valor entre os sabores'],
     ['Withdrawal', 'Sangria'],
+    ['ready', 'Pronto'],
+    ['start', 'Início do preparo'],
+    ['confirm', 'Confirmação'],
+    ['KitchenTicket', 'Ticket da cozinha'],
   ])('traduz %s para português', (value, expected) => {
     expect(translateEnum(value)).toBe(expected)
   })

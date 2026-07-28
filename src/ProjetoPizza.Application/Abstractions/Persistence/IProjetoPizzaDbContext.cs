@@ -37,6 +37,7 @@ public interface IProjetoPizzaDbContext
     IQueryable<KitchenTicket> KitchenTickets { get; }
     IQueryable<KitchenTicketItem> KitchenTicketItems { get; }
     IQueryable<Bill> Bills { get; }
+    IQueryable<BillSplit> BillSplits { get; }
     IQueryable<PaymentMethod> PaymentMethods { get; }
     IQueryable<Payment> Payments { get; }
     IQueryable<CashRegister> CashRegisters { get; }

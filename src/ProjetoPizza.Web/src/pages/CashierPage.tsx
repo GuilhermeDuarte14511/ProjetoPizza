@@ -1,7 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowDownToLine, ArrowUpFromLine, Calculator, LockKeyhole, Plus, WalletCards } from 'lucide-react'
 import { useState } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
+import { CurrencyInput } from '../components/ui/CurrencyInput'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { FieldError } from '../components/ui/FieldError'
 import { Modal } from '../components/ui/Modal'
@@ -90,7 +91,7 @@ export function CashierPage() {
             <Calculator size={24} />
             <h2>Conferência final</h2>
             <p>Informe o valor contado fisicamente no caixa.</p>
-            <label className="field-label">Valor contado<input type="number" min="0" step=".01" disabled={shift.status !== 'Open'} aria-invalid={Boolean(closeForm.formState.errors.countedCashAmount)} {...closeForm.register('countedCashAmount', { valueAsNumber: true })} /><FieldError message={closeForm.formState.errors.countedCashAmount?.message} /></label>
+            <label className="field-label">Valor contado<Controller control={closeForm.control} name="countedCashAmount" render={({ field }) => <CurrencyInput name={field.name} value={field.value} disabled={shift.status !== 'Open'} onBlur={field.onBlur} getInputRef={field.ref} aria-invalid={Boolean(closeForm.formState.errors.countedCashAmount)} onCurrencyValueChange={field.onChange} />} /><FieldError message={closeForm.formState.errors.countedCashAmount?.message} /></label>
             <div className="summary-line"><span>Esperado</span><strong>{currency.format(shift.expectedCashAmount)}</strong></div>
             <div className="summary-line"><span>Diferença</span><strong>{currency.format(counted - shift.expectedCashAmount)}</strong></div>
             <label className="field-label">Observações<textarea disabled={shift.status !== 'Open'} {...closeForm.register('notes')} /><FieldError message={closeForm.formState.errors.notes?.message} /></label>
@@ -102,7 +103,7 @@ export function CashierPage() {
         <form onSubmit={movementForm.handleSubmit(addMovement)} noValidate>
           <div className="modal-body"><div className="form-grid two-columns">
             <label className="field-label">Tipo<select {...movementForm.register('type')}><option value="Supply">Suprimento</option><option value="Withdrawal">Sangria</option></select></label>
-            <label className="field-label">Valor<input type="number" min=".01" step=".01" aria-invalid={Boolean(movementForm.formState.errors.amount)} {...movementForm.register('amount', { valueAsNumber: true })} /><FieldError message={movementForm.formState.errors.amount?.message} /></label>
+            <label className="field-label">Valor<Controller control={movementForm.control} name="amount" render={({ field }) => <CurrencyInput name={field.name} value={field.value} onBlur={field.onBlur} getInputRef={field.ref} aria-invalid={Boolean(movementForm.formState.errors.amount)} onCurrencyValueChange={field.onChange} />} /><FieldError message={movementForm.formState.errors.amount?.message} /></label>
             <label className="field-label wide">Descrição<input aria-invalid={Boolean(movementForm.formState.errors.description)} {...movementForm.register('description')} /><FieldError message={movementForm.formState.errors.description?.message} /></label>
             <label className="field-label wide">Motivo<input aria-invalid={Boolean(movementForm.formState.errors.reason)} {...movementForm.register('reason')} /><FieldError message={movementForm.formState.errors.reason?.message} /></label>
           </div></div>

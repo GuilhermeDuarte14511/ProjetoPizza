@@ -92,6 +92,7 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     IQueryable<KitchenTicket> IProjetoPizzaDbContext.KitchenTickets => KitchenTickets;
     IQueryable<KitchenTicketItem> IProjetoPizzaDbContext.KitchenTicketItems => KitchenTicketItems;
     IQueryable<Bill> IProjetoPizzaDbContext.Bills => Bills;
+    IQueryable<BillSplit> IProjetoPizzaDbContext.BillSplits => BillSplits;
     IQueryable<PaymentMethod> IProjetoPizzaDbContext.PaymentMethods => PaymentMethods;
     IQueryable<Payment> IProjetoPizzaDbContext.Payments => Payments;
     IQueryable<CashRegister> IProjetoPizzaDbContext.CashRegisters => CashRegisters;

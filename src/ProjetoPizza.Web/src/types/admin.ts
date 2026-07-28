@@ -192,6 +192,7 @@ export interface PaymentMethod {
 export interface Payment {
   id: string
   billId: string
+  payer?: string
   method: string
   status: string
   amount: number
@@ -235,6 +236,7 @@ export interface AuditLog {
   action: string
   entityType: string
   entityId: string
+  entityDescription?: string
   employee?: string
   occurredAt: string
 }

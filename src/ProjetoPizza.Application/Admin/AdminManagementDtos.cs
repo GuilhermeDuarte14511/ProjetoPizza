@@ -73,6 +73,7 @@ public sealed record PaymentMethodDto(
 public sealed record PaymentDto(
     Guid Id,
     Guid BillId,
+    string? Payer,
     string Method,
     string Status,
     decimal Amount,
@@ -116,6 +117,7 @@ public sealed record AuditLogDto(
     string Action,
     string EntityType,
     string EntityId,
+    string EntityDescription,
     string? Employee,
     DateTimeOffset OccurredAt);
 
@@ -206,6 +208,13 @@ public sealed record SavePizzaFlavorCommand(
 
 public sealed record OpenTableCommand(Guid TableId, int GuestCount);
 public sealed record RecordPaymentCommand(Guid BillId, Guid PaymentMethodId, decimal Amount, decimal ReceivedAmount, string? ExternalReference);
+public sealed record SplitPaymentPartCommand(
+    string Payer,
+    Guid PaymentMethodId,
+    decimal Amount,
+    decimal ReceivedAmount,
+    string? ExternalReference);
+public sealed record RecordSplitPaymentCommand(Guid BillId, IReadOnlyCollection<SplitPaymentPartCommand> Payments);
 public sealed record RegisterCashMovementCommand(string Type, decimal Amount, string Description, string Reason);
 public sealed record CloseCashShiftCommand(decimal CountedCashAmount, string? Notes);
 public sealed record UpdateDeviceCommand(

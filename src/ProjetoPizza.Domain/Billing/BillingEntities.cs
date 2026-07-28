@@ -148,6 +148,23 @@ public sealed class BillSplit : AggregateRoot<BillSplitId>
     public Money PaidAmount { get; private set; }
     public Money RemainingAmount { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
+
+    public void RegisterPayment(Money amount)
+    {
+        if (Status is BillSplitStatus.Paid or BillSplitStatus.Cancelled)
+        {
+            throw new BusinessRuleException("bill_split.closed", "A closed bill split cannot receive payments.");
+        }
+
+        if (amount.Amount <= 0 || amount.Amount > RemainingAmount.Amount)
+        {
+            throw new BusinessRuleException("bill_split.invalid_payment", "Payment must be positive and not exceed the split remaining amount.");
+        }
+
+        PaidAmount += amount;
+        RemainingAmount -= amount;
+        Status = RemainingAmount.Amount == 0 ? BillSplitStatus.Paid : BillSplitStatus.PartiallyPaid;
+    }
 }
 
 public sealed class BillSplitItem

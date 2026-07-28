@@ -1,6 +1,7 @@
 import { CheckCircle2, Database, Download, Printer, Save, Settings2, Store, Wifi } from 'lucide-react'
 import { type FormEvent, useMemo, useState } from 'react'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { CurrencyInput } from '../components/ui/CurrencyInput'
 import { PageHeader } from '../components/ui/PageHeader'
 import { useToast } from '../components/ui/toast'
 import { ViewTransitionLink } from '../components/ui/ViewTransitionLink'
@@ -110,7 +111,7 @@ function OperationSettingsForm() {
     </div>
     <div className="form-grid three-columns">
       <label className="field-label">Taxa de serviço (%)<input type="number" min="0" max="100" value={settings.serviceFeePercentage} onChange={(event) => setSettings({ ...settings, serviceFeePercentage: Number(event.target.value) })} /></label>
-      <label className="field-label">Taxa padrão delivery<input type="number" min="0" step=".01" value={settings.defaultDeliveryFee} onChange={(event) => setSettings({ ...settings, defaultDeliveryFee: Number(event.target.value) })} /></label>
+      <label className="field-label">Taxa padrão delivery<CurrencyInput value={settings.defaultDeliveryFee} onCurrencyValueChange={(value) => setSettings({ ...settings, defaultDeliveryFee: value })} /></label>
       <label className="field-label">Tolerância de chamado (min)<input type="number" min="1" max="120" value={settings.tableCallToleranceMinutes} onChange={(event) => setSettings({ ...settings, tableCallToleranceMinutes: Number(event.target.value) })} /></label>
     </div>
     <div className="form-actions">{hasPermission('admin:write') && <button className="primary-button" disabled={saving} aria-busy={saving}><Save size={16} /> {saving ? 'Salvando...' : 'Salvar operação'}</button>}</div>

@@ -143,6 +143,8 @@ export const adminService = {
     isApiConfigured ? postJson(`/api/v1/admin/kitchen/tickets/${id}/transitions/${transition}`, {}) : Promise.resolve({ ...demoResult, status: transition }),
   recordPayment: (command: { billId: string; paymentMethodId: string; amount: number; receivedAmount: number; externalReference?: string }) =>
     isApiConfigured ? postJson('/api/v1/admin/payments', command) : Promise.resolve({ ...demoResult, status: 'Paid' }),
+  recordSplitPayment: (command: { billId: string; payments: Array<{ payer: string; paymentMethodId: string; amount: number; receivedAmount: number; externalReference?: string }> }) =>
+    isApiConfigured ? postJson('/api/v1/admin/payments/split', command) : Promise.resolve({ ...demoResult, status: 'Paid' }),
   registerCashMovement: (command: { type: string; amount: number; description: string; reason: string }) =>
     isApiConfigured ? postJson('/api/v1/admin/cashier/movements', command) : Promise.resolve(demoResult),
   closeCashShift: (countedCashAmount: number, notes?: string) =>

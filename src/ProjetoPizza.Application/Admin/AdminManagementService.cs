@@ -154,12 +154,14 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
     {
         cancellationToken.ThrowIfCancellationRequested();
         var methods = context.PaymentMethods.ToDictionary(method => method.Id, method => method.Name);
+        var payers = context.BillSplits.ToDictionary(split => split.Id, split => split.Name);
         var result = context.Payments
             .OrderByDescending(payment => payment.PaidAt)
             .ToArray()
             .Select(payment => new PaymentDto(
                 payment.Id.Value,
                 payment.BillId.Value,
+                payment.BillSplitId.HasValue ? payers.GetValueOrDefault(payment.BillSplitId.Value) : null,
                 methods.GetValueOrDefault(payment.PaymentMethodId, "Desconhecido"),
                 payment.Status.ToString(),
                 payment.Amount.Amount,
@@ -240,6 +242,7 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
     {
         cancellationToken.ThrowIfCancellationRequested();
         var employees = context.Employees.ToDictionary(employee => employee.Id, employee => employee.DisplayName);
+        var kitchenTickets = context.KitchenTickets.ToDictionary(ticket => ticket.Id.Value, ticket => $"Ticket #{ticket.TicketNumber}");
         var result = context.AuditLogs
             .OrderByDescending(log => log.OccurredAt)
             .Take(250)
@@ -250,6 +253,7 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
                 log.Action,
                 log.EntityType,
                 log.EntityId,
+                DescribeAuditEntity(log.EntityType, log.EntityId, kitchenTickets),
                 log.EmployeeId.HasValue ? employees.GetValueOrDefault(log.EmployeeId.Value) : null,
                 log.OccurredAt))
             .ToArray();
@@ -753,6 +757,110 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
         return new CommandResultDto(payment.Id.Value, payment.Status.ToString());
     }
 
+    public async Task<CommandResultDto> RecordSplitPaymentAsync(
+        RecordSplitPaymentCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var parts = command.Payments?.ToArray() ?? [];
+        if (parts.Length is < 2 or > 50)
+        {
+            throw new BusinessRuleException("bill_split.people_count", "A split payment must contain between 2 and 50 people.");
+        }
+
+        var employee = GetEmployee(identityUserId);
+        var billId = new BillId(command.BillId);
+        var bill = context.Bills.Single(item => item.Id == billId);
+        var methods = context.PaymentMethods
+            .Where(method => method.IsActive)
+            .ToDictionary(method => method.Id);
+        var splitAmounts = parts.Select(part => new Money(part.Amount)).ToArray();
+        if (splitAmounts.Sum(amount => amount.Amount) != bill.RemainingAmount.Amount)
+        {
+            throw new BusinessRuleException("bill_split.total", "The split total must match the bill remaining amount.");
+        }
+
+        var selectedMethods = parts
+            .Select(part => methods.GetValueOrDefault(new PaymentMethodId(part.PaymentMethodId))
+                ?? throw new BusinessRuleException("payment.method", "The selected payment method is unavailable."))
+            .ToArray();
+        var cashShift = context.CashShifts
+            .Where(shift => shift.Status == CashShiftStatus.Open)
+            .OrderByDescending(shift => shift.OpenedAt)
+            .ToArray()
+            .FirstOrDefault();
+        if (selectedMethods.Any(method => method.Code == "CASH") && cashShift is null)
+        {
+            throw new BusinessRuleException("payment.cash_shift", "Cash payments require an open cash shift.");
+        }
+
+        var nextSplitNumber = context.BillSplits
+            .Where(split => split.BillId == bill.Id)
+            .ToArray()
+            .Select(split => split.SplitNumber)
+            .DefaultIfEmpty()
+            .Max() + 1;
+        if (cashShift is not null)
+        {
+            _ = context.CashMovements.Where(movement => movement.CashShiftId == cashShift.Id).ToArray();
+        }
+
+        for (var index = 0; index < parts.Length; index++)
+        {
+            var part = parts[index];
+            var amount = splitAmounts[index];
+            var method = selectedMethods[index];
+            var split = new BillSplit(
+                BillSplitId.New(),
+                bill.Id,
+                part.Payer,
+                nextSplitNumber + index,
+                amount);
+            var payment = new Payment(
+                PaymentId.New(),
+                bill.UnitId,
+                bill.Id,
+                method,
+                amount,
+                new Money(part.ReceivedAmount),
+                employee.Id,
+                split.Id,
+                cashShift?.Id,
+                part.ExternalReference);
+
+            split.RegisterPayment(amount);
+            bill.RegisterPayment(amount);
+            context.Add(split);
+            context.Add(payment);
+
+            if (method.Code == "CASH" && cashShift is not null)
+            {
+                cashShift.RegisterMovement(
+                    CashMovementId.New(),
+                    CashMovementType.Sale,
+                    amount,
+                    $"Pagamento de {split.Name} na conta {bill.Id.Value}",
+                    "Venda",
+                    employee.Id,
+                    paymentId: payment.Id);
+            }
+        }
+
+        var session = context.TableSessions.Single(item => item.Id == bill.TableSessionId);
+        if (bill.Status == BillStatus.Paid)
+        {
+            session.Close(employee.Id);
+        }
+        else if (session.Status == TableSessionStatus.BillRequested)
+        {
+            session.MarkPaymentPending();
+        }
+
+        AddAudit(bill.UnitId, employee.Id, "Billing", "SplitPayment", nameof(Bill), bill.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(bill.Id.Value, bill.Status.ToString());
+    }
+
     public async Task<CommandResultDto> RegisterCashMovementAsync(
         RegisterCashMovementCommand command,
         Guid identityUserId,
@@ -843,6 +951,23 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
         string entityType,
         Guid entityId) =>
         context.Add(new AuditLog(AuditLogId.New(), unitId, module, action, entityType, entityId.ToString(), employeeId));
+
+    private static string DescribeAuditEntity(
+        string entityType,
+        string entityId,
+        IReadOnlyDictionary<Guid, string> kitchenTickets)
+    {
+        if (entityType == nameof(KitchenTicket) &&
+            Guid.TryParse(entityId, out var kitchenTicketId) &&
+            kitchenTickets.TryGetValue(kitchenTicketId, out var description))
+        {
+            return description;
+        }
+
+        return Guid.TryParse(entityId, out _)
+            ? $"{entityType} {entityId[..8]}"
+            : entityId;
+    }
 
     private static UnitSettingsDto ToDto(RestaurantUnit unit) => new(
         unit.Id.Value,

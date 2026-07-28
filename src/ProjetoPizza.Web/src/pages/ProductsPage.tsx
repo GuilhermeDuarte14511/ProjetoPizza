@@ -1,7 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { MoreHorizontal, Plus, Save, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
+import { CurrencyInput } from '../components/ui/CurrencyInput'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { FieldError } from '../components/ui/FieldError'
 import { Modal } from '../components/ui/Modal'
@@ -94,7 +95,7 @@ export function ProductsPage() {
             <label className="field-label">SKU<input disabled={Boolean(form.getValues('id'))} aria-invalid={Boolean(form.formState.errors.sku)} {...form.register('sku')} /><FieldError message={form.formState.errors.sku?.message} /></label>
             <label className="field-label">Categoria<select aria-invalid={Boolean(form.formState.errors.categoryId)} {...form.register('categoryId')}><option value="">Selecione</option>{categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select><FieldError message={form.formState.errors.categoryId?.message} /></label>
             <label className="field-label">Tipo<select {...form.register('type')}><option value="Pizza">Pizza</option><option value="Beverage">Bebida</option><option value="Portion">Porção</option><option value="Dessert">Sobremesa</option><option value="Standard">Padrão</option></select></label>
-            <label className="field-label">Preço base<input type="number" min="0" step=".01" aria-invalid={Boolean(form.formState.errors.basePrice)} {...form.register('basePrice', { valueAsNumber: true })} /><FieldError message={form.formState.errors.basePrice?.message} /></label>
+            <label className="field-label">Preço base<Controller control={form.control} name="basePrice" render={({ field }) => <CurrencyInput name={field.name} value={field.value} onBlur={field.onBlur} getInputRef={field.ref} aria-invalid={Boolean(form.formState.errors.basePrice)} onCurrencyValueChange={field.onChange} />} /><FieldError message={form.formState.errors.basePrice?.message} /></label>
             <div className="check-stack"><label className="check-label"><input type="checkbox" {...form.register('isAvailable')} /> Disponível</label><label className="check-label"><input type="checkbox" {...form.register('isFeatured')} /> Destaque</label></div>
           </div></div>
           <div className="modal-footer"><button type="button" className="secondary-button" disabled={saving} onClick={requestClose}>Cancelar</button><button className="primary-button" disabled={saving} aria-busy={saving}><Save size={16} /> {saving ? 'Salvando...' : 'Salvar produto'}</button></div>

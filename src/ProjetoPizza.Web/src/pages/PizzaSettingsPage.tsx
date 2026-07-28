@@ -1,7 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Edit3, Plus, Save } from 'lucide-react'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
+import { CurrencyInput } from '../components/ui/CurrencyInput'
 import { FieldError } from '../components/ui/FieldError'
 import { Modal } from '../components/ui/Modal'
 import { PageHeader } from '../components/ui/PageHeader'
@@ -90,7 +91,7 @@ export function PizzaSettingsPage({ initialTab }: PizzaSettingsPageProps) {
             <label className="field-label">Sigla<input aria-invalid={Boolean(sizeForm.formState.errors.shortName)} {...sizeForm.register('shortName')} /><FieldError message={sizeForm.formState.errors.shortName?.message} /></label>
             <label className="field-label">Fatias<input type="number" min="1" aria-invalid={Boolean(sizeForm.formState.errors.slices)} {...sizeForm.register('slices', { valueAsNumber: true })} /><FieldError message={sizeForm.formState.errors.slices?.message} /></label>
             <label className="field-label">Diâmetro (cm)<input type="number" min="1" aria-invalid={Boolean(sizeForm.formState.errors.diameterCm)} {...sizeForm.register('diameterCm', { valueAsNumber: true })} /><FieldError message={sizeForm.formState.errors.diameterCm?.message} /></label>
-            <label className="field-label">Preço base<input type="number" min="0" step=".01" aria-invalid={Boolean(sizeForm.formState.errors.basePrice)} {...sizeForm.register('basePrice', { valueAsNumber: true })} /><FieldError message={sizeForm.formState.errors.basePrice?.message} /></label>
+            <label className="field-label">Preço base<Controller control={sizeForm.control} name="basePrice" render={({ field }) => <CurrencyInput name={field.name} value={field.value} onBlur={field.onBlur} getInputRef={field.ref} aria-invalid={Boolean(sizeForm.formState.errors.basePrice)} onCurrencyValueChange={field.onChange} />} /><FieldError message={sizeForm.formState.errors.basePrice?.message} /></label>
             <label className="field-label">Máx. sabores<input type="number" min="1" max="3" aria-invalid={Boolean(sizeForm.formState.errors.maxFlavors)} {...sizeForm.register('maxFlavors', { valueAsNumber: true })} /><FieldError message={sizeForm.formState.errors.maxFlavors?.message} /></label>
           </div></div>
           <div className="modal-footer"><button type="button" className="secondary-button" disabled={savingSize} onClick={() => setEditingSizeId(undefined)}>Cancelar</button><button className="primary-button" disabled={savingSize} aria-busy={savingSize}><Save size={16} /> {savingSize ? 'Salvando...' : 'Salvar tamanho'}</button></div>

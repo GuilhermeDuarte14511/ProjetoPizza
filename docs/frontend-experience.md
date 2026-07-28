@@ -10,6 +10,7 @@ O painel administrativo mantém o design do Stitch e usa uma camada de experiên
 - **Sonner** apresenta sucesso e falhas tratadas, inclusive detalhes seguros fornecidos por Problem Details.
 - **SignalR** notifica alterações administrativas. O cliente invalida o cache e busca a versão atual do servidor sem manter regra de negócio no Hub.
 - **View Transitions API** anima mudanças de rota quando suportada. O fallback CSS mantém a navegação funcional e respeita `prefers-reduced-motion`.
+- **React Number Format** aplica entrada monetária brasileira consistente (`R$ 1.234,56`) a preços, taxas, caixa e pagamentos sem transformar valores de domínio em texto.
 
 ## Estados de interface
 
@@ -43,6 +44,12 @@ npm run test:e2e
 ```
 
 O Vitest cobre componentes, apresentações e schemas. O Playwright executa o fluxo de formulário em Chromium desktop e viewport mobile usando o modo local sem API.
+
+## Recebimento e auditoria
+
+O modal de pagamento alterna entre recebimento único e divisão por 2 a 50 pessoas. A divisão distribui centavos sem perder ou criar valor, mostra a parcela individual e coleta forma de pagamento, valor recebido, troco e referência de cada pessoa. O envio é único para evitar uma conta parcialmente atualizada.
+
+O histórico administrativo traduz ação, módulo e entidade para português. Para tickets de cozinha, a API projeta o número operacional (`Ticket #1024`) no lugar do GUID, mantendo o identificador técnico no contrato e na exportação CSV.
 
 ## Tempo real
 

@@ -29,6 +29,7 @@ public interface IAdminManagementService
     Task<CommandResultDto> TransitionKitchenTicketAsync(Guid id, string transition, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> ResolveServiceCallAsync(Guid id, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RecordPaymentAsync(RecordPaymentCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> RecordSplitPaymentAsync(RecordSplitPaymentCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RegisterCashMovementAsync(RegisterCashMovementCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> CloseCashShiftAsync(CloseCashShiftCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> UpdateDeviceAsync(Guid id, UpdateDeviceCommand command, Guid identityUserId, CancellationToken cancellationToken);

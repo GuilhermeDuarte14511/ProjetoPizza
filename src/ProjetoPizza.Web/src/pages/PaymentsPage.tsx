@@ -25,7 +25,7 @@ export function PaymentsPage() {
       <div className="toolbar"><div className="toolbar-search"><Search size={17} /><input aria-label="Buscar pagamento" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar método, conta ou referência..." /></div></div>
       <section className="surface-card data-table-card">
         <div className="data-table-header payment-grid"><span>Pagamento</span><span>Método</span><span>Status</span><span>Recebido</span><span>Troco</span></div>
-        {visible.map((payment) => <div className="data-table-row payment-grid" key={payment.id}><span className="cell-title"><CreditCard size={17} /><span><strong>{payment.id.slice(0, 8)}</strong><small>{payment.paidAt ? new Date(payment.paidAt).toLocaleString('pt-BR') : 'Pendente'}</small></span></span><span>{payment.method}<small>{payment.externalReference}</small></span><StatusBadge status={payment.status} /><strong>{currency.format(payment.receivedAmount)}</strong><span>{currency.format(payment.changeAmount)}</span></div>)}
+        {visible.map((payment) => <div className="data-table-row payment-grid" key={payment.id}><span className="cell-title"><CreditCard size={17} /><span><strong>{payment.payer ?? payment.id.slice(0, 8)}</strong><small>{payment.paidAt ? new Date(payment.paidAt).toLocaleString('pt-BR') : 'Pendente'}</small></span></span><span>{payment.method}<small>{payment.externalReference}</small></span><StatusBadge status={payment.status} /><strong>{currency.format(payment.receivedAmount)}</strong><span>{currency.format(payment.changeAmount)}</span></div>)}
       </section>
     </>
   )

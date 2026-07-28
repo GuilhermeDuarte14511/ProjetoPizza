@@ -75,6 +75,7 @@ public sealed class AdminQueryServiceTests
         public IQueryable<KitchenTicket> KitchenTickets => KitchenTicketItemsData.AsQueryable();
         public IQueryable<KitchenTicketItem> KitchenTicketItems => KitchenTicketLineItems.AsQueryable();
         public IQueryable<Bill> Bills => BillItemsData.AsQueryable();
+        public IQueryable<BillSplit> BillSplits => Array.Empty<BillSplit>().AsQueryable();
         public IQueryable<PaymentMethod> PaymentMethods => Array.Empty<PaymentMethod>().AsQueryable();
         public IQueryable<Payment> Payments => Array.Empty<Payment>().AsQueryable();
         public IQueryable<CashRegister> CashRegisters => Array.Empty<CashRegister>().AsQueryable();

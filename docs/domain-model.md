@@ -47,6 +47,8 @@ Pedidos nascem em `Draft`; itens só são alterados nessa fase. Submeter exige i
 
 Pagamento deve ser maior que zero. Valor recebido não pode ser menor que o valor pago. Troco só é aceito quando `PaymentMethod.AllowsChange`; referência externa é obrigatória quando configurada. Cancelamentos são estados, nunca exclusão física.
 
+A divisão por pessoas é persistida em `BillSplit`. Cada parte mantém nome, sequência, total, valor pago, saldo e estado próprios, e cada `Payment` referencia a pessoa correspondente. O caso de uso `POST /api/v1/admin/payments/split` valida de 2 a 50 pessoas, exige que a soma em centavos corresponda ao saldo da conta e grava todas as partes e pagamentos em uma única unidade atômica.
+
 ### Caixa
 
 `CashShift` nasce aberto, registra movimentos somente nesse estado e calcula o valor esperado. O fechamento calcula a diferença assinada entre valor contado e esperado e impede novo fechamento.

@@ -238,6 +238,13 @@ public static class AdminEndpoints
             CancellationToken cancellationToken) =>
             service.RecordPaymentAsync(command, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("OperationsWrite");
+        group.MapPost("/payments/split", (
+            RecordSplitPaymentCommand command,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.RecordSplitPaymentAsync(command, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("OperationsWrite");
         group.MapPost("/cashier/movements", (
             RegisterCashMovementCommand command,
             ClaimsPrincipal user,
