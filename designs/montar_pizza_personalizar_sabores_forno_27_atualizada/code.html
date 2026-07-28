@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Personalizar Sabores</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "surface-dim": "#d7dae2",
+                "surface-container-lowest": "#ffffff",
+                "tertiary-fixed": "#9af6b8",
+                "on-tertiary-container": "#f6fff4",
+                "on-error-container": "#93000a",
+                "outline-variant": "#e1bfb5",
+                "outline": "#8d7168",
+                "surface-variant": "#dfe2eb",
+                "on-surface": "#181c22",
+                "inverse-on-surface": "#eef1f9",
+                "secondary-fixed": "#e8deff",
+                "surface": "#f8f9ff",
+                "tertiary-fixed-dim": "#7ed99e",
+                "on-secondary-fixed-variant": "#4e2aab",
+                "on-primary-fixed-variant": "#832600",
+                "tertiary-container": "#268451",
+                "primary": "#a83300",
+                "on-primary": "#ffffff",
+                "secondary-fixed-dim": "#cdbdff",
+                "on-tertiary-fixed-variant": "#00522d",
+                "tertiary": "#006a3b",
+                "primary-container": "#cc4916",
+                "on-tertiary-fixed": "#00210f",
+                "on-secondary-fixed": "#20005f",
+                "on-primary-container": "#fffbff",
+                "surface-container-high": "#e5e8f0",
+                "on-secondary-container": "#32008a",
+                "primary-fixed-dim": "#ffb59d",
+                "surface-container-low": "#f1f3fc",
+                "inverse-surface": "#2d3137",
+                "surface-container": "#ebeef6",
+                "error-container": "#ffdad6",
+                "on-surface-variant": "#59413a",
+                "background": "#f8f9ff",
+                "on-secondary": "#ffffff",
+                "error": "#ba1a1a",
+                "secondary-container": "#9c7efe",
+                "on-tertiary": "#ffffff",
+                "primary-fixed": "#ffdbd0",
+                "surface-container-highest": "#dfe2eb",
+                "on-primary-fixed": "#390c00",
+                "on-error": "#ffffff",
+                "inverse-primary": "#ffb59d",
+                "surface-tint": "#ac3500",
+                "surface-bright": "#f8f9ff",
+                "on-background": "#181c22",
+                "secondary": "#6646c4"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "gutter": "20px",
+                "grid-margin": "32px",
+                "touch-target-min": "52px",
+                "container-padding": "24px",
+                "stack-gap": "16px"
+        },
+        "fontFamily": {
+                "display-md": [
+                        "Inter"
+                ],
+                "section-title": [
+                        "Inter"
+                ],
+                "price-lg": [
+                        "Inter"
+                ],
+                "label-caps": [
+                        "Inter"
+                ],
+                "display-lg": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "product-title": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "display-md": [
+                        "28px",
+                        {
+                                "lineHeight": "36px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "section-title": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "price-lg": [
+                        "26px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "label-caps": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "display-lg": [
+                        "34px",
+                        {
+                                "lineHeight": "42px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "26px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "product-title": [
+                        "22px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        body { background-color: #FFF8F3; } /* Cream background from brand guidelines */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #a83300; /* primary */
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #a83300; /* primary */
+        }
+        /* Hide scrollbar for clean horizontal scrolling */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 32px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #dfe2eb;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 24px;
+            width: 24px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: #a83300;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232b72f1"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>');
+            background-size: 16px;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="text-on-surface antialiased h-screen overflow-hidden flex flex-col pt-[72px] pb-[72px] md:pt-0 md:pb-0 md:pl-64">
+<!-- TopNavBar (Mobile) -->
+<header class="md:hidden fixed top-0 left-0 w-full z-50 flex justify-between items-center px-grid-margin h-touch-target-min bg-surface dark:bg-surface-container-high shadow-sm transition-transform duration-300">
+<div class="text-display-md font-display-md font-bold text-primary dark:text-primary-fixed-dim">Forno 27</div>
+<div class="flex gap-4">
+<button class="h-touch-target-min min-w-[52px] flex items-center justify-center text-primary dark:text-primary-fixed-dim hover:bg-surface-container-highest transition-colors rounded-lg">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="h-touch-target-min min-w-[52px] flex items-center justify-center text-primary dark:text-primary-fixed-dim hover:bg-surface-container-highest transition-colors rounded-lg">
+<span class="material-symbols-outlined">shopping_cart</span>
+</button>
+</div>
+</header>
+<!-- SideNavBar (Desktop) -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full pt-20 pb-4 flex-col z-40 bg-surface-container-low dark:bg-inverse-surface border-r border-outline-variant dark:border-outline w-64 shadow-none">
+<div class="px-6 mb-8">
+<h1 class="text-section-title font-section-title text-primary">Categorias</h1>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1">Mesa 12</p>
+</div>
+<div class="flex-1 overflow-y-auto no-scrollbar">
+<ul class="space-y-2">
+<li><a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#"><span class="material-symbols-outlined mr-3">star</span><span class="text-label-caps font-label-caps">Destaques</span></a></li>
+<li><a class="bg-primary-container text-on-primary-container rounded-xl mx-2 flex items-center px-4 py-3 h-touch-target-min" href="#"><span class="material-symbols-outlined mr-3">local_pizza</span><span class="text-label-caps font-label-caps">Pizzas Tradicionais</span></a></li>
+<li><a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#"><span class="material-symbols-outlined mr-3">auto_awesome</span><span class="text-label-caps font-label-caps">Pizzas Especiais</span></a></li>
+<li><a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#"><span class="material-symbols-outlined mr-3">bakery_dining</span><span class="text-label-caps font-label-caps">Pizzas Doces</span></a></li>
+<li><a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#"><span class="material-symbols-outlined mr-3">flatware</span><span class="text-label-caps font-label-caps">Porções</span></a></li>
+<li><a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#"><span class="material-symbols-outlined mr-3">local_bar</span><span class="text-label-caps font-label-caps">Bebidas</span></a></li>
+<li><a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#"><span class="material-symbols-outlined mr-3">icecream</span><span class="text-label-caps font-label-caps">Sobremesas</span></a></li>
+<li><a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#"><span class="material-symbols-outlined mr-3">layers</span><span class="text-label-caps font-label-caps">Combos</span></a></li>
+</ul>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto px-grid-margin py-8 md:py-12 bg-[#FFF8F3] relative z-10">
+<!-- Top App Bar equivalent for inner flow -->
+<div class="flex items-center justify-between mb-8 max-w-5xl mx-auto">
+<div class="w-1/3 flex justify-start">
+<button class="flex items-center text-primary h-touch-target-min hover:bg-surface-container-low rounded-lg transition-colors px-2">
+<span class="material-symbols-outlined mr-2">arrow_back</span>
+<span class="text-label-caps font-label-caps hidden md:inline">Voltar</span>
+</button>
+</div>
+<div class="w-1/3 flex justify-center">
+<h2 class="text-display-md font-display-md text-on-surface text-center">Personalizar Sabores</h2>
+</div>
+<div class="w-1/3 flex justify-end"></div>
+</div>
+<div class="max-w-5xl mx-auto flex flex-col md:flex-row gap-8">
+<!-- Left Column: Image & Progress -->
+<div class="w-full md:w-1/3 flex flex-col gap-6">
+<!-- Progress Bar -->
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/30">
+<ol class="flex flex-col gap-4">
+<li class="flex items-center text-on-surface-variant">
+<span class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center mr-4 text-sm font-bold text-on-surface-variant">1</span>
+<span class="text-body-lg font-body-lg">Tamanho</span>
+</li>
+<li class="flex items-center text-on-surface-variant">
+<span class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center mr-4 text-sm font-bold text-on-surface-variant">2</span>
+<span class="text-body-lg font-body-lg">Sabores</span>
+</li>
+<li class="flex items-center text-primary font-bold">
+<span class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center mr-4 text-sm font-bold shadow-sm shadow-primary/20">3</span>
+<span class="text-body-lg font-body-lg">Personalização</span>
+</li>
+<li class="flex items-center text-on-surface-variant/50">
+<span class="w-8 h-8 rounded-full bg-surface-container-lowest border border-outline-variant/50 flex items-center justify-center mr-4 text-sm font-bold">4</span>
+<span class="text-body-lg font-body-lg">Borda</span>
+</li>
+<li class="flex items-center text-on-surface-variant/50">
+<span class="w-8 h-8 rounded-full bg-surface-container-lowest border border-outline-variant/50 flex items-center justify-center mr-4 text-sm font-bold">5</span>
+<span class="text-body-lg font-body-lg">Revisão</span>
+</li>
+</ol>
+</div>
+<!-- Pizza Preview Image -->
+<div class="relative w-full aspect-square rounded-3xl overflow-hidden shadow-sm border border-outline-variant/20 bg-white p-3">
+<img class="w-full h-full object-cover rounded-2xl" data-alt="A top-down, high-resolution food photography shot of a half-and-half pizza (Calabresa and Portuguesa) on a warm wooden peel. The crust is blistered and artisanal, resting against a soft cream background. The lighting is warm and inviting, emphasizing the rich terracotta reds of the pepperoni and the fresh yellows of the egg, casting soft ambient shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAISsmLAIKnbocmti6fzUBcgXAi5eAv4rS9iQ9oUWZOiczc4LF7CZmzXumD7gRL350U4hqBTvcBdID08vjbZjlLBEJuXqnjMdb37zHSC8u71vhN4HJO2mRmfIai26xqaq19q7IRBCnoe2FhvqqlTK1B9Gllfh81uzu4zZeSVwEGCu5R0p3J5wFsEib4Wpb-E41mJr2XXW9oCe8YGH3Si1XG2vFzIhoxBc0N9W9tAd0ig14WO23D5vjW"/>
+</div>
+</div>
+<!-- Right Column: Customization -->
+<div class="w-full md:w-2/3 flex flex-col gap-6">
+<!-- Flavor Selector Tabs -->
+<div class="flex bg-surface-container-lowest p-2 rounded-2xl shadow-sm border border-outline-variant/30 gap-2 overflow-x-auto no-scrollbar">
+<button class="flex-1 flex flex-col items-center justify-center py-4 px-2 min-w-[140px] bg-primary-container text-on-primary-container rounded-xl h-touch-target-min transition-all relative overflow-hidden group">
+<span class="text-label-caps font-label-caps relative z-10">1/2 Calabresa</span>
+</button>
+<button class="flex-1 flex flex-col items-center justify-center py-4 px-2 min-w-[140px] text-on-surface-variant hover:bg-surface-container h-touch-target-min rounded-xl transition-all border border-transparent hover:border-outline-variant/30">
+<span class="text-label-caps font-label-caps">1/2 Portuguesa</span>
+</button>
+</div>
+<!-- Ingredients Customization for Active Flavor -->
+<div class="bg-surface-container-lowest p-8 rounded-3xl shadow-sm border border-outline-variant/30 flex flex-col gap-8">
+<div>
+<h3 class="text-section-title font-section-title text-on-surface mb-2">Ingredientes da Calabresa</h3>
+<p class="text-body-md font-body-md text-on-surface-variant">Remova os itens que não deseja nesta metade.</p>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Ingredient 1 -->
+<div class="flex items-center justify-between p-5 rounded-2xl border border-outline-variant/20 bg-surface hover:bg-surface-container-low transition-colors min-h-[72px]">
+<div class="flex items-center gap-5">
+<div class="w-12 h-12 rounded-full bg-error-container text-on-error-container flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">lunch_dining</span>
+</div>
+<span class="text-body-lg font-body-lg text-on-surface">Calabresa Fatiada</span>
+</div>
+<label class="switch">
+<input checked="" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<!-- Ingredient 2 -->
+<div class="flex items-center justify-between p-5 rounded-2xl border border-outline-variant/20 bg-surface hover:bg-surface-container-low transition-colors min-h-[72px]">
+<div class="flex items-center gap-5">
+<div class="w-12 h-12 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<span class="text-body-lg font-body-lg text-on-surface">Cebola</span>
+</div>
+<label class="switch">
+<input checked="" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<!-- Ingredient 3 -->
+<div class="flex items-center justify-between p-5 rounded-2xl border border-outline-variant/20 bg-surface hover:bg-surface-container-low transition-colors min-h-[72px] opacity-60">
+<div class="flex items-center gap-5">
+<div class="w-12 h-12 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">grass</span>
+</div>
+<span class="text-body-lg font-body-lg text-on-surface line-through text-on-surface-variant">Orégano</span>
+</div>
+<label class="switch">
+<input type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col sm:flex-row gap-4 mt-6">
+<button class="flex-1 bg-surface-container border border-outline-variant/30 text-on-surface h-[56px] rounded-xl text-label-caps font-label-caps hover:bg-surface-container-highest transition-colors flex items-center justify-center">
+                        Pular Personalização
+                    </button>
+<button class="flex-1 bg-primary text-on-primary h-[56px] rounded-xl text-label-caps font-label-caps shadow-md shadow-primary/20 hover:bg-surface-tint transition-colors flex items-center justify-center">
+                        Confirmar e Avançar
+                        <span class="material-symbols-outlined ml-2">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer (Mobile) -->
+<footer class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-surface-container-lowest dark:bg-on-background border-t border-outline-variant w-full py-4 px-grid-margin flex justify-between items-center flat">
+<span class="text-body-md font-body-md text-on-surface-variant dark:text-surface-variant">© 2024 Forno 27 - Mesa 12</span>
+<div class="flex gap-4">
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-caps font-label-caps" href="#">Ajuda</a>
+</div>
+</footer>
+</body></html>

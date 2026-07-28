@@ -1,0 +1,538 @@
+<!DOCTYPE html><html class="light" lang="pt-BR" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Configurações - Impressoras | Forno 27</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#d5dae5",
+                        "secondary-container": "#ff6e40",
+                        "primary-container": "#cc4916",
+                        "on-secondary-fixed-variant": "#852400",
+                        "secondary": "#ad3305",
+                        "on-surface-variant": "#59413a",
+                        "primary-fixed": "#ffdbd0",
+                        "primary": "#a83300",
+                        "tertiary-fixed": "#c7e7ff",
+                        "primary-fixed-dim": "#ffb59d",
+                        "inverse-surface": "#2b3139",
+                        "on-tertiary-container": "#fcfcff",
+                        "on-secondary-fixed": "#3a0a00",
+                        "outline": "#8d7168",
+                        "surface-container": "#e9eef9",
+                        "outline-variant": "#e1bfb5",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#631800",
+                        "surface-bright": "#f8f9ff",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#85cfff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#001e2e",
+                        "on-primary-fixed-variant": "#832600",
+                        "background": "#f8f9ff",
+                        "surface-container-highest": "#dde3ee",
+                        "surface-tint": "#ac3500",
+                        "on-primary-fixed": "#390c00",
+                        "on-primary-container": "#fffbff",
+                        "tertiary": "#00628b",
+                        "secondary-fixed": "#ffdbd0",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#161c24",
+                        "on-tertiary-fixed-variant": "#004c6c",
+                        "surface-variant": "#dde3ee",
+                        "secondary-fixed-dim": "#ffb59f",
+                        "surface-container-high": "#e3e8f3",
+                        "surface": "#f8f9ff",
+                        "inverse-primary": "#ffb59d",
+                        "tertiary-container": "#007cae",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#eef4ff",
+                        "on-surface": "#161c24",
+                        "inverse-on-surface": "#ebf1fc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-margin": "32px",
+                        "stack-gap": "16px",
+                        "sidebar-width": "260px",
+                        "gutter": "24px",
+                        "topbar-height": "64px",
+                        "card-padding": "20px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-financial": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-financial": ["30px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "30px", "fontWeight": "600" }],
+                        "headline-lg": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background min-h-screen text-on-background font-body-md text-body-md overflow-x-hidden antialiased flex">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col h-full w-[260px] py-6 bg-inverse-surface dark:bg-inverse-surface fixed left-0 top-0 z-20">
+<div class="px-6 mb-8 flex flex-col gap-1">
+<div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-3">
+<span class="material-symbols-outlined text-on-primary font-headline-md" style="font-variation-settings: 'FILL' 1;">local_pizza</span>
+</div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-primary-fixed">Forno 27</h1>
+<p class="font-label-md text-label-md text-surface-variant opacity-70">Unidade Principal</p>
+</div>
+<div class="px-6 mb-6">
+<button class="w-full bg-primary text-on-primary rounded-lg py-3 flex items-center justify-center gap-2 hover:bg-secondary transition-colors shadow-sm">
+<span class="material-symbols-outlined">add</span>
+<span class="font-label-md text-label-md font-bold">Novo Pedido</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto px-2 pb-4 space-y-1 scrollbar-thin">
+<div class="px-4 py-2 mt-4">
+<span class="font-label-md text-label-md text-surface-variant opacity-40 uppercase tracking-wider">Operação</span>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">dashboard</span>
+<span class="font-label-md text-label-md">Visão Geral</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">restaurant</span>
+<span class="font-label-md text-label-md">Mesas</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">receipt_long</span>
+<span class="font-label-md text-label-md">Comandas</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">shopping_cart</span>
+<span class="font-label-md text-label-md">Pedidos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">oven_gen</span>
+<span class="font-label-md text-label-md">Cozinha</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">notifications_active</span>
+<span class="font-label-md text-label-md">Chamados</span>
+</a>
+<div class="px-4 py-2 mt-4">
+<span class="font-label-md text-label-md text-surface-variant opacity-40 uppercase tracking-wider">Financeiro</span>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">payments</span>
+<span class="font-label-md text-label-md">Caixa</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">credit_card</span>
+<span class="font-label-md text-label-md">Pagamentos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Fechamentos</span>
+</a>
+<div class="px-4 py-2 mt-4">
+<span class="font-label-md text-label-md text-surface-variant opacity-40 uppercase tracking-wider">Gestão</span>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">menu_book</span>
+<span class="font-label-md text-label-md">Cardápio</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">analytics</span>
+<span class="font-label-md text-label-md">Relatórios</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">tablet_android</span>
+<span class="font-label-md text-label-md">Tablets</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">group</span>
+<span class="font-label-md text-label-md">Usuários</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">security</span>
+<span class="font-label-md text-label-md">Auditoria</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary bg-primary-container border-l-4 border-primary rounded-r-lg shadow-sm" href="#">
+<span class="material-symbols-outlined text-primary-fixed" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-label-md text-label-md font-bold">Configurações</span>
+</a>
+</div>
+<div class="px-2 pt-4 border-t border-surface-variant/20 mt-auto">
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-error/10 hover:text-error transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">logout</span>
+<span class="font-label-md text-label-md">Sair</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 md:ml-[260px] flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center h-16 px-gutter bg-surface dark:bg-surface-container border-b border-outline-variant shadow-sm sticky top-0 z-10">
+<div class="flex items-center gap-4">
+<!-- Mobile Menu Button -->
+<button class="md:hidden p-2 -ml-2 text-on-surface hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="font-headline-md text-headline-md font-bold text-primary flex items-center gap-2"><span class="">Configurações</span></div>
+</div>
+<div class="flex items-center gap-2 sm:gap-4">
+<div class="hidden md:flex relative w-64 lg:w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-50">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md font-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder:text-on-surface-variant/50" placeholder="Buscar nas configurações... (Cmd+K)" type="text">
+</div>
+<button class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-all relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="w-px h-6 bg-outline-variant mx-2 hidden sm:block"></div>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-md font-bold">
+                        A
+                    </div>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<main class="flex-1 p-4 sm:p-gutter overflow-y-auto">
+<div class="max-w-6xl mx-auto space-y-section-margin">
+<!-- Settings Navigation Header -->
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-outline-variant">
+<div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-background mb-2">Configurações do Sistema</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Gerencie as preferências gerais, integrações e hardware do estabelecimento.</p>
+</div>
+<button class="bg-primary hover:bg-secondary text-on-primary px-4 py-2 rounded-lg font-label-md text-label-md shadow-sm transition-colors flex items-center justify-center gap-2 self-start sm:self-auto shrink-0">
+<span class="material-symbols-outlined text-[18px]">save</span>
+                        Salvar Alterações
+                    </button>
+</div>
+<!-- Settings Tabs -->
+<div class="flex overflow-x-auto hide-scrollbar gap-2 pb-1"><a class="px-4 py-2 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors whitespace-nowrap" href="#">Dados da Pizzaria</a><a class="px-4 py-2 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors whitespace-nowrap" href="#">Operação</a><a class="px-4 py-2 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors whitespace-nowrap" href="#">Regras de Pizzas</a><a class="px-4 py-2 rounded-full bg-surface-container-high text-primary font-bold shadow-sm whitespace-nowrap border border-outline-variant" href="#">Impressoras</a><a class="px-4 py-2 rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors whitespace-nowrap" href="#">Backup &amp; Sistema</a></div>
+<!-- Printers Section -->
+<div class="space-y-stack-gap">
+<div class="flex items-center justify-between">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-background">Gerenciamento de Impressoras</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Configure os pontos de impressão na rede local para roteamento de pedidos.</p>
+</div>
+<button class="border border-outline bg-surface hover:bg-surface-container-low text-primary px-4 py-2 rounded-lg font-label-md text-label-md transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+                            Adicionar Impressora
+                        </button>
+</div>
+<!-- Printers Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-stack-gap">
+<!-- Printer Card: Cozinha -->
+<div class="bg-surface rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
+<div class="p-card-padding border-b border-outline-variant/50 bg-surface-bright flex justify-between items-start">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 border border-outline-variant/30">
+<span class="material-symbols-outlined text-on-surface-variant">print</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-headline-md text-[16px] leading-tight text-on-background font-semibold">Cozinha - Principal</h4>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#E6F4EA] text-[#137333] font-label-md text-[10px] uppercase font-bold border border-[#CEEAD6]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#137333]"></span>
+                                                Online
+                                            </span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[14px]">router</span>
+<span class="">IP: 192.168.1.100</span>
+<span class="mx-1">•</span>
+<span class="">Porta: 9100</span>
+</div>
+</div>
+</div>
+<div class="flex gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-md transition-colors" title="Editar">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-md transition-colors" title="Remover">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+<div class="p-card-padding space-y-4 flex-1">
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant block">Tipo de Papel</label>
+<select class="w-full bg-surface border border-outline-variant rounded-md py-1.5 px-3 font-body-md text-body-md focus:ring-primary focus:border-primary">
+<option value="80">80mm (Padrão)</option>
+<option value="58">58mm (Estreito)</option>
+</select>
+</div>
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant block">Número de Vias</label>
+<select class="w-full bg-surface border border-outline-variant rounded-md py-1.5 px-3 font-body-md text-body-md focus:ring-primary focus:border-primary">
+<option value="1">1 Via</option>
+<option selected="" value="2">2 Vias</option>
+<option value="3">3 Vias</option>
+</select>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="font-body-md text-body-md text-on-background">Impressão automática de pedidos</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value="">
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-md text-body-md text-on-background">Imprimir itens cancelados</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value="">
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<div class="p-3 bg-surface-container-lowest border-t border-outline-variant flex justify-end">
+<button class="text-secondary hover:text-primary font-label-md text-label-md font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+                                    Testar Impressão
+                                </button>
+</div>
+</div>
+<!-- Printer Card: Pizzaria -->
+<div class="bg-surface rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
+<div class="p-card-padding border-b border-outline-variant/50 bg-surface-bright flex justify-between items-start">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 border border-outline-variant/30">
+<span class="material-symbols-outlined text-on-surface-variant">print</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-headline-md text-[16px] leading-tight text-on-background font-semibold">Pizzaria - Fornos</h4>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#E6F4EA] text-[#137333] font-label-md text-[10px] uppercase font-bold border border-[#CEEAD6]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#137333]"></span>
+                                                Online
+                                            </span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[14px]">router</span>
+<span class="">IP: 192.168.1.101</span>
+<span class="mx-1">•</span>
+<span class="">Porta: 9100</span>
+</div>
+</div>
+</div>
+<div class="flex gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-md transition-colors" title="Editar">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-md transition-colors" title="Remover">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+<div class="p-card-padding space-y-4 flex-1">
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant block">Tipo de Papel</label>
+<select class="w-full bg-surface border border-outline-variant rounded-md py-1.5 px-3 font-body-md text-body-md focus:ring-primary focus:border-primary">
+<option value="80">80mm (Padrão)</option>
+<option value="58">58mm (Estreito)</option>
+</select>
+</div>
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant block">Número de Vias</label>
+<select class="w-full bg-surface border border-outline-variant rounded-md py-1.5 px-3 font-body-md text-body-md focus:ring-primary focus:border-primary">
+<option selected="" value="1">1 Via</option>
+<option value="2">2 Vias</option>
+<option value="3">3 Vias</option>
+</select>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="font-body-md text-body-md text-on-background">Impressão automática de pedidos</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value="">
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-md text-body-md text-on-background">Imprimir itens cancelados</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value="">
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<div class="p-3 bg-surface-container-lowest border-t border-outline-variant flex justify-end">
+<button class="text-secondary hover:text-primary font-label-md text-label-md font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+                                    Testar Impressão
+                                </button>
+</div>
+</div>
+<!-- Printer Card: Bar -->
+<div class="bg-surface rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
+<div class="p-card-padding border-b border-outline-variant/50 bg-surface-bright flex justify-between items-start opacity-75">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 border border-outline-variant/30">
+<span class="material-symbols-outlined text-on-surface-variant">print</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-headline-md text-[16px] leading-tight text-on-background font-semibold">Bar - Bebidas</h4>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FCE8E6] text-[#C5221F] font-label-md text-[10px] uppercase font-bold border border-[#FAD2CF]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#C5221F]"></span>
+                                                Offline
+                                            </span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[14px]">router</span>
+<span class="">IP: 192.168.1.102</span>
+<span class="mx-1">•</span>
+<span class="">Porta: 9100</span>
+</div>
+</div>
+</div>
+<div class="flex gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-md transition-colors" title="Editar">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-md transition-colors" title="Remover">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+<div class="p-card-padding space-y-4 flex-1">
+<div class="p-3 bg-error-container/30 border border-error/20 rounded-lg flex items-start gap-3">
+<span class="material-symbols-outlined text-error text-[20px] mt-0.5">warning</span>
+<p class="font-body-md text-[13px] text-on-background">Falha na conexão detectada há 45 minutos. Verifique a energia ou o cabo de rede da impressora.</p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant block">Tipo de Papel</label>
+<select class="w-full bg-surface border border-outline-variant rounded-md py-1.5 px-3 font-body-md text-body-md focus:ring-primary focus:border-primary" disabled="">
+<option selected="" value="58">58mm (Estreito)</option>
+</select>
+</div>
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant block">Número de Vias</label>
+<select class="w-full bg-surface border border-outline-variant rounded-md py-1.5 px-3 font-body-md text-body-md focus:ring-primary focus:border-primary" disabled="">
+<option selected="" value="1">1 Via</option>
+</select>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="font-body-md text-body-md text-on-surface-variant">Impressão automática de pedidos</span>
+<label class="relative inline-flex items-center cursor-not-allowed opacity-50">
+<input checked="" class="sr-only peer" disabled="" type="checkbox" value="">
+<div class="w-11 h-6 bg-surface-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<div class="p-3 bg-surface-container-lowest border-t border-outline-variant flex justify-end">
+<button class="text-on-surface-variant opacity-50 font-label-md text-label-md font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-md cursor-not-allowed">
+<span class="material-symbols-outlined text-[18px]">print_disabled</span>
+                                    Testar Impressão
+                                </button>
+</div>
+</div>
+<!-- Printer Card: Caixa -->
+<div class="bg-surface rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
+<div class="p-card-padding border-b border-outline-variant/50 bg-surface-bright flex justify-between items-start">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 border border-outline-variant/30">
+<span class="material-symbols-outlined text-on-surface-variant">receipt</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h4 class="font-headline-md text-[16px] leading-tight text-on-background font-semibold">Caixa - Balcão</h4>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#E6F4EA] text-[#137333] font-label-md text-[10px] uppercase font-bold border border-[#CEEAD6]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#137333]"></span>
+                                                Online
+                                            </span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[14px]">usb</span>
+<span class="">Conexão Local (USB)</span>
+</div>
+</div>
+</div>
+<div class="flex gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-md transition-colors" title="Editar">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error-container rounded-md transition-colors" title="Remover">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+<div class="p-card-padding space-y-4 flex-1">
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant block">Tipo de Papel</label>
+<select class="w-full bg-surface border border-outline-variant rounded-md py-1.5 px-3 font-body-md text-body-md focus:ring-primary focus:border-primary">
+<option selected="" value="80">80mm (Padrão)</option>
+<option value="58">58mm (Estreito)</option>
+</select>
+</div>
+<div class="space-y-1">
+<label class="font-label-md text-label-md text-on-surface-variant block">Número de Vias (Cupom)</label>
+<select class="w-full bg-surface border border-outline-variant rounded-md py-1.5 px-3 font-body-md text-body-md focus:ring-primary focus:border-primary">
+<option selected="" value="1">1 Via</option>
+<option value="2">2 Vias</option>
+</select>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="font-body-md text-body-md text-on-background">Impressão NFC-e automática</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value="">
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-md text-body-md text-on-background">Imprimir fechamento de caixa</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value="">
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<div class="p-3 bg-surface-container-lowest border-t border-outline-variant flex justify-end">
+<button class="text-secondary hover:text-primary font-label-md text-label-md font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+                                    Testar Impressão
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+
+</body></html>

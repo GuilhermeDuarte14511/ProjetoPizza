@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Forno 27 - Revisar sua Pizza</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "background": "#f8f9ff",
+                    "primary": "#a83300",
+                    "primary-fixed-dim": "#ffb59d",
+                    "inverse-primary": "#ffb59d",
+                    "on-surface-variant": "#59413a",
+                    "surface-container-highest": "#dfe2eb",
+                    "surface": "#f8f9ff",
+                    "surface-container": "#ebeef6",
+                    "on-background": "#181c22",
+                    "surface-container-high": "#e5e8f0",
+                    "on-secondary-container": "#32008a",
+                    "tertiary": "#006a3b",
+                    "primary-fixed": "#ffdbd0",
+                    "surface-bright": "#f8f9ff",
+                    "surface-dim": "#d7dae2",
+                    "secondary-container": "#9c7efe",
+                    "on-tertiary-container": "#f6fff4",
+                    "outline": "#8d7168",
+                    "error-container": "#ffdad6",
+                    "inverse-surface": "#2d3137",
+                    "error": "#ba1a1a",
+                    "on-error-container": "#93000a",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed-variant": "#00522d",
+                    "on-surface": "#181c22",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed": "#390c00",
+                    "on-secondary-fixed-variant": "#4e2aab",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed": "#e8deff",
+                    "on-error": "#ffffff",
+                    "inverse-on-surface": "#eef1f9",
+                    "secondary": "#6646c4",
+                    "secondary-fixed-dim": "#cdbdff",
+                    "outline-variant": "#e1bfb5",
+                    "tertiary-container": "#268451",
+                    "tertiary-fixed": "#9af6b8",
+                    "on-primary-fixed-variant": "#832600",
+                    "tertiary-fixed-dim": "#7ed99e",
+                    "surface-variant": "#dfe2eb",
+                    "primary-container": "#cc4916",
+                    "on-secondary-fixed": "#20005f",
+                    "on-tertiary-fixed": "#00210f",
+                    "on-primary": "#ffffff",
+                    "surface-tint": "#ac3500",
+                    "surface-container-low": "#f1f3fc",
+                    "on-primary-container": "#fffbff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-gap": "16px",
+                    "gutter": "20px",
+                    "container-padding": "24px",
+                    "touch-target-min": "52px",
+                    "grid-margin": "32px"
+            },
+            "fontFamily": {
+                    "section-title": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "product-title": ["Inter"],
+                    "price-lg": ["Inter"],
+                    "display-md": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "display-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "section-title": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "26px", "fontWeight": "400"}],
+                    "product-title": ["22px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "price-lg": ["26px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-md": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "label-caps": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "display-lg": ["34px", {"lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Subtle lift for cards */
+        .card-elevation-1 {
+            box-shadow: 0 4px 12px rgba(168, 51, 0, 0.08);
+            border: 1px solid theme('colors.outline-variant');
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen text-on-surface antialiased flex flex-col md:flex-row font-body-md">
+<!-- JSON Component: SideNavBar (Hidden on Mobile) -->
+<nav class="hidden md:flex flex-col bg-surface-container-low dark:bg-inverse-surface docked left-0 h-full w-64 border-r border-outline-variant dark:border-outline fixed left-0 top-0 pt-20 pb-4 z-40">
+<div class="px-6 mb-8">
+<h2 class="text-section-title font-section-title text-primary">Categorias</h2>
+<p class="text-body-md text-on-surface-variant mt-1">Mesa 12</p>
+</div>
+<div class="flex-1 overflow-y-auto">
+<ul class="space-y-2">
+<li>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined mr-3">star</span>
+<span class="text-label-caps font-label-caps">Destaques</span>
+</a>
+</li>
+<li>
+<!-- Active state for current flow (pizza building) -->
+<a class="bg-primary-container text-on-primary-container rounded-xl mx-2 flex items-center px-4 py-3 hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined mr-3" style="font-variation-settings: 'FILL' 1;">local_pizza</span>
+<span class="text-label-caps font-label-caps">Pizzas Tradicionais</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined mr-3">auto_awesome</span>
+<span class="text-label-caps font-label-caps">Pizzas Especiais</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined mr-3">bakery_dining</span>
+<span class="text-label-caps font-label-caps">Pizzas Doces</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined mr-3">flatware</span>
+<span class="text-label-caps font-label-caps">Porções</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined mr-3">local_bar</span>
+<span class="text-label-caps font-label-caps">Bebidas</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined mr-3">icecream</span>
+<span class="text-label-caps font-label-caps">Sobremesas</span>
+</a>
+</li>
+<li>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined mr-3">layers</span>
+<span class="text-label-caps font-label-caps">Combos</span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 flex flex-col min-h-screen relative pt-[104px] md:pt-0">
+<!-- JSON Component: TopNavBar (Used as Mobile Header & Web Action Bar) -->
+<header class="fixed top-0 left-0 md:left-64 right-0 z-50 flex justify-between items-center px-grid-margin h-touch-target-min bg-surface dark:bg-surface-container-high shadow-sm min-h-[80px]">
+<div class="flex items-center gap-4">
+<button class="md:hidden w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-highest text-on-surface">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="text-display-md font-display-md font-bold text-primary dark:text-primary-fixed-dim">Forno 27</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex gap-6">
+<a class="text-on-surface-variant font-label-caps hover:bg-surface-container-highest transition-colors py-2 px-3 rounded-lg" href="#">Meus Pedidos</a>
+<a class="text-on-surface-variant font-label-caps hover:bg-surface-container-highest transition-colors py-2 px-3 rounded-lg" href="#">Chamar Garçom</a>
+</div>
+<button class="flex items-center gap-2 bg-primary-container text-on-primary-container px-4 py-3 rounded-xl hover:scale-95 duration-100 transition-transform h-touch-target-min">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+<span class="font-label-caps hidden sm:inline">Carrinho · 3 itens · R$ 124,80</span>
+</button>
+</div>
+</header>
+<!-- Canvas -->
+<div class="flex-1 p-container-padding md:p-grid-margin pb-32 max-w-4xl mx-auto w-full mt-4 md:mt-24">
+<!-- Page Header -->
+<div class="mb-8 flex items-center justify-between">
+<div>
+<h1 class="text-display-lg font-display-lg text-on-surface">Revisar sua Pizza</h1>
+<p class="text-body-lg text-on-surface-variant mt-2">Confira os detalhes antes de adicionar ao carrinho.</p>
+</div>
+<button aria-label="Voltar" class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-highest text-on-surface hover:bg-surface-dim transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Left Column: Details -->
+<div class="lg:col-span-2 space-y-6">
+<!-- Hero Image Area (Bento style) -->
+<div class="rounded-xl overflow-hidden card-elevation-1 bg-surface-container-lowest h-64 relative">
+<img class="w-full h-full object-cover" data-alt="A highly appetizing close-up of a large artisanal pizza, half pepperoni and half margherita, fresh out of the wood-fired oven. The crust is thick and golden-brown with slight charring, filled with creamy catupiry cheese. The lighting is warm and inviting, highlighting the melting cheese, vibrant red tomato sauce, and fresh green basil leaves. The setting implies a high-end casual pizzeria with a modern light-mode aesthetic, utilizing warm cream background tones in the surrounding environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp4lR23WZy_6uyRX_Gp3JhITBDMTsGMr2IAtBDSvt1NkPtrd0gkzwoLUdxK4mKKuE2foMmBuHcc_qNyZ9_P1aeLuJhIIkODXXuJjE08m8CeKeOoijPive7QKKz-ncqRBgRQbQhVVrcc7gvukVqOTnDc0fE7HpSuZBSuaQcP5lXS499QSwa7fyllMmS_a3zAsQ8NJf4odiJPmYWkRj6vaXc2HnDpM82FYGXgmeet73Xfvk6dhwm_wod"/>
+</div>
+<!-- Size Section -->
+<div class="bg-surface-container-lowest rounded-xl p-6 card-elevation-1">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-product-title font-product-title text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">straighten</span>
+                                    Tamanho
+                                </h3>
+<p class="text-body-md text-on-surface mt-1">Grande (8 fatias)</p>
+</div>
+<button class="text-primary font-label-caps hover:bg-primary-fixed rounded-lg px-4 py-2 h-touch-target-min flex items-center transition-colors">
+                                Editar
+                            </button>
+</div>
+</div>
+<!-- Flavors Section -->
+<div class="bg-surface-container-lowest rounded-xl p-6 card-elevation-1">
+<div class="flex justify-between items-start mb-4">
+<h3 class="text-product-title font-product-title text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">local_pizza</span>
+                                Sabores (3/3)
+                            </h3>
+<button class="text-primary font-label-caps hover:bg-primary-fixed rounded-lg px-4 py-2 h-touch-target-min flex items-center transition-colors">
+                                Editar
+                            </button>
+</div>
+<div class="space-y-4 mt-4">
+<!-- Flavor 1 -->
+<div class="border-l-4 border-primary pl-4 py-2">
+<p class="text-body-lg font-bold text-on-surface">1/3 Calabresa</p>
+<div class="mt-2 flex flex-wrap gap-2">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-error-container text-on-error-container text-sm font-medium">
+<span class="material-symbols-outlined text-[16px] mr-1">remove</span> Sem cebola
+                                    </span>
+</div>
+</div>
+<!-- Flavor 2 -->
+<div class="border-l-4 border-primary pl-4 py-2">
+<p class="text-body-lg font-bold text-on-surface">1/3 Margherita</p>
+<p class="text-body-md text-on-surface-variant mt-1">Ingredientes originais</p>
+</div>
+<!-- Flavor 3 -->
+<div class="border-l-4 border-primary pl-4 py-2">
+<p class="text-body-lg font-bold text-on-surface">1/3 Quatro Queijos</p>
+<div class="mt-2 flex flex-wrap gap-2">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-tertiary-container text-on-tertiary-container text-sm font-medium">
+<span class="material-symbols-outlined text-[16px] mr-1">add</span> Extra Gorgonzola (+ R$ 4,00)
+                                    </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Crust Section -->
+<div class="bg-surface-container-lowest rounded-xl p-6 card-elevation-1">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-product-title font-product-title text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">donut_large</span>
+                                    Borda
+                                </h3>
+<p class="text-body-md text-on-surface mt-1">Borda de Catupiry</p>
+</div>
+<button class="text-primary font-label-caps hover:bg-primary-fixed rounded-lg px-4 py-2 h-touch-target-min flex items-center transition-colors">
+                                Editar
+                            </button>
+</div>
+</div>
+<!-- Observations -->
+<div class="bg-surface-container-lowest rounded-xl p-6 card-elevation-1">
+<h3 class="text-product-title font-product-title text-on-surface flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">edit_note</span>
+                            Observações
+                        </h3>
+<p class="text-body-md text-on-surface-variant italic bg-surface-container p-4 rounded-lg">
+                            "Bem assada, por favor."
+                        </p>
+</div>
+</div>
+<!-- Right Column: Summary & Checkout -->
+<div class="lg:col-span-1">
+<div class="bg-surface-container-lowest rounded-xl p-6 card-elevation-1 sticky top-[120px]">
+<h2 class="text-section-title font-section-title text-on-surface mb-6 border-b border-outline-variant pb-4">Resumo do Pedido</h2>
+<div class="space-y-4 mb-6 text-body-md">
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant">Pizza Grande (Base)</span>
+<span class="text-on-surface font-medium">R$ 68,00</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant">Borda Catupiry</span>
+<span class="text-on-surface font-medium">R$ 12,00</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant pl-4 border-l-2 border-outline-variant">Extra Gorgonzola</span>
+<span class="text-on-surface font-medium">R$ 4,00</span>
+</div>
+</div>
+<div class="border-t border-outline-variant pt-4 mb-8">
+<div class="flex justify-between items-center">
+<span class="text-product-title font-product-title text-on-surface">Total</span>
+<span class="text-price-lg font-price-lg text-primary">R$ 84,00</span>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<!-- Quantity Selector -->
+<div class="flex items-center justify-between bg-surface-container rounded-xl p-2">
+<button aria-label="Diminuir quantidade" class="w-14 h-14 bg-surface-container-lowest rounded-lg flex items-center justify-center text-on-surface shadow-sm hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="text-product-title font-product-title text-on-surface px-4">1</span>
+<button aria-label="Aumentar quantidade" class="w-14 h-14 bg-surface-container-lowest rounded-lg flex items-center justify-center text-on-surface shadow-sm hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<!-- Add to Cart Button -->
+<button class="w-full bg-primary text-on-primary rounded-xl h-16 text-body-lg font-bold hover:bg-surface-tint transition-colors flex items-center justify-center gap-3">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_bag</span>
+                                Adicionar ao carrinho
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- JSON Component: Footer -->
+<footer class="w-full py-4 px-grid-margin flex justify-between items-center bg-surface-container-lowest dark:bg-on-background border-t border-outline-variant mt-auto relative z-10">
+<p class="text-body-md font-body-md text-on-surface-variant dark:text-surface-variant">© 2024 Forno 27 Pizzeria - Mesa 12</p>
+<div class="flex gap-6">
+<a class="text-on-surface-variant text-body-md font-body-md hover:text-primary transition-colors" href="#">Termos de Uso</a>
+<a class="text-on-surface-variant text-body-md font-body-md hover:text-primary transition-colors" href="#">Política de Privacidade</a>
+<a class="text-on-surface-variant text-body-md font-body-md hover:text-primary transition-colors" href="#">Ajuda</a>
+</div>
+</footer>
+</main>
+</body></html>

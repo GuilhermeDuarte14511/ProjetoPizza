@@ -1,0 +1,495 @@
+<!DOCTYPE html><html lang="pt-BR" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Configurações - Backup &amp; Sistema | Forno 27</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#d5dae5",
+                    "secondary-container": "#ff6e40",
+                    "primary-container": "#cc4916",
+                    "on-secondary-fixed-variant": "#852400",
+                    "secondary": "#ad3305",
+                    "on-surface-variant": "#59413a",
+                    "primary-fixed": "#ffdbd0",
+                    "primary": "#a83300",
+                    "tertiary-fixed": "#c7e7ff",
+                    "primary-fixed-dim": "#ffb59d",
+                    "inverse-surface": "#2b3139",
+                    "on-tertiary-container": "#fcfcff",
+                    "on-secondary-fixed": "#3a0a00",
+                    "outline": "#8d7168",
+                    "surface-container": "#e9eef9",
+                    "outline-variant": "#e1bfb5",
+                    "error": "#ba1a1a",
+                    "error-container": "#ffdad6",
+                    "on-secondary-container": "#631800",
+                    "surface-bright": "#f8f9ff",
+                    "on-error": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed-dim": "#85cfff",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed": "#001e2e",
+                    "on-primary-fixed-variant": "#832600",
+                    "background": "#f8f9ff",
+                    "surface-container-highest": "#dde3ee",
+                    "surface-tint": "#ac3500",
+                    "on-primary-fixed": "#390c00",
+                    "on-primary-container": "#fffbff",
+                    "tertiary": "#00628b",
+                    "secondary-fixed": "#ffdbd0",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-background": "#161c24",
+                    "on-tertiary-fixed-variant": "#004c6c",
+                    "surface-variant": "#dde3ee",
+                    "secondary-fixed-dim": "#ffb59f",
+                    "surface-container-high": "#e3e8f3",
+                    "surface": "#f8f9ff",
+                    "inverse-primary": "#ffb59d",
+                    "tertiary-container": "#007cae",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-low": "#eef4ff",
+                    "on-surface": "#161c24",
+                    "inverse-on-surface": "#ebf1fc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-margin": "32px",
+                    "stack-gap": "16px",
+                    "sidebar-width": "260px",
+                    "gutter": "24px",
+                    "topbar-height": "64px",
+                    "card-padding": "20px"
+            },
+            "fontFamily": {
+                    "label-md": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Inter"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "display-financial": [
+                            "Inter"
+                    ],
+                    "headline-lg-mobile": [
+                            "Inter"
+                    ],
+                    "headline-lg": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "label-md": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.02em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-md": [
+                            "22px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-lg": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "display-financial": [
+                            "30px",
+                            {
+                                    "lineHeight": "36px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "24px",
+                            {
+                                    "lineHeight": "30px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg": [
+                            "28px",
+                            {
+                                    "lineHeight": "34px",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(228, 231, 236, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased min-h-screen flex font-body-md">
+<!-- SideNavBar (from JSON) -->
+<aside class="hidden md:flex flex-col h-full w-[260px] py-6 fixed left-0 top-0 bg-inverse-surface z-20"><div class="px-6 mb-8 flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-2xl icon-fill">local_pizza</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-primary-fixed">Forno 27</h1>
+<p class="font-label-md text-label-md text-surface-variant opacity-60">Unidade Principal</p>
+</div>
+</div>
+<div class="px-4 mb-6">
+<button class="w-full flex items-center justify-center gap-2 bg-primary hover:bg-secondary transition-colors text-on-primary py-2.5 rounded-lg font-label-md text-label-md font-semibold shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                Novo Pedido
+            </button>
+</div>
+<nav class="flex-1 overflow-y-auto px-2 space-y-1">
+<div class="px-4 py-2 mt-4">
+<span class="font-label-md text-label-md text-surface-variant opacity-40 uppercase tracking-wider">Operação</span>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">dashboard</span>
+<span class="font-label-md text-label-md">Visão Geral</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">restaurant</span>
+<span class="font-label-md text-label-md">Mesas</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">receipt_long</span>
+<span class="font-label-md text-label-md">Comandas</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">shopping_cart</span>
+<span class="font-label-md text-label-md">Pedidos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">oven_gen</span>
+<span class="font-label-md text-label-md">Cozinha</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">notifications_active</span>
+<span class="font-label-md text-label-md">Chamados</span>
+</a>
+<div class="px-4 py-2 mt-4">
+<span class="font-label-md text-label-md text-surface-variant opacity-40 uppercase tracking-wider">Financeiro</span>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">payments</span>
+<span class="font-label-md text-label-md">Caixa</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">credit_card</span>
+<span class="font-label-md text-label-md">Pagamentos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Fechamentos</span>
+</a>
+<div class="px-4 py-2 mt-4">
+<span class="font-label-md text-label-md text-surface-variant opacity-40 uppercase tracking-wider">Gestão</span>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">menu_book</span>
+<span class="font-label-md text-label-md">Cardápio</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">analytics</span>
+<span class="font-label-md text-label-md">Relatórios</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">tablet_android</span>
+<span class="font-label-md text-label-md">Tablets</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">group</span>
+<span class="font-label-md text-label-md">Usuários</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">security</span>
+<span class="font-label-md text-label-md">Auditoria</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary bg-primary-container border-l-4 border-primary rounded-r-lg shadow-sm" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-label-md text-label-md">Configurações</span>
+</a>
+</nav>
+<div class="px-4 mt-auto pt-4 border-t border-surface-variant/20">
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<span class="font-label-md text-label-md">Sair</span>
+</a>
+</div></aside>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col min-h-screen md:ml-[260px] relative">
+<!-- TopNavBar (from JSON) -->
+<header class="hidden md:flex justify-between items-center h-16 px-gutter bg-surface sticky top-0 z-10 shadow-sm border-b border-outline-variant">
+<!-- Left: Breadcrumb / Global Search -->
+<div class="flex items-center gap-6 flex-1">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="font-label-md text-label-md font-medium">Configurações</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="font-label-md text-label-md font-bold text-primary">Backup &amp; Sistema</span>
+</div>
+<div class="relative w-full max-w-md ml-4">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 text-[20px]">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg pl-10 pr-4 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" placeholder="Buscar em configurações... (CMD+K)" type="text">
+</div>
+</div>
+<!-- Right: Actions -->
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-3 mr-4 pr-4 border-r border-outline-variant">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="font-label-md text-label-md text-on-surface-variant">Caixa Aberto</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-high px-2 py-1 rounded-md">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">restaurant</span>
+<span class="font-label-md text-label-md font-bold text-on-surface">12/30</span>
+</div>
+</div>
+<button class="p-2 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined">schedule</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 p-gutter bg-background overflow-y-auto">
+<div class="max-w-6xl mx-auto space-y-section-margin">
+<!-- Page Header -->
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-background mb-2">Configurações do Sistema</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Gerencie preferências, backups, integrações e segurança da operação.</p>
+</div>
+<!-- Settings Tabs (Matching Context) -->
+<div class="flex gap-1 border-b border-outline-variant overflow-x-auto pb-px"><a class="px-4 py-2 font-label-md text-label-md text-on-surface-variant font-medium hover:text-primary hover:bg-surface-container-low transition-all rounded-t-lg whitespace-nowrap" href="#">Dados da Pizzaria</a>
+<a class="px-4 py-2 font-label-md text-label-md text-on-surface-variant font-medium hover:text-primary hover:bg-surface-container-low transition-all rounded-t-lg whitespace-nowrap" href="#">Operação</a>
+<a class="px-4 py-2 font-label-md text-label-md text-on-surface-variant font-medium hover:text-primary hover:bg-surface-container-low transition-all rounded-t-lg whitespace-nowrap" href="#">Regras de Pizzas</a>
+<a class="px-4 py-2 font-label-md text-label-md text-on-surface-variant font-medium hover:text-primary hover:bg-surface-container-low transition-all rounded-t-lg whitespace-nowrap" href="#">Impressoras</a>
+<a class="px-4 py-2 font-label-md text-label-md text-primary font-bold border-b-2 border-primary pb-1 rounded-t-lg whitespace-nowrap bg-surface-container-low/50" href="#">Backup &amp; Sistema</a></div>
+<!-- Bento Grid Layout for Settings Content -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Backup Settings & Actions -->
+<div class="lg:col-span-8 flex flex-col gap-gutter">
+<!-- Backup Automático Card (Glassmorphism inspired) -->
+<div class="bg-surface rounded-xl border border-[#E4E7EC] shadow-sm p-card-padding flex flex-col relative overflow-hidden">
+<!-- Subtle background accent -->
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-fixed/20 rounded-bl-full -mr-16 -mt-16 pointer-events-none"></div>
+<div class="flex justify-between items-start mb-6 z-10">
+<div>
+<h3 class="font-headline-md text-[18px] text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">cloud_sync</span>
+                                         Backup Automático
+                                     </h3>
+<p class="font-body-md text-sm text-on-surface-variant mt-1">Configure a rotina de cópias de segurança do seu banco de dados.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value="">
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+<span class="ml-3 font-label-md text-sm font-medium text-on-surface">Ativo</span>
+</label>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 z-10 bg-surface-container-lowest p-4 rounded-lg border border-outline-variant/50">
+<div>
+<label class="block font-label-md text-xs text-on-surface-variant mb-2">Frequência</label>
+<select class="w-full bg-surface border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+<option selected="" value="diario">Diário (Madrugada)</option>
+<option value="semanal">Semanal</option>
+<option value="mensal">Mensal</option>
+</select>
+</div>
+<div>
+<label class="block font-label-md text-xs text-on-surface-variant mb-2">Local de Armazenamento</label>
+<select class="w-full bg-surface border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+<option selected="" value="nuvem">Nuvem Segura (AWS)</option>
+<option value="local">Servidor Local</option>
+<option value="hibrido">Híbrido (Nuvem + Local)</option>
+</select>
+</div>
+</div>
+<div class="mt-6 flex justify-end z-10">
+<button class="flex items-center gap-2 bg-surface hover:bg-surface-container-low text-primary border border-outline-variant px-4 py-2 rounded-lg font-label-md text-sm font-medium transition-colors">
+<span class="material-symbols-outlined text-[18px]">save</span>
+                                     Salvar Preferências
+                                 </button>
+</div>
+</div>
+<!-- Manual Backup Action -->
+<div class="bg-surface rounded-xl border border-[#E4E7EC] shadow-sm p-card-padding flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">backup</span>
+</div>
+<div>
+<h4 class="font-label-md text-base text-on-surface font-semibold">Backup Manual</h4>
+<p class="font-body-md text-xs text-on-surface-variant">Recomendado antes de grandes atualizações de cardápio.</p>
+</div>
+</div>
+<button class="flex items-center gap-2 bg-primary hover:bg-secondary text-on-primary px-5 py-2.5 rounded-lg font-label-md text-sm font-medium shadow-sm transition-colors whitespace-nowrap">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                                Executar Backup Agora
+                            </button>
+</div>
+<!-- Backups Recentes Table -->
+<div class="bg-surface rounded-xl border border-[#E4E7EC] shadow-sm flex flex-col overflow-hidden">
+<div class="p-4 border-b border-outline-variant/50 bg-surface-container-lowest">
+<h3 class="font-headline-md text-[16px] text-on-surface font-semibold">Backups Recentes</h3>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/50 bg-surface-container-lowest">
+<th class="py-3 px-4 font-label-md text-xs font-medium text-on-surface-variant uppercase tracking-wider">Data / Hora</th>
+<th class="py-3 px-4 font-label-md text-xs font-medium text-on-surface-variant uppercase tracking-wider">Tamanho</th>
+<th class="py-3 px-4 font-label-md text-xs font-medium text-on-surface-variant uppercase tracking-wider">Tipo</th>
+<th class="py-3 px-4 font-label-md text-xs font-medium text-on-surface-variant uppercase tracking-wider text-right">Ações</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/30">
+<tr class="hover:bg-surface-container-lowest/50 transition-colors">
+<td class="py-3 px-4">
+<div class="font-body-md text-sm text-on-surface font-medium">Hoje, 03:00 AM</div>
+<div class="font-label-md text-xs text-on-surface-variant">Finalizado com sucesso</div>
+</td>
+<td class="py-3 px-4 font-body-md text-sm text-on-surface-variant">45.2 MB</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-container-high text-on-surface-variant">Automático</span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-primary hover:text-secondary font-label-md text-sm font-medium transition-colors">Restaurar</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest/50 transition-colors">
+<td class="py-3 px-4">
+<div class="font-body-md text-sm text-on-surface font-medium">Ontem, 03:00 AM</div>
+<div class="font-label-md text-xs text-on-surface-variant">Finalizado com sucesso</div>
+</td>
+<td class="py-3 px-4 font-body-md text-sm text-on-surface-variant">45.1 MB</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-container-high text-on-surface-variant">Automático</span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-primary hover:text-secondary font-label-md text-sm font-medium transition-colors">Restaurar</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest/50 transition-colors">
+<td class="py-3 px-4">
+<div class="font-body-md text-sm text-on-surface font-medium">12/10/2023, 14:30 PM</div>
+<div class="font-label-md text-xs text-on-surface-variant">Finalizado com sucesso</div>
+</td>
+<td class="py-3 px-4 font-body-md text-sm text-on-surface-variant">44.8 MB</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-fixed text-primary-fixed-dim">Manual</span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-primary hover:text-secondary font-label-md text-sm font-medium transition-colors">Restaurar</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-3 border-t border-outline-variant/50 bg-surface-container-lowest text-center">
+<button class="text-on-surface-variant hover:text-on-surface font-label-md text-xs font-medium transition-colors">Ver histórico completo</button>
+</div>
+</div>
+</div>
+<!-- Right Column: System Info Widget -->
+<div class="lg:col-span-4 flex flex-col gap-gutter">
+<div class="bg-inverse-surface rounded-xl shadow-sm p-card-padding text-on-primary-fixed relative overflow-hidden">
+<!-- Technical pattern overlay -->
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 16px 16px;"></div>
+<h3 class="font-headline-md text-[18px] text-white flex items-center gap-2 mb-6 relative z-10">
+<span class="material-symbols-outlined text-primary-fixed">dns</span>
+                                 Informações do Sistema
+                             </h3>
+<ul class="space-y-4 relative z-10">
+<li class="flex justify-between items-center border-b border-surface-variant/20 pb-3">
+<span class="font-label-md text-sm text-surface-variant opacity-80">Versão Atual</span>
+<span class="font-body-md text-sm font-medium text-white bg-surface-variant/20 px-2 py-1 rounded">v2.4.1 (Stable)</span>
+</li>
+<li class="flex justify-between items-center border-b border-surface-variant/20 pb-3">
+<span class="font-label-md text-sm text-surface-variant opacity-80">Status do Banco</span>
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+<span class="font-body-md text-sm font-medium text-white">Online &amp; Otimizado</span>
+</div>
+</li>
+<li class="flex justify-between items-center border-b border-surface-variant/20 pb-3">
+<span class="font-label-md text-sm text-surface-variant opacity-80">Última Sincronização</span>
+<span class="font-body-md text-sm font-medium text-white">Há 12 min</span>
+</li>
+<li class="flex justify-between items-center pb-1">
+<span class="font-label-md text-sm text-surface-variant opacity-80">Armazenamento Usado</span>
+<span class="font-body-md text-sm font-medium text-white">45.2 MB / 1 GB</span>
+</li>
+</ul>
+<!-- Progress Bar -->
+<div class="w-full bg-surface-variant/20 rounded-full h-1.5 mt-2 relative z-10 overflow-hidden">
+<div class="bg-primary-fixed h-1.5 rounded-full" style="width: 4.5%"></div>
+</div>
+<div class="mt-6 pt-4 border-t border-surface-variant/20 relative z-10 text-center">
+<button class="text-primary-fixed hover:text-white font-label-md text-sm font-medium transition-colors flex items-center justify-center gap-1 w-full">
+<span class="material-symbols-outlined text-[16px]">update</span>
+                                     Verificar Atualizações
+                                 </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+
+</body></html>

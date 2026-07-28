@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Forno 27 - Montagem de Pizza</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#832600",
+                        "on-surface": "#181c22",
+                        "background": "#f8f9ff",
+                        "primary-fixed-dim": "#ffb59d",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#268451",
+                        "surface-bright": "#f8f9ff",
+                        "inverse-surface": "#2d3137",
+                        "secondary-fixed-dim": "#cdbdff",
+                        "on-primary-fixed": "#390c00",
+                        "primary-fixed": "#ffdbd0",
+                        "tertiary": "#006a3b",
+                        "on-tertiary-fixed-variant": "#00522d",
+                        "error": "#ba1a1a",
+                        "surface-tint": "#ac3500",
+                        "primary": "#a83300",
+                        "surface-container-highest": "#dfe2eb",
+                        "on-primary-container": "#fffbff",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#e5e8f0",
+                        "surface-container": "#ebeef6",
+                        "secondary-fixed": "#e8deff",
+                        "on-surface-variant": "#59413a",
+                        "inverse-primary": "#ffb59d",
+                        "outline": "#8d7168",
+                        "on-secondary-fixed": "#20005f",
+                        "on-background": "#181c22",
+                        "outline-variant": "#e1bfb5",
+                        "primary-container": "#cc4916",
+                        "surface": "#f8f9ff",
+                        "surface-container-low": "#f1f3fc",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#32008a",
+                        "tertiary-fixed-dim": "#7ed99e",
+                        "on-tertiary-container": "#f6fff4",
+                        "tertiary-fixed": "#9af6b8",
+                        "surface-dim": "#d7dae2",
+                        "on-tertiary-fixed": "#00210f",
+                        "inverse-on-surface": "#eef1f9",
+                        "surface-variant": "#dfe2eb",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#9c7efe",
+                        "secondary": "#6646c4",
+                        "on-secondary-fixed-variant": "#4e2aab"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-gap": "16px",
+                        "grid-margin": "32px",
+                        "container-padding": "24px",
+                        "gutter": "20px",
+                        "touch-target-min": "52px"
+                    },
+                    "fontFamily": {
+                        "product-title": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "price-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "section-title": ["Inter"]
+                    },
+                    "fontSize": {
+                        "product-title": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-caps": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "display-md": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "400" }],
+                        "price-lg": ["26px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "display-lg": ["34px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "section-title": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface-bright min-h-screen antialiased text-on-surface overflow-x-hidden pb-[120px]">
+<!-- TopNavBar (JSON Anchor - Kept for brand consistency, but nav items inactive as this is a transactional flow) -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-grid-margin h-[80px] bg-surface-container-lowest shadow-sm border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<div class="text-display-md font-display-md font-bold text-primary">Forno 27</div>
+<div class="px-3 py-1 bg-surface-container rounded-full text-label-caps font-label-caps text-on-surface-variant border border-outline-variant">Mesa 12</div>
+</div>
+<div class="flex gap-2 lg:gap-4 items-center">
+<button class="flex items-center justify-center w-10 h-10 text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-full">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="text-on-surface-variant font-label-caps hover:bg-surface-container-highest transition-colors px-4 py-2 rounded-lg">Meus Pedidos</button>
+<button class="text-on-surface-variant font-label-caps hover:bg-surface-container-highest transition-colors px-4 py-2 rounded-lg">Chamar Garçom</button>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container rounded-full text-on-surface font-label-caps hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-primary">shopping_cart</span>
+                3 itens · R$ 124,80
+            </button>
+</div>
+</nav>
+<!-- Contextual Header Image -->
+<div class="relative w-full h-[240px] mt-[80px]">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A warm, cinematic, close-up macro shot of flour dusting a wooden preparation counter in a pizzeria. The background is softly out of focus, showing a glowing brick oven. The lighting is golden and inviting, emphasizing an artisanal, handcrafted culinary experience." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAlgzCahKE8rdIlDegTfGAhzF37tN2FzM9Lv5TdKSvHXVc1qCSmrA4nLvtfsxy_Vjg4CZO6FpTmhF4Tq7pfc3-2UlueRYGbiZWUN43c06KX11pYYA_Kce7Qdi6QAwW8DwM6HRtLZr2rOEfLuP2p-7OnCjRWveP7ExPAHfwQp_7jwmVX25geLTVhsEFuRHKQYs--ReTB4JnWnnx8Ku3_kLLvqbtpjLyb5sX2z6Bh1EV1Vo_nzqQcfavw')"></div>
+<div class="absolute inset-0 bg-gradient-to-b from-transparent to-surface-bright"></div>
+</div>
+<!-- Main Content Area -->
+<main class="relative z-10 px-grid-margin max-w-[1024px] mx-auto -mt-16">
+<!-- Progress Bar -->
+<div class="bg-surface-container-lowest p-8 rounded-[24px] shadow-sm border border-outline-variant mb-8">
+<div class="flex justify-between items-end mb-6">
+<div>
+<span class="text-label-caps font-label-caps text-primary mb-2 block uppercase tracking-wider">Etapa 2 de 4</span>
+<h1 class="text-display-lg font-display-lg text-on-surface">Quantidade de Sabores</h1>
+</div>
+<p class="text-body-lg font-body-lg text-on-surface-variant hidden md:block">Pizza Grande permite até 3 sabores</p>
+</div>
+<!-- Labeled Stepper Progress -->
+<div class="flex justify-between items-center w-full relative pt-2">
+<div class="absolute left-0 top-[18px] w-full h-1 bg-surface-variant -z-10 rounded-full"></div>
+<div class="absolute left-0 top-[18px] w-[33%] h-1 bg-primary -z-10 rounded-full"></div>
+<div class="flex flex-col items-center gap-2 bg-surface-container-lowest px-2">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-caps shadow-sm"><span class="material-symbols-outlined text-[18px]">check</span></div>
+<span class="text-label-caps font-label-caps text-on-surface-variant">Tamanho</span>
+</div>
+<div class="flex flex-col items-center gap-2 bg-surface-container-lowest px-2">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-caps shadow-sm relative overflow-hidden">
+<span class="relative z-10">2</span>
+<div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+</div>
+<span class="text-label-caps font-label-caps text-primary">Sabores</span>
+</div>
+<div class="flex flex-col items-center gap-2 bg-surface-container-lowest px-2">
+<div class="w-8 h-8 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center font-label-caps">3</div>
+<span class="text-label-caps font-label-caps text-on-surface-variant">Massa &amp; Borda</span>
+</div>
+<div class="flex flex-col items-center gap-2 bg-surface-container-lowest px-2">
+<div class="w-8 h-8 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center font-label-caps">4</div>
+<span class="text-label-caps font-label-caps text-on-surface-variant">Revisão</span>
+</div>
+</div>
+<p class="text-body-md font-body-md text-on-surface-variant mt-6 block md:hidden">Pizza Grande permite até 3 sabores</p>
+</div>
+<!-- Selection Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Option: 1 Flavor -->
+<button class="group relative flex flex-col items-center justify-center p-8 min-h-[280px] rounded-[24px] bg-surface-container-lowest border border-outline-variant shadow-sm transition-all duration-200 active:scale-95 hover:shadow-md hover:border-primary focus:outline-none">
+<div class="w-24 h-24 rounded-full bg-surface-container flex items-center justify-center mb-6 group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-[48px] text-on-surface-variant group-hover:text-primary transition-colors" style="font-variation-settings: 'FILL' 0;">lens</span>
+</div>
+<h3 class="text-product-title font-product-title text-on-surface mb-2">1 Sabor</h3>
+<p class="text-body-md font-body-md text-on-surface-variant text-center px-4">A pizza inteira com o seu sabor favorito.</p>
+</button>
+<!-- Option: 2 Flavors (Simulated Active State) -->
+<button class="group relative flex flex-col items-center justify-center p-8 min-h-[280px] rounded-[24px] bg-primary border-2 border-primary shadow-[0_8px_24px_rgba(168,51,0,0.25)] transition-all duration-200 active:scale-95 focus:outline-none">
+<div class="absolute top-4 right-4 w-8 h-8 rounded-full bg-surface-container-lowest text-primary flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[20px] font-bold">check</span>
+</div>
+<div class="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-[48px] text-on-primary" style="font-variation-settings: 'FILL' 1;">contrast</span>
+</div>
+<h3 class="text-product-title font-product-title text-on-primary mb-2">2 Sabores</h3>
+<p class="text-body-md font-body-md text-on-primary/90 text-center px-4">Meio a meio. Perfeito para dividir a vontade.</p>
+</button>
+<!-- Option: 3 Flavors -->
+<button class="group relative flex flex-col items-center justify-center p-8 min-h-[280px] rounded-[24px] bg-surface-container-lowest border border-outline-variant shadow-sm transition-all duration-200 active:scale-95 hover:shadow-md hover:border-primary focus:outline-none">
+<div class="w-24 h-24 rounded-full bg-surface-container flex items-center justify-center mb-6 group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-[48px] text-on-surface-variant group-hover:text-primary transition-colors" style="font-variation-settings: 'FILL' 0;">pie_chart</span>
+</div>
+<h3 class="text-product-title font-product-title text-on-surface mb-2">3 Sabores</h3>
+<p class="text-body-md font-body-md text-on-surface-variant text-center px-4">Um terço para cada preferência da mesa.</p>
+</button>
+</div>
+</main>
+<!-- Transactional Footer (Fixed Bottom for Kiosk) -->
+<div class="fixed bottom-0 left-0 w-full bg-surface-container-lowest border-t border-outline-variant shadow-[0_-4px_24px_rgba(0,0,0,0.05)] z-50">
+<div class="max-w-[1024px] mx-auto px-grid-margin py-6 flex justify-between items-center">
+<button class="min-h-touch-target-min min-w-[140px] px-6 rounded-xl border border-outline-variant text-on-surface font-label-caps text-label-caps flex items-center justify-center gap-2 hover:bg-surface-variant active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+                Voltar
+            </button>
+<button class="min-h-touch-target-min min-w-[200px] px-8 rounded-xl bg-primary text-on-primary font-label-caps text-label-caps flex items-center justify-center gap-2 shadow-md hover:bg-surface-tint active:scale-95 transition-all">
+                Continuar
+                <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</body></html>

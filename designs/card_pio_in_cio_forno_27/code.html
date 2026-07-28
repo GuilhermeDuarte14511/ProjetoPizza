@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Forno 27 - Cardápio</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Hide scrollbar for horizontal scrolling sections */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-fixed-variant": "#00522d",
+                      "on-secondary-fixed": "#20005f",
+                      "tertiary-fixed-dim": "#7ed99e",
+                      "surface-dim": "#d7dae2",
+                      "tertiary": "#006a3b",
+                      "tertiary-fixed": "#9af6b8",
+                      "on-secondary-container": "#32008a",
+                      "on-tertiary": "#ffffff",
+                      "outline-variant": "#e1bfb5",
+                      "inverse-surface": "#2d3137",
+                      "surface-container": "#ebeef6",
+                      "secondary-fixed": "#e8deff",
+                      "primary": "#a83300",
+                      "on-primary": "#ffffff",
+                      "outline": "#8d7168",
+                      "surface-container-high": "#e5e8f0",
+                      "on-primary-fixed-variant": "#832600",
+                      "secondary-fixed-dim": "#cdbdff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-surface-variant": "#59413a",
+                      "surface-container-low": "#f1f3fc",
+                      "secondary": "#6646c4",
+                      "primary-fixed-dim": "#ffb59d",
+                      "surface-tint": "#ac3500",
+                      "on-secondary-fixed-variant": "#4e2aab",
+                      "on-tertiary-fixed": "#00210f",
+                      "surface-container-highest": "#dfe2eb",
+                      "error-container": "#ffdad6",
+                      "on-primary-container": "#fffbff",
+                      "secondary-container": "#9c7efe",
+                      "surface-bright": "#f8f9ff",
+                      "on-tertiary-container": "#f6fff4",
+                      "on-primary-fixed": "#390c00",
+                      "on-background": "#181c22",
+                      "surface-variant": "#dfe2eb",
+                      "surface": "#f8f9ff",
+                      "primary-container": "#cc4916",
+                      "on-error": "#ffffff",
+                      "primary-fixed": "#ffdbd0",
+                      "on-surface": "#181c22",
+                      "inverse-on-surface": "#eef1f9",
+                      "inverse-primary": "#ffb59d",
+                      "on-error-container": "#93000a",
+                      "on-secondary": "#ffffff",
+                      "background": "#f8f9ff",
+                      "tertiary-container": "#268451",
+                      "error": "#ba1a1a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "grid-margin": "32px",
+                      "container-padding": "24px",
+                      "gutter": "20px",
+                      "touch-target-min": "52px",
+                      "stack-gap": "16px"
+              },
+              "fontFamily": {
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "display-md": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Inter"
+                      ],
+                      "price-lg": [
+                              "Inter"
+                      ],
+                      "product-title": [
+                              "Inter"
+                      ],
+                      "section-title": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "label-caps": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "26px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-md": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "34px",
+                              {
+                                      "lineHeight": "42px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "price-lg": [
+                              "26px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "product-title": [
+                              "22px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "section-title": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+            },
+          }
+        }
+    </script>
+</head>
+<body class="bg-[#FFF8F3] text-on-surface font-sans antialiased overflow-x-hidden pt-[144px] pb-[80px]">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-grid-margin h-touch-target-min bg-[#FFF8F3] dark:bg-surface-container-high shadow-sm pt-4 pb-4">
+<!-- Brand Logo -->
+<div class="flex items-center gap-4">
+<span class="text-display-md font-display-md font-bold text-primary dark:text-primary-fixed-dim">Forno 27</span>
+<span class="text-body-md font-body-md text-on-surface-variant bg-surface-container-highest px-3 py-1 rounded-full">Mesa 12</span>
+</div>
+<!-- Navigation Links -->
+<div class="hidden md:flex items-center gap-6">
+<button class="flex items-center gap-2 text-on-surface-variant font-label-caps hover:bg-surface-container-highest transition-colors rounded-full px-4 h-touch-target-min">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">receipt_long</span>
+                Meus Pedidos
+            </button>
+<button class="flex items-center gap-2 text-on-surface-variant font-label-caps hover:bg-surface-container-highest transition-colors rounded-full px-4 h-touch-target-min">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+                Chamar Garçom
+            </button>
+</div>
+<!-- Trailing Action -->
+<div class="flex items-center gap-4">
+<div class="relative flex items-center bg-surface-container-highest rounded-full px-4 py-2">
+<span class="material-symbols-outlined text-on-surface-variant mr-2" style="font-variation-settings: 'FILL' 0;">search</span>
+<input class="bg-transparent border-none outline-none text-body-md font-body-md text-on-surface placeholder:text-on-surface-variant w-48 focus:ring-0" placeholder="Buscar no cardápio..." type="text"/>
+</div>
+<button class="flex items-center gap-2 bg-primary text-on-primary rounded-full px-6 h-touch-target-min hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+<span class="text-label-caps font-label-caps">Carrinho · 0 itens · R$ 0,00</span>
+</button>
+</div>
+</nav>
+<!-- CategoryBar (Horizontal Nav) -->
+<div class="fixed top-[84px] left-0 w-full z-40 bg-[#FFF8F3] border-b border-outline-variant shadow-sm px-grid-margin py-2 overflow-x-auto no-scrollbar">
+<div class="flex gap-4 items-center h-touch-target-min w-max">
+<!-- Active Category -->
+<button class="flex items-center gap-2 bg-primary-container text-on-primary-container rounded-full px-6 h-full shadow-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-label-caps font-label-caps whitespace-nowrap">Destaques</span>
+</button>
+<!-- Inactive Categories -->
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-container-highest transition-all rounded-full px-6 h-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">local_pizza</span>
+<span class="text-label-caps font-label-caps whitespace-nowrap">Pizzas Tradicionais</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-container-highest transition-all rounded-full px-6 h-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">auto_awesome</span>
+<span class="text-label-caps font-label-caps whitespace-nowrap">Pizzas Especiais</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-container-highest transition-all rounded-full px-6 h-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">bakery_dining</span>
+<span class="text-label-caps font-label-caps whitespace-nowrap">Pizzas Doces</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-container-highest transition-all rounded-full px-6 h-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">flatware</span>
+<span class="text-label-caps font-label-caps whitespace-nowrap">Porções</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-container-highest transition-all rounded-full px-6 h-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">local_bar</span>
+<span class="text-label-caps font-label-caps whitespace-nowrap">Bebidas</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-container-highest transition-all rounded-full px-6 h-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">icecream</span>
+<span class="text-label-caps font-label-caps whitespace-nowrap">Sobremesas</span>
+</button>
+</div>
+</div>
+<!-- Main Content -->
+<main class="px-grid-margin mt-8 flex flex-col gap-12 max-w-[1280px] mx-auto">
+<!-- Hero Banner (Custom Pizza) -->
+<section class="relative w-full rounded-[2rem] overflow-hidden shadow-md flex bg-white min-h-[360px]">
+<div class="w-1/2 p-10 flex flex-col justify-center z-10 relative bg-gradient-to-r from-white via-white to-transparent">
+<h1 class="text-display-lg font-display-lg text-on-surface mb-4">Monte sua pizza do seu jeito.</h1>
+<p class="text-body-lg font-body-lg text-on-surface-variant mb-8 max-w-md">Escolha o tamanho, até 3 sabores, tipo de massa e adicione seus extras favoritos.</p>
+<button class="bg-primary text-on-primary px-8 h-[64px] rounded-full text-product-title font-product-title flex items-center justify-center gap-3 w-fit hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined">add_circle</span>
+                    Montar minha pizza
+                </button>
+</div>
+<div class="absolute inset-0 w-full h-full object-cover z-0" data-alt="A top-down view of a half-finished artisanal pizza on a rustic wooden board, showing raw ingredients like fresh mozzarella, basil, and tomato sauce waiting to be spread. Warm, inviting lighting, high-end food photography style, light modern aesthetic with a focus on fresh ingredients against a clean background." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA04u_lNmwMI8Gvt7HdnF1NYpSnU02hjWx4mdFrXKcfHarAUFNfaR8mFZLlTvYw6Ygd7C__cPvL_BvWOOXD8ZiBpmGAw_dUlbKdEmQtUFAh4XruDNKdlYw9Q8r88fjlmRisBOilfQTtcKg_Ou_A1j6ZPTnaiKwU4LJ5Eaa5yxA8X4E1ogYVPuXavIChMm-6xMKQ32NAgn-nO3BwIjPGYFPWdHy18h6b21QeZr2EYIdrSw2_kwAU0n-e')">
+</div>
+</section>
+<!-- Mais Pedidos Hoje Section -->
+<section class="flex flex-col gap-6">
+<h2 class="text-section-title font-section-title text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+                Mais pedidos hoje
+            </h2>
+<div class="flex gap-6 overflow-x-auto no-scrollbar pb-4 snap-x">
+<!-- Product Card 1 -->
+<div class="min-w-[320px] bg-white rounded-2xl overflow-hidden shadow-sm border border-outline-variant snap-start flex flex-col hover:shadow-md transition-shadow relative">
+<div class="h-48 w-full bg-surface-container-highest relative">
+<img class="w-full h-full object-cover" data-alt="A close-up, highly appetizing photograph of a classic Margherita pizza fresh out of a wood-fired oven. The crust is perfectly blistered, with melted pools of fresh mozzarella and vibrant green basil leaves. Warm, inviting lighting, professional food photography, emphasizing artisanal quality on a clean white plate." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXBZABUtDwT9LuSUPFww5DwnSCq1BbFSv4QY4RdFS2vlw1r4lOTIBXk_wtLO6fDPepIBXz1wFZM92TrAuyrYhcUtWzeaKxSx5WKjbP9ZpqKAyBXY0sWH7lMZF2M-0Wxu86ORQTJejMh5HMfG4dF3pWvk6BuuscX3ZYyMSxJUttew2lLnsn-CTWwCOyMElSVh79zE6LtCcQ0qPLeTyUQDVdVcgaC1yjtmFL0NTpKs05fxsG5_qL7-qL"/>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<h3 class="text-product-title font-product-title text-on-surface mb-2">Margherita</h3>
+<p class="text-body-md font-body-md text-on-surface-variant line-clamp-2 mb-4 flex-grow">Molho de tomate artesanal, mozzarella fresca, manjericão e azeite de oliva extra virgem.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="text-price-lg font-price-lg text-primary">R$ 49,90</span>
+<button class="border-2 border-primary text-primary rounded-full px-4 h-touch-target-min font-label-caps text-label-caps flex items-center justify-center hover:bg-primary/10 transition-colors">Ver opções</button>
+</div>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="min-w-[320px] bg-white rounded-2xl overflow-hidden shadow-sm border border-outline-variant snap-start flex flex-col hover:shadow-md transition-shadow relative">
+<div class="h-48 w-full bg-surface-container-highest relative">
+<img class="w-full h-full object-cover" data-alt="A delicious, savory Calabresa pizza with generous slices of smoked sausage, thinly sliced raw onions, and a sprinkle of oregano over melted mozzarella. Shot from a slightly angled top-down perspective on a bright wooden table. Warm, inviting food photography style, emphasizing hearty, artisanal quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZEuoOBkL8tCcEl1wiKYlJx3gmRx-0kp6J3KC4i_SwFNXwUtU7e1PsBlYrGUqWWsVUEC4EiEoK5azhObMfbbg-nhiY0GH9O6L0I0j0by9D-4tE1yxbCCzkErTtdIfVyrI3EfIElMHLZcRxL6XVjH86HPXuI-2LzJxgovsIaDHBJHpnCKBhCBiRMDnDHMOHonKo7DNdu4up_EQspuWbtJ7o-4JXQWvM__DGXYPBHFODoLZR6T35xOe7"/>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<h3 class="text-product-title font-product-title text-on-surface mb-2">Calabresa</h3>
+<p class="text-body-md font-body-md text-on-surface-variant line-clamp-2 mb-4 flex-grow">Molho de tomate, mozzarella, calabresa artesanal fatiada, cebola roxa e orégano.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="text-price-lg font-price-lg text-primary">R$ 54,90</span>
+<button class="border-2 border-primary text-primary rounded-full px-4 h-touch-target-min font-label-caps text-label-caps flex items-center justify-center hover:bg-primary/10 transition-colors">Ver opções</button>
+</div>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="min-w-[320px] bg-white rounded-2xl overflow-hidden shadow-sm border border-outline-variant snap-start flex flex-col hover:shadow-md transition-shadow relative">
+<div class="h-48 w-full bg-surface-container-highest relative">
+<img class="w-full h-full object-cover" data-alt="A gourmet pizza featuring four distinct cheeses: mozzarella, gorgonzola, provolone, and parmesan. The cheeses are bubbling and slightly browned on a thin, crispy artisanal crust. Bright, even lighting highlights the textures of the melted cheese against a clean, modern tabletop setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0761Zjx_f_DmjmwUUpwrr1lHGNBQWJGXv8zjDRYsO1aAQq0gcP5ooVAIHw2qHfxeE8r--QOq5bl7P3b4SMow5Ptsw7285Ptl1WgXaCg686cQBMnRsUOyyJ3YLa4GEqwbpuJaN8iBpiM11I3Mrd1uYjRK5qwJQsQtstx--E-AGM2oq4-RfB2NIQgzCCEwJJgNEuIFeaANStC9tHD2WFie6uwPgvc5RoezqWe9MFmwTGuvhyn92ARBm"/>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<h3 class="text-product-title font-product-title text-on-surface mb-2">Quatro Queijos</h3>
+<p class="text-body-md font-body-md text-on-surface-variant line-clamp-2 mb-4 flex-grow">Molho de tomate, mozzarella, provolone, gorgonzola e parmesão salpicado.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="text-price-lg font-price-lg text-primary">R$ 59,90</span>
+<button class="border-2 border-primary text-primary rounded-full px-4 h-touch-target-min font-label-caps text-label-caps flex items-center justify-center hover:bg-primary/10 transition-colors">Ver opções</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Combos Section (Bento Grid Style) -->
+<section class="flex flex-col gap-6">
+<h2 class="text-section-title font-section-title text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">layers</span>
+                Combos para compartilhar
+            </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Large Combo Card -->
+<div class="bg-white rounded-[1.5rem] border border-outline-variant shadow-sm overflow-hidden flex flex-col md:flex-row hover:shadow-md transition-shadow relative">
+<div class="w-full md:w-2/5 h-48 md:h-auto bg-surface-container-highest relative">
+<img class="w-full h-full object-cover" data-alt="A festive spread of food meant for sharing: a large artisanal pizza, a generous portion of crispy golden fries, and a large bottle of cola, arranged invitingly on a bright, modern dining table. Warm, appetizing lighting with a casual, high-end family dining aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbpnR2wZOwNOS3Q8sbozQa4B_Sjtqc4LHuCLUE8szgP-Whw_tFQ0BYLFHeZB9CA746hOjnt797x9pYtcD4treQWT0oXQY3izKA1eclpPoKPHyzWUqxU_Q-O_lAQ22JPDbJ4heybmlAcwd_rrcE6vIw-gaWO53FJxWn62EDGE8WcqGlJkWZHsanQtiWg3SXDmlzPxlA3LBp3HKVRD-NXx9lU9yjvhMtVjDagYlbEj2aK6PvXksSdAgK"/>
+</div>
+<div class="p-8 flex flex-col justify-between w-full md:w-3/5">
+<div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-display-md font-display-md text-on-surface">Combo Família</h3>
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-label-caps font-label-caps whitespace-nowrap">Popular</span>
+</div>
+<p class="text-body-lg font-body-lg text-on-surface-variant mb-4">1 Pizza Grande + 1 Porção (Fritas ou Polenta) + 1 Refrigerante 2L</p>
+<ul class="flex flex-col gap-2 mb-6">
+<li class="flex items-center gap-2 text-body-md font-body-md text-on-surface">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+                                    Escolha 1 ou 2 sabores
+                                </li>
+<li class="flex items-center gap-2 text-body-md font-body-md text-on-surface">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+                                    Serve de 3 a 4 pessoas
+                                </li>
+</ul>
+</div>
+<div class="flex justify-between items-center mt-auto border-t border-outline-variant pt-4">
+<span class="text-price-lg font-price-lg text-primary">R$ 129,90</span>
+<button class="bg-primary text-on-primary rounded-full px-6 h-touch-target-min font-label-caps text-label-caps flex items-center justify-center hover:bg-primary-container transition-colors shadow-sm">Configurar</button>
+</div>
+</div>
+</div>
+<!-- Secondary Combo Card -->
+<div class="bg-white rounded-[1.5rem] border border-outline-variant shadow-sm overflow-hidden flex flex-col md:flex-row hover:shadow-md transition-shadow relative">
+<div class="w-full md:w-2/5 h-48 md:h-auto bg-surface-container-highest relative">
+<img class="w-full h-full object-cover" data-alt="An intimate dinner setup for two, featuring a medium artisanal pizza paired with two elegant glasses of red wine. Soft, romantic lighting emphasizes the rich textures of the pizza and the deep red of the wine, set against a clean, light-colored table." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAE6slTz3gjDGaHPDpcyzoiQNpQRei8Oci5kwZmqBC2RHoEPas3Pnc45UUEHXW030JbTYHrQ6TTgOnrvmvI9B3XXEWjC5P7hWEhDuwxRYjo1srJMYH44qERTqrE-c3kZ9tzJbvfl2OswAOV8JBhC6lOiKwvdzstxVZWlxuvu_Ne2M18IFmrQNIQCU3rmcnZ9FZpMDqLUtenUxXm2UFcHJuGxhRlZKo9sbbbIiUG6tkRFZPExlkXbFnj"/>
+</div>
+<div class="p-8 flex flex-col justify-between w-full md:w-3/5">
+<div>
+<h3 class="text-display-md font-display-md text-on-surface mb-2">Combo Casal</h3>
+<p class="text-body-lg font-body-lg text-on-surface-variant mb-4">1 Pizza Média + 2 Taças de Vinho da Casa ou 2 Sucos Naturais</p>
+<ul class="flex flex-col gap-2 mb-6">
+<li class="flex items-center gap-2 text-body-md font-body-md text-on-surface">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+                                    Escolha 1 sabor especial
+                                </li>
+<li class="flex items-center gap-2 text-body-md font-body-md text-on-surface">
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+                                    Ideal para 2 pessoas
+                                </li>
+</ul>
+</div>
+<div class="flex justify-between items-center mt-auto border-t border-outline-variant pt-4">
+<span class="text-price-lg font-price-lg text-primary">R$ 98,90</span>
+<button class="bg-primary text-on-primary rounded-full px-6 h-touch-target-min font-label-caps text-label-caps flex items-center justify-center hover:bg-primary-container transition-colors shadow-sm">Configurar</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-4 px-grid-margin flex justify-between items-center bg-surface-container-lowest dark:bg-on-background border-t border-outline-variant mt-16">
+<span class="text-body-md font-body-md text-on-surface-variant dark:text-surface-variant">© 2024 Forno 27 Pizzeria - Mesa 12</span>
+<div class="flex gap-6">
+<a class="text-body-md font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Termos de Uso</a>
+<a class="text-body-md font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Política de Privacidade</a>
+<a class="text-body-md font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Ajuda</a>
+</div>
+</footer>
+</body></html>

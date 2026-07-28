@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Seu Carrinho - Forno 27</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#f8f9ff",
+                        "primary": "#a83300",
+                        "primary-fixed-dim": "#ffb59d",
+                        "inverse-primary": "#ffb59d",
+                        "on-surface-variant": "#59413a",
+                        "surface-container-highest": "#dfe2eb",
+                        "surface": "#f8f9ff",
+                        "surface-container": "#ebeef6",
+                        "on-background": "#181c22",
+                        "surface-container-high": "#e5e8f0",
+                        "on-secondary-container": "#32008a",
+                        "tertiary": "#006a3b",
+                        "primary-fixed": "#ffdbd0",
+                        "surface-bright": "#f8f9ff",
+                        "surface-dim": "#d7dae2",
+                        "secondary-container": "#9c7efe",
+                        "on-tertiary-container": "#f6fff4",
+                        "outline": "#8d7168",
+                        "error-container": "#ffdad6",
+                        "inverse-surface": "#2d3137",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#00522d",
+                        "on-surface": "#181c22",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#390c00",
+                        "on-secondary-fixed-variant": "#4e2aab",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#e8deff",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#eef1f9",
+                        "secondary": "#6646c4",
+                        "secondary-fixed-dim": "#cdbdff",
+                        "outline-variant": "#e1bfb5",
+                        "tertiary-container": "#268451",
+                        "tertiary-fixed": "#9af6b8",
+                        "on-primary-fixed-variant": "#832600",
+                        "tertiary-fixed-dim": "#7ed99e",
+                        "surface-variant": "#dfe2eb",
+                        "primary-container": "#cc4916",
+                        "on-secondary-fixed": "#20005f",
+                        "on-tertiary-fixed": "#00210f",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#ac3500",
+                        "surface-container-low": "#f1f3fc",
+                        "on-primary-container": "#fffbff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-gap": "16px",
+                        "gutter": "20px",
+                        "container-padding": "24px",
+                        "touch-target-min": "52px",
+                        "grid-margin": "32px"
+                    },
+                    "fontFamily": {
+                        "section-title": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "product-title": ["Inter"],
+                        "price-lg": ["Inter"],
+                        "display-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "section-title": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "400" }],
+                        "product-title": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "price-lg": ["26px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "display-md": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "label-caps": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "display-lg": ["34px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #FFF8F3; } /* Artisanal Warmth - Cream background */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 24px rgba(168, 51, 0, 0.08); /* Ambient shadow */
+            border: 1px solid #E8E1DC;
+        }
+    </style>
+</head>
+<body class="text-on-surface font-body-md min-h-screen flex flex-col pt-[72px] pb-[72px] md:pl-64">
+<!-- TopAppBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-grid-margin h-[72px] bg-surface shadow-sm">
+<div class="flex items-center gap-4">
+<button class="md:hidden p-2 rounded-full hover:bg-surface-container-highest transition-colors flex items-center justify-center min-h-[52px] min-w-[52px]">
+<span class="material-symbols-outlined text-primary">menu</span>
+</button>
+<span class="text-display-md font-display-md font-bold text-primary">Forno 27</span>
+</div>
+<div class="hidden md:flex gap-8">
+<a class="text-on-surface-variant font-label-caps hover:bg-surface-container-highest transition-colors px-3 py-2 rounded-lg flex items-center h-touch-target-min" href="#">Meus Pedidos</a>
+<a class="text-on-surface-variant font-label-caps hover:bg-surface-container-highest transition-colors px-3 py-2 rounded-lg flex items-center h-touch-target-min" href="#">Chamar Garçom</a>
+</div>
+<div class="flex items-center gap-4">
+<!-- Not highlighting cart icon as it's not a nav tab, it's a trailing action -->
+<button class="flex items-center gap-2 hover:bg-surface-container-highest transition-colors px-4 py-2 rounded-full h-touch-target-min bg-surface-container-highest">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+<span class="font-label-caps text-label-caps hidden sm:block">Carrinho · 3 itens · R$ 124,80</span>
+</button>
+</div>
+</nav>
+<!-- SideNavBar (Hidden on Mobile) -->
+<aside class="hidden md:flex fixed left-0 top-0 h-full w-64 pt-20 pb-4 flex-col z-40 bg-surface-container-low border-r border-outline-variant">
+<div class="px-6 mb-6">
+<h2 class="text-section-title font-section-title text-primary">Categorias</h2>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">table_restaurant</span> Mesa 12
+            </p>
+</div>
+<nav class="flex-1 overflow-y-auto px-2 space-y-2">
+<!-- Intent: User is in Cart. None of these categories perfectly match "Cart". 
+                  The JSON labels for nav are categories. 
+                  We will leave them all inactive as the user is in a transactional/details view. -->
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">star</span>
+<span class="font-label-caps text-label-caps">Destaques</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">local_pizza</span>
+<span class="font-label-caps text-label-caps">Pizzas Tradicionais</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">auto_awesome</span>
+<span class="font-label-caps text-label-caps">Pizzas Especiais</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">bakery_dining</span>
+<span class="font-label-caps text-label-caps">Pizzas Doces</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">flatware</span>
+<span class="font-label-caps text-label-caps">Porções</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">local_bar</span>
+<span class="font-label-caps text-label-caps">Bebidas</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">icecream</span>
+<span class="font-label-caps text-label-caps">Sobremesas</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">layers</span>
+<span class="font-label-caps text-label-caps">Combos</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-grid-margin py-8 max-w-5xl mx-auto w-full">
+<header class="mb-8 flex items-center gap-4">
+<button class="md:hidden rounded-full w-12 h-12 flex items-center justify-center bg-surface border border-outline-variant hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">arrow_back</span>
+</button>
+<h1 class="text-display-lg font-display-lg text-primary">Seu Carrinho</h1>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Cart Items List -->
+<div class="lg:col-span-2 flex flex-col gap-4">
+<!-- Item 1: Customized Pizza -->
+<article class="glass-card rounded-xl p-4 flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+<img class="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-lg shrink-0" data-alt="A high-quality, top-down photograph of half margherita and half pepperoni pizza on a rustic wooden board, bathed in warm, soft, natural light evoking a cozy artisanal pizzeria atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuGq66Lcpdx8nLiex4s6PE1H1PNzwmqZ5Fo-q_vtKWgc5Xw4Df-dxcA58ZVpV5kmOwelSTWc-ooKpgzU9aGPbbe0oeaUNwGifvP_qck6jdLc5yg-q7xq5rkmz7BU8B974BVZDpxHo7uafzkteGq-R92gUr9RaFbzK7GVV70tA0KO78380VyGQHqsoizJWjLrM37XT5qL7dGQDBQ3hZ5d9sR270fTgfeN2LetP-7MEEJyU1CPmOWJCi"/>
+<div class="flex-1 w-full">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-product-title font-product-title text-on-surface">Pizza Grande - 2 Sabores</h3>
+<span class="text-price-lg font-price-lg text-primary">R$ 82,90</span>
+</div>
+<div class="text-body-md font-body-md text-on-surface-variant mb-4 space-y-1">
+<p>• 1/2 Margherita</p>
+<p>• 1/2 Pepperoni</p>
+<p class="text-primary-container italic">+ Borda Recheada de Catupiry (+ R$ 12,00)</p>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant pt-4 mt-2">
+<button class="text-error flex items-center gap-1 hover:bg-error-container px-3 py-2 rounded-lg transition-colors h-12">
+<span class="material-symbols-outlined text-sm">delete</span>
+<span class="text-sm font-semibold">Remover</span>
+</button>
+<!-- Quantity Selector -->
+<div class="flex items-center bg-surface-container rounded-full h-14 border border-outline-variant">
+<button class="w-14 h-full flex items-center justify-center text-primary hover:bg-surface-container-highest rounded-l-full transition-colors">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="w-12 text-center text-body-lg font-bold">1</span>
+<button class="w-14 h-full flex items-center justify-center text-primary hover:bg-surface-container-highest rounded-r-full transition-colors">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- Item 2: Drink -->
+<article class="glass-card rounded-xl p-4 flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+<img class="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-lg shrink-0" data-alt="A frosty glass bottle of artisanal cola sitting on a clean, light-colored wooden table, condensation dripping down its sides, lit with bright, crisp natural light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBi3AuQ99Twx5PVi8ZjfglVTpNkstTkjlgMQRshp7TPI9NNVUx4W-J31ysL92vCLduFZdGTR60QSIycJT0fdHWsbU_exicFnyrVcwWz9bfzuTH8E5bCsOwkj4GrL-et8SDcHAWv2bX-Ne5VAlEphEju_mqe_4_BRGTEThEsaP3h0wPMrmrIw7kXhqBmWTSgHvPNW7Agc7OCKJQDNfjax0nd3pg3ugp_r_dIH4B35hNReccOcBpYjLj"/>
+<div class="flex-1 w-full">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-product-title font-product-title text-on-surface">Coca-Cola 1L</h3>
+<span class="text-price-lg font-price-lg text-primary">R$ 14,90</span>
+</div>
+<div class="text-body-md font-body-md text-on-surface-variant mb-4">
+<p>Gelada</p>
+</div>
+<div class="flex items-center justify-between border-t border-outline-variant pt-4 mt-2">
+<button class="text-error flex items-center gap-1 hover:bg-error-container px-3 py-2 rounded-lg transition-colors h-12">
+<span class="material-symbols-outlined text-sm">delete</span>
+<span class="text-sm font-semibold">Remover</span>
+</button>
+<!-- Quantity Selector -->
+<div class="flex items-center bg-surface-container rounded-full h-14 border border-outline-variant">
+<button class="w-14 h-full flex items-center justify-center text-primary hover:bg-surface-container-highest rounded-l-full transition-colors">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<span class="w-12 text-center text-body-lg font-bold">2</span>
+<button class="w-14 h-full flex items-center justify-center text-primary hover:bg-surface-container-highest rounded-r-full transition-colors">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+</div>
+<!-- Order Summary Sidebar -->
+<div class="lg:col-span-1">
+<div class="glass-card rounded-2xl p-6 sticky top-24">
+<h2 class="text-section-title font-section-title text-on-surface mb-6 border-b border-outline-variant pb-4">Resumo do Pedido</h2>
+<div class="space-y-4 text-body-md font-body-md text-on-surface-variant mb-6">
+<div class="flex justify-between">
+<span>Subtotal (3 itens)</span>
+<span class="font-semibold text-on-surface">R$ 112,70</span>
+</div>
+<div class="flex justify-between text-primary-container">
+<span>Taxa de Serviço (10%)</span>
+<span>R$ 11,27</span>
+</div>
+<div class="flex justify-between text-sm italic">
+<span>Mesa 12 (Consumo atual)</span>
+<span>R$ 45,00</span>
+</div>
+</div>
+<div class="border-t border-outline-variant pt-4 mb-8 flex justify-between items-end">
+<div>
+<span class="block text-sm text-on-surface-variant mb-1">Total a Enviar</span>
+</div>
+<span class="text-display-md font-display-md font-bold text-primary">R$ 123,97</span>
+</div>
+<div class="flex flex-col gap-4">
+<button class="w-full bg-primary text-on-primary rounded-xl font-label-caps text-label-caps h-[60px] flex items-center justify-center gap-2 hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined">send</span>
+                            Confirmar e Enviar Pedido
+                        </button>
+<button class="w-full bg-transparent border-2 border-primary text-primary rounded-xl font-label-caps text-label-caps h-[60px] flex items-center justify-center hover:bg-primary-fixed-dim hover:text-on-primary-fixed transition-colors">
+                            Continuar Comprando
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-4 px-grid-margin flex justify-between items-center bg-surface-container-lowest border-t border-outline-variant mt-auto">
+<p class="text-body-md font-body-md text-on-surface-variant">© 2024 Forno 27 Pizzeria - Mesa 12</p>
+<div class="flex gap-4">
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors h-touch-target-min flex items-center" href="#">Termos de Uso</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors h-touch-target-min flex items-center" href="#">Política de Privacidade</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors h-touch-target-min flex items-center" href="#">Ajuda</a>
+</div>
+</footer>
+</body></html>

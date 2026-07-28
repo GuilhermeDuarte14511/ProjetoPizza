@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Forno 27 - Pizzas Tradicionais</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+  }
+</style>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-tertiary-fixed-variant": "#00522d",
+                "on-secondary-fixed": "#20005f",
+                "tertiary-fixed-dim": "#7ed99e",
+                "surface-dim": "#d7dae2",
+                "tertiary": "#006a3b",
+                "tertiary-fixed": "#9af6b8",
+                "on-secondary-container": "#32008a",
+                "on-tertiary": "#ffffff",
+                "outline-variant": "#e1bfb5",
+                "inverse-surface": "#2d3137",
+                "surface-container": "#ebeef6",
+                "secondary-fixed": "#e8deff",
+                "primary": "#a83300",
+                "on-primary": "#ffffff",
+                "outline": "#8d7168",
+                "surface-container-high": "#e5e8f0",
+                "on-primary-fixed-variant": "#832600",
+                "secondary-fixed-dim": "#cdbdff",
+                "surface-container-lowest": "#ffffff",
+                "on-surface-variant": "#59413a",
+                "surface-container-low": "#f1f3fc",
+                "secondary": "#6646c4",
+                "primary-fixed-dim": "#ffb59d",
+                "surface-tint": "#ac3500",
+                "on-secondary-fixed-variant": "#4e2aab",
+                "on-tertiary-fixed": "#00210f",
+                "surface-container-highest": "#dfe2eb",
+                "error-container": "#ffdad6",
+                "on-primary-container": "#fffbff",
+                "secondary-container": "#9c7efe",
+                "surface-bright": "#f8f9ff",
+                "on-tertiary-container": "#f6fff4",
+                "on-primary-fixed": "#390c00",
+                "on-background": "#181c22",
+                "surface-variant": "#dfe2eb",
+                "surface": "#f8f9ff",
+                "primary-container": "#cc4916",
+                "on-error": "#ffffff",
+                "primary-fixed": "#ffdbd0",
+                "on-surface": "#181c22",
+                "inverse-on-surface": "#eef1f9",
+                "inverse-primary": "#ffb59d",
+                "on-error-container": "#93000a",
+                "on-secondary": "#ffffff",
+                "background": "#f8f9ff",
+                "tertiary-container": "#268451",
+                "error": "#ba1a1a"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "grid-margin": "32px",
+                "container-padding": "24px",
+                "gutter": "20px",
+                "touch-target-min": "52px",
+                "stack-gap": "16px"
+        },
+        "fontFamily": {
+                "label-caps": [
+                        "Inter"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "display-md": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "display-lg": [
+                        "Inter"
+                ],
+                "price-lg": [
+                        "Inter"
+                ],
+                "product-title": [
+                        "Inter"
+                ],
+                "section-title": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "label-caps": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "26px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "display-md": [
+                        "28px",
+                        {
+                                "lineHeight": "36px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "display-lg": [
+                        "34px",
+                        {
+                                "lineHeight": "42px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "price-lg": [
+                        "26px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "product-title": [
+                        "22px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "section-title": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ]
+        }
+    }
+  }
+  }
+</script>
+</head>
+<body class="bg-surface-bright text-on-background font-body-md antialiased min-h-screen">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-grid-margin h-touch-target-min bg-surface dark:bg-surface-container-high shadow-sm shadow-sm">
+<div class="flex items-center gap-8">
+<div class="text-display-md font-display-md font-bold text-primary dark:text-primary-fixed-dim">Forno 27</div>
+<nav class="hidden md:flex gap-6 h-full items-center">
+<a class="text-on-surface-variant font-label-caps text-label-caps hover:bg-surface-container-highest transition-colors flex items-center h-full px-2" href="#">Meus Pedidos</a>
+<a class="text-on-surface-variant font-label-caps text-label-caps hover:bg-surface-container-highest transition-colors flex items-center h-full px-2" href="#">Chamar Garçom</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 bg-primary-container text-on-primary-container h-touch-target-min px-6 rounded-full hover:bg-surface-container-highest transition-colors font-label-caps text-label-caps shadow-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+<span>Carrinho · 3 itens · R$ 124,80</span>
+</button>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full pt-20 pb-4 flex-col z-40 bg-surface-container-low dark:bg-inverse-surface border-r border-outline-variant dark:border-outline docked left-0 h-full w-64">
+<div class="px-6 py-6 mb-4">
+<h2 class="text-section-title font-section-title text-primary">Categorias</h2>
+<p class="text-on-surface-variant text-body-md font-body-md mt-1">Mesa 12</p>
+</div>
+<div class="flex flex-col gap-2 flex-grow overflow-y-auto">
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all font-label-caps text-label-caps gap-4" href="#">
+<span class="material-symbols-outlined">star</span>
+        Destaques
+      </a>
+<!-- ACTIVE TAB -->
+<a class="bg-primary-container text-on-primary-container rounded-xl mx-2 flex items-center px-4 py-3 hover:bg-surface-container-highest transition-all scale-98 duration-150 font-label-caps text-label-caps gap-4" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">local_pizza</span>
+        Pizzas Tradicionais
+      </a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all font-label-caps text-label-caps gap-4" href="#">
+<span class="material-symbols-outlined">auto_awesome</span>
+        Pizzas Especiais
+      </a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all font-label-caps text-label-caps gap-4" href="#">
+<span class="material-symbols-outlined">bakery_dining</span>
+        Pizzas Doces
+      </a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all font-label-caps text-label-caps gap-4" href="#">
+<span class="material-symbols-outlined">flatware</span>
+        Porções
+      </a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all font-label-caps text-label-caps gap-4" href="#">
+<span class="material-symbols-outlined">local_bar</span>
+        Bebidas
+      </a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all font-label-caps text-label-caps gap-4" href="#">
+<span class="material-symbols-outlined">icecream</span>
+        Sobremesas
+      </a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all font-label-caps text-label-caps gap-4" href="#">
+<span class="material-symbols-outlined">layers</span>
+        Combos
+      </a>
+</div>
+</nav>
+<!-- Main Canvas -->
+<main class="md:ml-64 pt-[calc(var(--spacing-touch-target-min)+2rem)] px-grid-margin pb-20">
+<!-- Section Header & Sorting -->
+<div class="flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-6 border-b border-outline-variant pb-6">
+<div>
+<h1 class="font-display-lg text-display-lg text-on-background mb-2">Pizzas Tradicionais</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">As favoritas que todo mundo ama. (48 produtos)</p>
+</div>
+<div class="flex items-center gap-3">
+<span class="font-label-caps text-label-caps text-on-surface-variant">Ordenar por:</span>
+<button class="h-touch-target-min px-4 rounded-full border-2 border-outline-variant bg-surface flex items-center justify-between gap-4 text-on-background hover:bg-surface-container transition-colors min-w-[200px]">
+<span class="font-body-md text-body-md font-semibold">Recomendados</span>
+<span class="material-symbols-outlined text-on-surface-variant">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+<!-- Product Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-stack-gap">
+<!-- Card 1 -->
+<article class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_12px_rgba(168,51,0,0.05)] border border-outline-variant flex flex-col group cursor-pointer hover:shadow-[0_8px_24px_rgba(168,51,0,0.1)] transition-all">
+<div class="relative w-full aspect-[4/3] overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A mouth-watering high-resolution food photography shot of a classic Calabresa pizza on a wooden serving board. The warm light-mode aesthetic highlights the golden melted cheese, perfectly browned crust, generously layered sliced smoked sausage (calabresa), and thin rings of fresh onion. Shot from a 45-degree appetizing angle on a textured white marble table, conveying an artisanal warmth and premium quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtnCvRT1-RbOn1t4gCvcnNwnnEMbeNh5DcLqxVTGAhR3_roUHaKoanhCHxils7OM73hzVFQ2BOO4EHym0nHm8Z6TJ87SgmOD89sqe1pOKNHpZh3u1NeQVcIyeiqE_hkWVnCk4OmsoA1flXbBW5VnQlucSa2oflQB6aflfzt2ve8zyCpL6aXsu130LjPLojA4B2t0SiQnVo_wXVUvnrNjH9yZtwUXIsAZh1CfKhgtoSa5q0Y-LDN8mN"/>
+<div class="absolute top-4 left-4 bg-primary text-on-primary font-label-caps text-label-caps px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+            Mais pedido
+          </div>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<h3 class="font-product-title text-product-title text-on-background mb-2">Pizza Calabresa</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow mb-4">Molho artesanal, mussarela, calabresa e cebola.</p>
+<div class="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/30">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant text-sm">A partir de</span>
+<span class="font-price-lg text-price-lg text-primary">R$ 39,90</span>
+</div>
+<button class="h-touch-target-min px-6 rounded-full bg-primary text-on-primary font-label-caps text-label-caps hover:bg-primary-container transition-colors">
+              Escolher opções
+            </button>
+</div>
+</div>
+</article>
+<!-- Card 2 -->
+<article class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_12px_rgba(168,51,0,0.05)] border border-outline-variant flex flex-col group cursor-pointer hover:shadow-[0_8px_24px_rgba(168,51,0,0.1)] transition-all">
+<div class="relative w-full aspect-[4/3] overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A highly detailed close-up of a freshly baked Margherita pizza showing artisanal quality. The bright, high-key lighting brings out the rich red of the sliced tomatoes, the vivid green of fresh basil leaves, and the creamy white patches of melted mozzarella and parmesan against a beautifully blistered crust. The setting is clean, modern, and inviting with a light cream background, embodying warm culinary craftsmanship." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4Y2GAItle2Il9Z2iBOOrVohypXuwmabd9EWPLH6GxCFOJYGI8ZpnMQd8xVpF1Al4KiEljJHIf3zilJlSRs1Q6AIZbkxPOrpzSNXrPk_JymW48Lt5bM9C9tJhPDyy3gs6yX7Ww8r2SVJ11Ej0QXaG5CEkxhkJVW_zDMTbtWGelZb-zhcNyNOQf6FZRHaSO0L-iuDZ8MiK9AL9hjYi22Qa3MHuQUW2YK-NOB8wN8K-xus3yWgiUSbS9"/>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<h3 class="font-product-title text-product-title text-on-background mb-2">Pizza Margherita</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow mb-4">Mussarela, tomate fatiado, manjericão fresco e parmesão.</p>
+<div class="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/30">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant text-sm">A partir de</span>
+<span class="font-price-lg text-price-lg text-primary">R$ 42,90</span>
+</div>
+<button class="h-touch-target-min px-6 rounded-full bg-primary text-on-primary font-label-caps text-label-caps hover:bg-primary-container transition-colors">
+              Escolher opções
+            </button>
+</div>
+</div>
+</article>
+<!-- Card 3 -->
+<article class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_12px_rgba(168,51,0,0.05)] border border-outline-variant flex flex-col group cursor-pointer hover:shadow-[0_8px_24px_rgba(168,51,0,0.1)] transition-all">
+<div class="relative w-full aspect-[4/3] overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A delicious overhead view of a Brazilian-style Chicken and Catupiry pizza. The rich creamy Catupiry cheese is piped in decorative concentric circles over generous amounts of seasoned shredded chicken. The crust is golden-brown and slightly charred on the edges, presented on a rustic metal pizza pan over a clean cream-colored wooden table. The lighting is soft and warm, making the food look highly appealing." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAm3P4uiSIhOSD0gZvjw2qpAb2NPKSuMqz66-53dtl-H32y8K1WqvGktXxDnYaP_maXmKoegi3AeGy0o3sXvSfdBEp35JlAr0ydm_7zXjp7sHPg_SM5VDDkNk055tnYu0B9jS9kTsKK8Qnr5P4AEkxgFlxnWbQxoIABKtefiQXMt12CI4KcIhY_bjwiqETBGoIwIfO5A33WGxvzhPu0MkRSiabYxVpHOdZ9JLhPsDU6OygJ41qhGZO2"/>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<h3 class="font-product-title text-product-title text-on-background mb-2">Pizza de Frango com Catupiry</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow mb-4">Frango desfiado temperado e o legítimo Catupiry.</p>
+<div class="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/30">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant text-sm">A partir de</span>
+<span class="font-price-lg text-price-lg text-primary">R$ 45,90</span>
+</div>
+<button class="h-touch-target-min px-6 rounded-full bg-primary text-on-primary font-label-caps text-label-caps hover:bg-primary-container transition-colors">
+              Escolher opções
+            </button>
+</div>
+</div>
+</article>
+<!-- Card 4 -->
+<article class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_12px_rgba(168,51,0,0.05)] border border-outline-variant flex flex-col group cursor-pointer hover:shadow-[0_8px_24px_rgba(168,51,0,0.1)] transition-all">
+<div class="relative w-full aspect-[4/3] overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A vibrant, appetizing macro shot of a traditional Portuguese pizza. The toppings are abundant and colorful, featuring sliced boiled eggs, bright green peas, black olives, sliced ham, and onions over a bed of melted mozzarella. The scene is lit with bright, diffused daylight, highlighting the fresh textures and vibrant colors against a minimalist, warm-toned dining surface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuABUF1xFyHq-q9H8dVNtBboRz3ug7MpbcQco9QUmZo3A7VBfWypovJMytk9jy08pTfT-rs3WMChDuVIZlIJSxHM5hyE0saCeN7VWAx-W3m6GvSuZn6UhbKbd4IxD7X2rzIs2ZSVY9giRTAQSXNqUY-k5OgPAOOXHwxhCd2KbkXYZQ1Ish_fc8vVn0oB-xWxMCbXo-X3qkBK7cCVMR3AUyJXKI57CgIfMvTulw5B12WyCrfS9bmXHAkl"/>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<h3 class="font-product-title text-product-title text-on-background mb-2">Pizza Portuguesa</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow mb-4">Presunto, ovos, cebola, ervilha e azeitonas.</p>
+<div class="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/30">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant text-sm">A partir de</span>
+<span class="font-price-lg text-price-lg text-primary">R$ 44,90</span>
+</div>
+<button class="h-touch-target-min px-6 rounded-full bg-primary text-on-primary font-label-caps text-label-caps hover:bg-primary-container transition-colors">
+              Escolher opções
+            </button>
+</div>
+</div>
+</article>
+<!-- Card 5 (Disabled) -->
+<article class="bg-surface-container rounded-xl overflow-hidden shadow-none border border-outline-variant/50 flex flex-col opacity-60 grayscale-[50%] pointer-events-none">
+<div class="relative w-full aspect-[4/3] overflow-hidden bg-surface-variant">
+<img class="w-full h-full object-cover" data-alt="A muted, slightly desaturated food photography shot of a Napolitana pizza showing melted mozzarella, fresh tomato slices, parmesan, and fried garlic. The lighting is soft and subdued, giving the image a slightly unavailable or 'out of stock' aesthetic, while still remaining part of a warm, high-end culinary presentation on a minimalist cream background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8Akh3XJYF74W2IGOb-luup-zVweV1gYDax9DXUkhov5Q1W5c6AqslDYxjRMmcp22Oi40RkIrFoGHCp8cGaFqsCMj-nrZx9SOsjRkDXRXUpE0o8RD4I36FbpPAEIHX0mhQioSuyqepaYrqrtat0hlWUFLVmMcyFvnpR1HsduxP-S0PeAa2f9o8UkbwOYKqgPWGH0e9yweu5aDUxhqQEw0SMeTqHVAxbphLH7QBAU3IKzISJJYOS2zL"/>
+<div class="absolute inset-0 bg-surface/40 flex items-center justify-center">
+<div class="bg-inverse-surface text-inverse-on-surface font-label-caps text-label-caps px-4 py-2 rounded-full shadow-md">
+              Indisponível no momento
+            </div>
+</div>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<h3 class="font-product-title text-product-title text-on-background mb-2">Pizza Napolitana</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow mb-4">Mussarela, rodelas de tomate, parmesão e alho frito.</p>
+<div class="flex items-center justify-between mt-auto pt-4 border-t border-outline-variant/30">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant text-sm">A partir de</span>
+<span class="font-price-lg text-price-lg text-on-surface-variant">R$ 41,90</span>
+</div>
+<button class="h-touch-target-min px-6 rounded-full bg-surface-variant text-on-surface-variant font-label-caps text-label-caps" disabled="">
+              Indisponível
+            </button>
+</div>
+</div>
+</article>
+</div>
+</main>
+</body></html>

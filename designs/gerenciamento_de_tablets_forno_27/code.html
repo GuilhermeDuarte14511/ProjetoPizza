@@ -1,0 +1,432 @@
+<!DOCTYPE html><html class="light" lang="pt-BR" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Forno 27 - Gerenciamento de Tablets</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-tint": "#ac3500",
+                      "surface-bright": "#f8f9ff",
+                      "surface": "#f8f9ff",
+                      "on-tertiary-fixed-variant": "#004c6c",
+                      "on-surface-variant": "#59413a",
+                      "primary-container": "#cc4916",
+                      "secondary-container": "#ff6e40",
+                      "secondary": "#ad3305",
+                      "surface-container-highest": "#dde3ee",
+                      "primary-fixed": "#ffdbd0",
+                      "on-secondary-fixed": "#3a0a00",
+                      "surface-container": "#e9eef9",
+                      "tertiary": "#00628b",
+                      "on-secondary-fixed-variant": "#852400",
+                      "on-primary": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "tertiary-fixed-dim": "#85cfff",
+                      "on-primary-container": "#fffbff",
+                      "inverse-on-surface": "#ebf1fc",
+                      "outline": "#8d7168",
+                      "on-primary-fixed": "#390c00",
+                      "inverse-surface": "#2b3139",
+                      "on-tertiary-fixed": "#001e2e",
+                      "error": "#ba1a1a",
+                      "surface-container-low": "#eef4ff",
+                      "secondary-fixed-dim": "#ffb59f",
+                      "on-tertiary-container": "#fcfcff",
+                      "primary": "#a83300",
+                      "surface-variant": "#dde3ee",
+                      "on-surface": "#161c24",
+                      "background": "#f8f9ff",
+                      "tertiary-container": "#007cae",
+                      "on-secondary": "#ffffff",
+                      "surface-dim": "#d5dae5",
+                      "on-secondary-container": "#631800",
+                      "primary-fixed-dim": "#ffb59d",
+                      "error-container": "#ffdad6",
+                      "on-background": "#161c24",
+                      "inverse-primary": "#ffb59d",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-fixed": "#ffdbd0",
+                      "tertiary-fixed": "#c7e7ff",
+                      "surface-container-high": "#e3e8f3",
+                      "on-tertiary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "outline-variant": "#e1bfb5",
+                      "on-primary-fixed-variant": "#832600"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "sidebar-width": "260px",
+                      "stack-gap": "16px",
+                      "gutter": "24px",
+                      "topbar-height": "64px",
+                      "card-padding": "20px",
+                      "section-margin": "32px"
+              },
+              "fontFamily": {
+                      "body-md": ["Inter", "sans-serif"],
+                      "headline-lg": ["Inter", "sans-serif"],
+                      "display-financial": ["Inter", "sans-serif"],
+                      "headline-lg-mobile": ["Inter", "sans-serif"],
+                      "headline-md": ["Inter", "sans-serif"],
+                      "body-lg": ["Inter", "sans-serif"],
+                      "label-md": ["Inter", "sans-serif"]
+              },
+              "fontSize": {
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-lg": ["28px", {"lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "display-financial": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "30px", "fontWeight": "600"}],
+                      "headline-md": ["22px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        /* Custom Scrollbar for a premium feel */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #dde3ee; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d5dae5; }
+
+        .dropdown-menu { display: none; }
+        .dropdown-trigger:hover .dropdown-menu, .dropdown-trigger:focus-within .dropdown-menu { display: block; }
+    </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" data-snapdom="injected-import"></head>
+<body class="bg-surface text-on-surface font-body-md h-screen overflow-hidden flex antialiased">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-[260px] bg-inverse-surface dark:bg-inverse-surface flex flex-col py-6 z-20"><!-- Brand Area -->
+<div class="px-6 mb-8 flex items-center gap-3">
+  <div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center shrink-0">
+    <span class="material-symbols-outlined text-on-primary" style="font-variation-settings: 'FILL' 1;">local_pizza</span>
+  </div>
+  <div>
+    <h1 class="font-headline-md text-headline-md font-bold text-on-primary-fixed text-white">Forno 27</h1>
+    <p class="font-label-md text-label-md text-surface-variant opacity-80">Unidade Principal</p>
+  </div>
+</div>
+<!-- CTA -->
+<div class="px-4 mb-6">
+  <button class="w-full bg-primary text-on-primary rounded-lg py-2.5 px-4 font-label-md text-label-md font-semibold flex items-center justify-center gap-2 hover:bg-secondary transition-colors shadow-sm">
+    <span class="material-symbols-outlined text-[18px]">add</span>
+    Novo Pedido
+  </button>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 overflow-y-auto px-2 flex flex-col gap-1"><div class="px-4 py-2 mt-2"><p class="text-[10px] font-bold text-surface-variant opacity-50 uppercase tracking-widest">Operação</p></div><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">dashboard</span>Visão Geral</a><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">restaurant</span>Mesas</a><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">receipt_long</span>Comandas</a><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">shopping_cart</span>Pedidos</a><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">oven_gen</span>Cozinha</a><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">notifications_active</span>Chamados</a><div class="px-4 py-2 mt-4"><p class="text-[10px] font-bold text-surface-variant opacity-50 uppercase tracking-widest">Financeiro</p></div><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">payments</span>Caixa</a><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">credit_card</span>Pagamentos</a><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">account_balance_wallet</span>Fechamentos</a><div class="px-4 py-2 mt-4"><p class="text-[10px] font-bold text-surface-variant opacity-50 uppercase tracking-widest">Gestão</p></div><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">menu_book</span>Cardápio</a><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">analytics</span>Relatórios</a><a class="flex items-center gap-3 px-4 py-3 text-on-primary bg-primary-container border-l-4 border-primary rounded-r-lg font-label-md text-label-md scale-[0.99] transition-transform duration-150" href="#"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">tablet_android</span>Tablets</a><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">group</span>Usuários</a><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">security</span>Auditoria</a><a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#"><span class="material-symbols-outlined">settings</span>Configurações</a></nav>
+<!-- Footer -->
+<div class="px-2 mt-auto pt-4 border-t border-surface-variant/10">
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-white transition-colors rounded-lg font-label-md text-label-md" href="#">
+    <span class="material-symbols-outlined">logout</span>Sair
+  </a>
+</div></aside>
+<!-- Main Content Wrapper -->
+<div class="flex-1 ml-[260px] flex flex-col h-screen min-w-0">
+<!-- TopNavBar (Shared Component) -->
+<header class="flex justify-between items-center h-[64px] px-gutter border-b border-outline-variant shadow-sm bg-surface dark:bg-surface-container shrink-0 z-10"><div class="flex items-center gap-6 h-full"><a class="text-on-surface-variant font-medium font-label-md text-label-md h-full flex items-center hover:text-primary transition-all" href="#">Visão Geral</a><a class="text-on-surface-variant font-medium font-label-md text-label-md h-full flex items-center hover:text-primary transition-all" href="#">Mesas</a></div><div class="flex items-center gap-4"><div class="relative hidden lg:block"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span><input class="pl-10 pr-4 py-1.5 bg-surface-container-low border border-outline-variant rounded-md font-body-md text-body-md text-on-surface focus:ring-2 focus:ring-primary focus:border-primary w-64 transition-shadow" placeholder="Buscar global (Cmd+K)" type="text"></div><div class="w-px h-6 bg-outline-variant mx-2"></div><div class="flex items-center gap-2 px-3 py-1.5 bg-green-500/5 border border-green-500/20 rounded-full"><div class="w-2 h-2 rounded-full bg-green-500"></div><span class="text-[12px] font-medium text-green-700">Caixa Aberto</span></div><button class="w-10 h-10 rounded-full hover:bg-surface-container-low flex items-center justify-center text-on-surface-variant transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2"><span class="material-symbols-outlined">notifications</span></button><button class="w-10 h-10 rounded-full hover:bg-surface-container-low flex items-center justify-center text-on-surface-variant transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2"><span class="material-symbols-outlined">schedule</span></button><img class="w-8 h-8 rounded-full object-cover ml-2 border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuwQXoIA7MVfud8Teja9YusRJdCZb2kb6CzLElXxUtgT5haP0AXVUAcQlovczxKI2CkaXpDMiAHqhjnlnaLiOxTUcV97o04nxQ_dEtC1udfymH9eTmoiYwJaWfAPJge0HsdBnx0-TVvCLiHNO4SfRLlAg4iQU_5ek3YmYU3VhhypQbk_eKxgWDj1bkbj3Kcd3y-6GNK89bmAKPyryNaCCPwgeEMpgGQX0FrtGAgrLUE7U4I8NQOwAT"></div></header>
+<!-- Canvas (Main Scrollable Area) -->
+<main class="flex-1 overflow-y-auto bg-surface-bright p-gutter flex flex-col gap-section-margin">
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Gerenciamento de Tablets</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Monitore e controle os dispositivos de atendimento em tempo real.</p>
+</div>
+<button class="bg-primary text-on-primary px-5 py-2.5 rounded-lg font-label-md text-label-md font-semibold hover:bg-secondary transition-colors shadow-sm flex items-center gap-2 shrink-0">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+                    Ativar Novo Dispositivo
+                </button>
+</div>
+<!-- Summary Cards (Bento Grid Style) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-stack-gap">
+<!-- Online -->
+<div class="bg-surface-container-lowest p-card-padding rounded-xl border border-outline-variant shadow-sm flex flex-col gap-4 relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-green-500/5 rounded-full blur-xl"></div>
+<div class="flex justify-between items-start">
+<div class="w-10 h-10 rounded-lg bg-green-50 text-green-700 flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="px-2 py-1 bg-green-100 text-green-800 rounded-md font-label-md text-[10px] font-bold uppercase tracking-wider">Operacional</span>
+</div>
+<div>
+<h3 class="font-display-financial text-display-financial text-on-surface">18</h3>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mt-1">Tablets Online</p>
+</div>
+</div>
+<!-- Offline -->
+<div class="bg-surface-container-lowest p-card-padding rounded-xl border border-outline-variant shadow-sm flex flex-col gap-4 relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-red-500/5 rounded-full blur-xl"></div>
+<div class="flex justify-between items-start">
+<div class="w-10 h-10 rounded-lg bg-red-50 text-error flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<span class="px-2 py-1 bg-red-100 text-red-800 rounded-md font-label-md text-[10px] font-bold uppercase tracking-wider">Atenção</span>
+</div>
+<div>
+<h3 class="font-display-financial text-display-financial text-on-surface">2</h3>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mt-1">Tablets Offline</p>
+</div>
+</div>
+<!-- Bateria Baixa -->
+<div class="bg-surface-container-lowest p-card-padding rounded-xl border border-outline-variant shadow-sm flex flex-col gap-4 relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/5 rounded-full blur-xl"></div>
+<div class="flex justify-between items-start">
+<div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+<span class="material-symbols-outlined">battery_alert</span>
+</div>
+<span class="px-2 py-1 bg-amber-100 text-amber-800 rounded-md font-label-md text-[10px] font-bold uppercase tracking-wider">Recarregar</span>
+</div>
+<div>
+<h3 class="font-display-financial text-display-financial text-on-surface">3</h3>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mt-1">Bateria Baixa (&lt; 20%)</p>
+</div>
+</div>
+<!-- Sem Mesa -->
+<div class="bg-surface-container-lowest p-card-padding rounded-xl border border-outline-variant shadow-sm flex flex-col gap-4 relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-gray-500/5 rounded-full blur-xl"></div>
+<div class="flex justify-between items-start">
+<div class="w-10 h-10 rounded-lg bg-surface-variant text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined">link_off</span>
+</div>
+<span class="px-2 py-1 bg-surface-variant text-on-surface-variant rounded-md font-label-md text-[10px] font-bold uppercase tracking-wider">Ocioso</span>
+</div>
+<div>
+<h3 class="font-display-financial text-display-financial text-on-surface">1</h3>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mt-1">Sem Mesa Vinculada</p>
+</div>
+</div>
+</div>
+<!-- Management Section -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col overflow-hidden">
+<!-- Filters Bar -->
+<div class="p-4 border-b border-outline-variant flex flex-col sm:flex-row justify-between items-center gap-4 bg-surface-container-lowest">
+<div class="relative w-full sm:w-80">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-shadow" placeholder="Buscar por dispositivo ou mesa..." type="text">
+</div>
+<div class="flex items-center gap-3 w-full sm:w-auto">
+<span class="font-label-md text-label-md text-on-surface-variant">Status:</span>
+<select class="bg-surface border border-outline-variant rounded-lg py-2 pl-3 pr-8 font-body-md text-body-md text-on-surface focus:ring-2 focus:ring-primary focus:border-primary appearance-none cursor-pointer">
+<option>Todos</option>
+<option>Online</option>
+<option>Offline</option>
+<option>Bateria Baixa</option>
+</select>
+</div>
+</div>
+<!-- Data Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Dispositivo</th>
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Mesa Vinculada</th>
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Status</th>
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Bateria</th>
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Rede</th>
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Versão</th>
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold text-right">Ações</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1: Normal -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">tablet_mac</span>
+</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-on-surface">Tablet #01</div>
+<div class="font-label-md text-label-md text-on-surface-variant">S/N: 948A7B21</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface">Mesa 04</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="font-label-md text-label-md text-on-surface">Online</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-600 text-[18px]">battery_full</span>
+<span class="font-label-md text-label-md text-on-surface">85%</span>
+</div>
+</td>
+<td class="py-3 px-4 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">wifi</span>
+</td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant">v2.4.1</td>
+<td class="py-3 px-4 text-right relative dropdown-trigger">
+<button class="w-8 h-8 rounded-full hover:bg-surface-variant flex items-center justify-center text-on-surface-variant transition-colors ml-auto focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+<!-- Action Menu -->
+<div class="dropdown-menu absolute right-8 top-10 w-48 bg-surface-container-lowest border border-outline-variant shadow-lg rounded-lg py-1 z-10">
+<a class="flex items-center gap-2 px-3 py-2 text-on-surface hover:bg-surface-container hover:text-primary font-body-md text-body-md transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">link</span> Vincular Mesa
+                                        </a>
+<a class="flex items-center gap-2 px-3 py-2 text-on-surface hover:bg-surface-container hover:text-primary font-body-md text-body-md transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span> Reiniciar Sessão
+                                        </a>
+<a class="flex items-center gap-2 px-3 py-2 text-on-surface hover:bg-surface-container hover:text-error font-body-md text-body-md transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">lock</span> Bloquear
+                                        </a>
+<a class="flex items-center gap-2 px-3 py-2 text-error hover:bg-error-container hover:text-on-error-container font-body-md text-body-md transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">delete_sweep</span> Limpar Dados
+                                        </a>
+</div>
+</td>
+</tr>
+<!-- Row 2: Offline -->
+<tr class="hover:bg-surface-container-lowest transition-colors group bg-red-50/20">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">tablet_mac</span>
+</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-on-surface">iPad Pro Cozinha</div>
+<div class="font-label-md text-label-md text-on-surface-variant">S/N: 11X90BZC</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant italic">Nenhuma</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-red-500"></div>
+<span class="font-label-md text-label-md text-error font-medium">Offline (há 2h)</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2 opacity-50">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">battery_unknown</span>
+<span class="font-label-md text-label-md text-on-surface-variant">--</span>
+</div>
+</td>
+<td class="py-3 px-4 text-on-surface-variant opacity-50">
+<span class="material-symbols-outlined text-[20px]">wifi_off</span>
+</td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant">v2.4.0</td>
+<td class="py-3 px-4 text-right relative dropdown-trigger">
+<button class="w-8 h-8 rounded-full hover:bg-surface-variant flex items-center justify-center text-on-surface-variant transition-colors ml-auto focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+</td>
+</tr>
+<!-- Row 3: Low Battery -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">tablet_mac</span>
+</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-on-surface">Tablet #05</div>
+<div class="font-label-md text-label-md text-on-surface-variant">S/N: 772C1A99</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface">Mesa 12</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="font-label-md text-label-md text-on-surface">Online</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-amber-600 text-[18px]">battery_1_bar</span>
+<span class="font-label-md text-label-md text-amber-700 font-bold">12%</span>
+</div>
+</td>
+<td class="py-3 px-4 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">wifi</span>
+</td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant">v2.4.1</td>
+<td class="py-3 px-4 text-right relative dropdown-trigger">
+<button class="w-8 h-8 rounded-full hover:bg-surface-variant flex items-center justify-center text-on-surface-variant transition-colors ml-auto focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+</td>
+</tr>
+<!-- Row 4: Normal -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">tablet_mac</span>
+</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-on-surface">Tablet #08</div>
+<div class="font-label-md text-label-md text-on-surface-variant">S/N: 334X9Y22</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface">Mesa 02</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="font-label-md text-label-md text-on-surface">Online</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-600 text-[18px]">battery_charging_full</span>
+<span class="font-label-md text-label-md text-on-surface">98%</span>
+</div>
+</td>
+<td class="py-3 px-4 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">wifi</span>
+</td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant">v2.4.1</td>
+<td class="py-3 px-4 text-right relative dropdown-trigger">
+<button class="w-8 h-8 rounded-full hover:bg-surface-variant flex items-center justify-center text-on-surface-variant transition-colors ml-auto focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination (Simple visual representation) -->
+<div class="p-4 border-t border-outline-variant flex items-center justify-between bg-surface-container-low">
+<span class="font-label-md text-label-md text-on-surface-variant">Mostrando 1-4 de 24 dispositivos</span>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant text-surface-dim cursor-not-allowed">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded bg-primary text-on-primary font-label-md text-label-md">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors">3</button>
+<button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant hover:bg-surface-container text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+
+</body></html>

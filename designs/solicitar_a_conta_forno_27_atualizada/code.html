@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Solicitar Conta - Forno 27</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "outline-variant": "#e1bfb5",
+                "on-tertiary-fixed": "#00210f",
+                "secondary": "#6646c4",
+                "surface-container": "#ebeef6",
+                "surface-bright": "#f8f9ff",
+                "inverse-surface": "#2d3137",
+                "surface-container-high": "#e5e8f0",
+                "surface-container-highest": "#dfe2eb",
+                "secondary-fixed-dim": "#cdbdff",
+                "inverse-primary": "#ffb59d",
+                "tertiary": "#006a3b",
+                "on-tertiary-fixed-variant": "#00522d",
+                "on-secondary-fixed": "#20005f",
+                "on-surface": "#181c22",
+                "error-container": "#ffdad6",
+                "primary-container": "#cc4916",
+                "surface-container-lowest": "#ffffff",
+                "surface-tint": "#ac3500",
+                "secondary-container": "#9c7efe",
+                "on-tertiary-container": "#f6fff4",
+                "on-tertiary": "#ffffff",
+                "tertiary-container": "#268451",
+                "surface-dim": "#d7dae2",
+                "on-primary-fixed": "#390c00",
+                "tertiary-fixed-dim": "#7ed99e",
+                "on-error-container": "#93000a",
+                "on-error": "#ffffff",
+                "on-background": "#181c22",
+                "background": "#f8f9ff",
+                "on-primary-container": "#fffbff",
+                "surface-container-low": "#f1f3fc",
+                "outline": "#8d7168",
+                "surface-variant": "#dfe2eb",
+                "on-primary-fixed-variant": "#832600",
+                "on-secondary-container": "#32008a",
+                "on-primary": "#ffffff",
+                "secondary-fixed": "#e8deff",
+                "on-secondary": "#ffffff",
+                "inverse-on-surface": "#eef1f9",
+                "tertiary-fixed": "#9af6b8",
+                "on-surface-variant": "#59413a",
+                "primary-fixed": "#ffdbd0",
+                "surface": "#f8f9ff",
+                "primary": "#a83300",
+                "on-secondary-fixed-variant": "#4e2aab",
+                "primary-fixed-dim": "#ffb59d",
+                "error": "#ba1a1a"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "gutter": "20px",
+                "touch-target-min": "52px",
+                "stack-gap": "16px",
+                "grid-margin": "32px",
+                "container-padding": "24px"
+        },
+        "fontFamily": {
+                "body-md": [
+                        "Inter"
+                ],
+                "product-title": [
+                        "Inter"
+                ],
+                "section-title": [
+                        "Inter"
+                ],
+                "price-lg": [
+                        "Inter"
+                ],
+                "display-md": [
+                        "Inter"
+                ],
+                "display-lg": [
+                        "Inter"
+                ],
+                "label-caps": [
+                        "Inter"
+                ],
+                "body-lg": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "product-title": [
+                        "22px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "section-title": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "price-lg": [
+                        "26px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "display-md": [
+                        "28px",
+                        {
+                                "lineHeight": "36px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "display-lg": [
+                        "34px",
+                        {
+                                "lineHeight": "42px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "label-caps": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "26px",
+                                "fontWeight": "400"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        body { background-color: #FFF8F3; } /* Artisanal Warmth - Cream background */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 24px rgba(168, 51, 0, 0.08); /* Ambient shadow */
+            border: 1px solid #E8E1DC;
+        }
+    </style>
+</head>
+<body class="text-on-surface font-body-md min-h-screen flex flex-col pt-[72px] pb-[72px] md:pl-64">
+<!-- TopAppBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-grid-margin h-[72px] bg-surface shadow-sm">
+<div class="flex items-center gap-4">
+<button class="md:hidden p-2 rounded-full hover:bg-surface-container-highest transition-colors flex items-center justify-center min-h-[52px] min-w-[52px]">
+<span class="material-symbols-outlined text-primary">menu</span>
+</button>
+<span class="text-display-md font-display-md font-bold text-primary">Forno 27</span>
+</div>
+<div class="hidden md:flex gap-8 items-center flex-1 justify-center max-w-2xl mx-auto">
+<div class="relative w-full max-w-md hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-highest rounded-full py-2 pl-10 pr-4 text-body-md font-body-md focus:outline-none focus:ring-2 focus:ring-primary h-[48px]" placeholder="Buscar no cardápio..." type="text"/>
+</div>
+</div>
+<div class="hidden md:flex gap-4 items-center">
+<a class="text-on-surface-variant font-label-caps hover:bg-surface-container-highest transition-colors px-3 py-2 rounded-lg flex items-center h-touch-target-min" href="#">Meus Pedidos</a>
+<a class="text-on-surface-variant font-label-caps hover:bg-surface-container-highest transition-colors px-3 py-2 rounded-lg flex items-center h-touch-target-min" href="#">Chamar Garçom</a>
+</div>
+<div class="flex items-center gap-4 ml-4">
+<button class="flex items-center gap-2 hover:bg-surface-container-highest transition-colors px-4 py-2 rounded-full h-touch-target-min bg-surface-container-highest text-on-surface">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+<span class="font-label-caps text-label-caps hidden sm:block">Carrinho · 3 itens · R$ 124,80</span>
+</button>
+</div>
+</nav>
+<!-- SideNavBar (Hidden on Mobile) -->
+<aside class="hidden md:flex fixed left-0 top-0 h-full w-64 pt-20 pb-4 flex-col z-40 bg-surface-container-low border-r border-outline-variant">
+<div class="px-6 mb-6">
+<h2 class="text-section-title font-section-title text-primary">Categorias</h2>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">table_restaurant</span> Mesa 12
+            </p>
+</div>
+<nav class="flex-1 overflow-y-auto px-2 space-y-2">
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">star</span>
+<span class="font-label-caps text-label-caps">Destaques</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">local_pizza</span>
+<span class="font-label-caps text-label-caps">Pizzas Tradicionais</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">auto_awesome</span>
+<span class="font-label-caps text-label-caps">Pizzas Especiais</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">bakery_dining</span>
+<span class="font-label-caps text-label-caps">Pizzas Doces</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">flatware</span>
+<span class="font-label-caps text-label-caps">Porções</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">local_bar</span>
+<span class="font-label-caps text-label-caps">Bebidas</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">icecream</span>
+<span class="font-label-caps text-label-caps">Sobremesas</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">layers</span>
+<span class="font-label-caps text-label-caps">Combos</span>
+</a>
+</nav>
+</aside>
+<main class="flex-1 px-grid-margin py-8 mx-auto w-full max-w-[1200px]">
+<header class="mb-8">
+<h1 class="font-display-lg text-display-lg text-primary">Resumo da Mesa 12</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2">Confira os itens antes de solicitar o pagamento.</p>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Items List -->
+<div class="lg:col-span-2 space-y-6">
+<div class="glass-card rounded-2xl p-6">
+<div class="flex justify-between items-start border-b border-surface-variant pb-4 mb-4">
+<div class="flex gap-4">
+<span class="bg-surface-container-high text-on-background font-label-caps text-label-caps w-10 h-10 rounded-full flex items-center justify-center min-w-10">1x</span>
+<div>
+<h3 class="font-product-title text-product-title text-on-surface">Pizza Grande 3 Sabores</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Marguerita, Calabresa, Quatro Queijos</p>
+</div>
+</div>
+<span class="font-price-lg text-price-lg text-on-surface">R$ 85,00</span>
+</div>
+<div class="flex justify-between items-start border-b border-surface-variant pb-4 mb-4">
+<div class="flex gap-4">
+<span class="bg-surface-container-high text-on-background font-label-caps text-label-caps w-10 h-10 rounded-full flex items-center justify-center min-w-10">2x</span>
+<div>
+<h3 class="font-product-title text-product-title text-on-surface">Coca-Cola 2L</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Gelada</p>
+</div>
+</div>
+<span class="font-price-lg text-price-lg text-on-surface">R$ 28,00</span>
+</div>
+<div class="flex justify-between items-start">
+<div class="flex gap-4">
+<span class="bg-surface-container-high text-on-background font-label-caps text-label-caps w-10 h-10 rounded-full flex items-center justify-center min-w-10">1x</span>
+<div>
+<h3 class="font-product-title text-product-title text-on-surface">Batata Frita</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Porção Média</p>
+</div>
+</div>
+<span class="font-price-lg text-price-lg text-on-surface">R$ 32,00</span>
+</div>
+</div>
+</div>
+<!-- Summary & Actions -->
+<div class="lg:col-span-1">
+<div class="glass-card rounded-2xl p-8 sticky top-24">
+<h2 class="font-section-title text-section-title text-on-surface mb-6 border-b border-outline-variant pb-4">Total</h2>
+<div class="space-y-4 mb-6">
+<div class="flex justify-between font-body-md text-body-md text-on-surface-variant">
+<span>Subtotal</span>
+<span>R$ 145,00</span>
+</div>
+<div class="flex justify-between font-body-md text-body-md text-primary-container">
+<span>Taxa de Serviço (10%)</span>
+<span>R$ 14,50</span>
+</div>
+<div class="flex justify-between items-end pt-6 border-t border-outline-variant mt-4">
+<span class="block text-body-md text-on-surface-variant mb-1">Valor Estimado</span>
+<span class="text-display-lg font-display-lg font-bold text-primary">R$ 159,50</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl mb-6 flex items-start gap-3 border border-outline-variant">
+<span class="material-symbols-outlined text-outline" style="font-variation-settings: 'FILL' 0;">info</span>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">O valor será conferido pelo atendente antes do pagamento.</p>
+</div>
+<div class="space-y-4 mb-6">
+<p class="font-label-caps text-label-caps text-on-surface-variant">Como deseja pagar?</p>
+<div class="grid grid-cols-2 gap-4">
+<button class="bg-surface-container-lowest border-2 border-outline-variant hover:border-primary text-on-surface rounded-xl p-4 min-h-[52px] flex flex-col items-center justify-center gap-2 transition-colors active:bg-surface-container-low">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">receipt_long</span>
+<span class="font-label-caps text-label-caps">Pagar Junto</span>
+</button>
+<button class="bg-surface-container-lowest border-2 border-outline-variant hover:border-primary text-on-surface rounded-xl p-4 min-h-[52px] flex flex-col items-center justify-center gap-2 transition-colors active:bg-surface-container-low">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">pie_chart</span>
+<span class="font-label-caps text-label-caps">Dividir Conta</span>
+</button>
+</div>
+</div>
+<button class="w-full bg-primary text-on-primary rounded-xl font-label-caps text-label-caps h-[60px] flex items-center justify-center gap-2 hover:bg-primary-container transition-colors shadow-sm">
+                        Solicitar a Conta
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-6 px-grid-margin flex flex-col md:flex-row justify-between items-center bg-surface-container-lowest border-t border-outline-variant mt-auto">
+<p class="text-body-md font-body-md text-on-surface-variant mb-4 md:mb-0">© 2024 Forno 27 Pizzeria - Mesa 12</p>
+<div class="flex gap-6">
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors h-touch-target-min flex items-center" href="#">Termos de Uso</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors h-touch-target-min flex items-center" href="#">Política de Privacidade</a>
+<a class="text-on-surface-variant font-body-md text-body-md hover:text-primary transition-colors h-touch-target-min flex items-center" href="#">Ajuda</a>
+</div>
+</footer>
+</body></html>

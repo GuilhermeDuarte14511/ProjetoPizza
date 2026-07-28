@@ -1,0 +1,2059 @@
+Você será o arquiteto e desenvolvedor principal do **ProjetoPizza**, um sistema completo de gestão para pizzaria.
+
+Trabalhe diretamente no repositório aberto no ambiente.
+
+Os designs exportados pelo Google Stitch estão localizados em:
+
+```text
+C:\teste\designs
+```
+
+Esses arquivos devem ser analisados antes da implementação. Eles representam a referência visual e funcional do sistema.
+
+## Objetivo desta primeira tarefa
+
+Crie a fundação real do sistema utilizando:
+
+* .NET 10;
+* C#;
+* ASP.NET Core;
+* Entity Framework Core;
+* PostgreSQL;
+* Npgsql;
+* DDD pragmático;
+* Clean Architecture;
+* Clean Code;
+* princípios SOLID;
+* testes automatizados;
+* frontend administrativo responsivo.
+
+Além da estrutura arquitetural, crie a primeira versão das entidades de domínio necessárias para atender às funcionalidades encontradas nos designs.
+
+A prioridade visual desta etapa é a **interface administrativa**.
+
+Não implemente ainda toda a interface do tablet do cliente, mas mantenha a arquitetura preparada para ela.
+
+Não solicite confirmação para decisões técnicas que possam ser tomadas com segurança. Documente as decisões e prossiga.
+
+---
+
+# 1. Análise obrigatória dos designs
+
+Antes de criar ou alterar qualquer arquivo:
+
+1. percorra todos os diretórios dentro de `C:\teste\designs`;
+2. leia todos os arquivos HTML, CSS, JavaScript, imagens e arquivos auxiliares;
+3. identifique todas as telas administrativas;
+4. identifique telas duplicadas ou versões atualizadas;
+5. dê preferência às telas marcadas como atualizadas, quando isso estiver claro;
+6. identifique:
+
+   * cores;
+   * fontes;
+   * espaçamentos;
+   * componentes;
+   * menus;
+   * tabelas;
+   * modais;
+   * formulários;
+   * cards;
+   * indicadores;
+   * estados visuais;
+   * mensagens;
+   * fluxos de navegação;
+7. identifique inconsistências entre as telas;
+8. não modifique os arquivos originais do Stitch;
+9. crie um inventário das telas em:
+
+```text
+docs/design-inventory.md
+```
+
+O inventário deve informar:
+
+* nome da tela;
+* caminho do arquivo;
+* finalidade;
+* componentes encontrados;
+* ações disponíveis;
+* entidades relacionadas;
+* observações e inconsistências.
+
+Antes de implementar, apresente no terminal ou na resposta um plano curto com as etapas que serão executadas.
+
+Depois do plano, continue automaticamente.
+
+---
+
+# 2. Arquitetura da solução
+
+Crie uma solução .NET 10 chamada:
+
+```text
+ProjetoPizza.sln
+```
+
+Utilize a seguinte organização:
+
+```text
+src/
+  ProjetoPizza.Domain/
+  ProjetoPizza.Application/
+  ProjetoPizza.Infrastructure/
+  ProjetoPizza.Api/
+  ProjetoPizza.Web/
+
+tests/
+  ProjetoPizza.Domain.Tests/
+  ProjetoPizza.Application.Tests/
+  ProjetoPizza.IntegrationTests/
+
+docs/
+  architecture.md
+  domain-model.md
+  database-model.md
+  design-inventory.md
+  development.md
+
+designs/
+```
+
+Caso os designs estejam fora da raiz atual, não os copie desnecessariamente. Documente o caminho utilizado.
+
+## Dependências permitidas
+
+As referências devem respeitar estas regras:
+
+```text
+Domain
+  não depende de nenhum outro projeto da solução
+
+Application
+  depende somente de Domain
+
+Infrastructure
+  depende de Application e Domain
+
+Api
+  depende de Application e Infrastructure
+
+Web
+  consome a API e não acessa Infrastructure ou banco diretamente
+```
+
+Não crie dependências circulares.
+
+---
+
+# 3. Estilo arquitetural
+
+Utilize um **monólito modular**.
+
+Não utilize microsserviços.
+
+Organize o domínio inicialmente nos seguintes módulos:
+
+```text
+Core
+Identity
+Catalog
+Inventory
+Dining
+Ordering
+Production
+Billing
+Cashier
+Devices
+Notifications
+Audit
+```
+
+Os módulos continuam na mesma aplicação e no mesmo banco PostgreSQL.
+
+Não crie um projeto separado para cada módulo nesta primeira versão. Organize os módulos por namespaces e diretórios dentro de cada camada.
+
+Exemplo:
+
+```text
+ProjetoPizza.Domain/
+  SharedKernel/
+  Core/
+  Catalog/
+  Dining/
+  Ordering/
+  Production/
+  Billing/
+  Cashier/
+  Devices/
+  Inventory/
+```
+
+---
+
+# 4. Banco de dados
+
+Utilize PostgreSQL como banco principal.
+
+Configure:
+
+```text
+Entity Framework Core
+Npgsql.EntityFrameworkCore.PostgreSQL
+```
+
+Crie inicialmente um único:
+
+```text
+ProjetoPizzaDbContext
+```
+
+Organize as tabelas por schemas PostgreSQL:
+
+```text
+core
+identity
+catalog
+inventory
+dining
+ordering
+production
+billing
+cashier
+devices
+notifications
+audit
+```
+
+Não crie múltiplos `DbContext` nesta primeira etapa.
+
+## Convenções do banco
+
+Utilize:
+
+```text
+UUID para identificadores técnicos
+numeric(18,2) para valores monetários
+timestamp with time zone para datas
+snake_case para tabelas e colunas
+```
+
+No código C#:
+
+```text
+Guid ou IDs fortemente tipados
+decimal para dinheiro
+DateTimeOffset para datas
+```
+
+Armazene datas em UTC.
+
+Não utilize `double` ou `float` para valores monetários.
+
+Não utilize Data Annotations de persistência nas entidades do domínio.
+
+Configure o EF Core usando classes que implementem:
+
+```csharp
+IEntityTypeConfiguration<TEntity>
+```
+
+Não coloque senha ou credencial no repositório.
+
+Crie:
+
+```text
+appsettings.json
+appsettings.Development.json
+.env.example
+compose.yaml
+```
+
+O `compose.yaml` deve subir apenas o PostgreSQL, com:
+
+* volume persistente;
+* health check;
+* usuário e senha configuráveis;
+* porta configurável;
+* banco `projeto_pizza`.
+
+---
+
+# 5. Regras para o Domain
+
+O projeto `ProjetoPizza.Domain` não pode depender de:
+
+* Entity Framework Core;
+* ASP.NET Core;
+* banco de dados;
+* JSON;
+* controllers;
+* bibliotecas de frontend;
+* Infrastructure;
+* Application.
+
+As entidades devem:
+
+* possuir construtores controlados;
+* preservar suas invariantes;
+* evitar setters públicos;
+* disponibilizar métodos com intenção de negócio;
+* possuir nomes em inglês;
+* utilizar tipos fortes;
+* impedir estados inválidos.
+
+Não crie entidades puramente anêmicas quando houver comportamento claro.
+
+Não crie abstrações somente para afirmar que está utilizando DDD ou SOLID.
+
+---
+
+# 6. Shared Kernel
+
+Crie os componentes mínimos necessários:
+
+```text
+Entity<TId>
+AggregateRoot<TId>
+DomainException
+BusinessRuleException
+Money
+Percentage
+```
+
+Crie IDs fortemente tipados usando `readonly record struct` ou estratégia equivalente.
+
+Exemplos:
+
+```text
+RestaurantUnitId
+ProductId
+PizzaFlavorId
+PizzaSizeId
+RestaurantTableId
+TableSessionId
+OrderId
+OrderItemId
+PaymentId
+CashShiftId
+DeviceId
+EmployeeId
+```
+
+Não crie uma hierarquia excessivamente genérica.
+
+## Money
+
+Crie um Value Object `Money`.
+
+Regras:
+
+* utilizar `decimal`;
+* inicialmente trabalhar somente com BRL;
+* impedir valores inválidos;
+* possuir operações de soma e subtração;
+* permitir multiplicação por quantidade;
+* utilizar arredondamento monetário apropriado;
+* impedir operações entre moedas diferentes;
+* não aceitar `NaN`, infinito ou conceitos equivalentes;
+* não utilizar `double`.
+
+---
+
+# 7. Entidades iniciais
+
+Crie as entidades abaixo com suas principais propriedades, relacionamentos e invariantes.
+
+Não crie apenas classes vazias. Implemente comportamentos básicos coerentes.
+
+## Core
+
+### `RestaurantUnit`
+
+Representa uma unidade da pizzaria.
+
+Propriedades principais:
+
+```text
+Id
+Name
+LegalName
+TradeName
+Cnpj
+Phone
+AdministrativeEmail
+Timezone
+CurrencyCode
+IsActive
+CreatedAt
+UpdatedAt
+```
+
+Comportamentos:
+
+```text
+Activate
+Deactivate
+UpdateContactInformation
+UpdateIdentification
+```
+
+### `OperationSettings`
+
+Propriedades:
+
+```text
+UnitId
+AllowTableWithoutWaiter
+AllowOrdersWithoutOpenCashShift
+ClearTabletAfterTableClose
+ServiceFeePercentage
+DefaultDeliveryFee
+DeliveryOrderSoundEnabled
+TableCallSoundEnabled
+TableCallToleranceMinutes
+```
+
+### `PizzaSettings`
+
+Propriedades:
+
+```text
+UnitId
+GlobalMaxFlavors
+PricingPolicy
+AllowSweetAndSavoryMix
+AllowExtrasPerFlavor
+AllowRepeatedFlavors
+```
+
+O máximo global inicial de sabores deve ser `3`.
+
+Políticas previstas:
+
+```text
+HighestFlavorPrice
+AverageFlavorPrice
+ProportionalFlavorPrice
+```
+
+Não implemente uma política definitiva sem isolá-la em uma abstração de domínio.
+
+---
+
+## Identity
+
+### `Employee`
+
+Propriedades:
+
+```text
+Id
+UnitId
+IdentityUserId
+Name
+DisplayName
+Email
+Phone
+EmployeeCode
+IsActive
+LastAccessAt
+CreatedAt
+UpdatedAt
+```
+
+Comportamentos:
+
+```text
+Activate
+Deactivate
+UpdateProfile
+RegisterAccess
+```
+
+Prepare a Infrastructure para ASP.NET Core Identity.
+
+Não faça o domínio depender diretamente das classes do Identity.
+
+---
+
+## Catalog
+
+### `Category`
+
+```text
+Id
+UnitId
+ParentCategoryId
+Name
+Description
+Slug
+Icon
+DisplayOrder
+IsVisibleOnTablet
+IsActive
+```
+
+### `Product`
+
+```text
+Id
+UnitId
+CategoryId
+Sku
+Name
+Description
+ProductType
+BasePrice
+IsActive
+IsAvailable
+IsFeatured
+IsPopular
+PreparationTimeMinutes
+DisplayOrder
+CreatedAt
+UpdatedAt
+```
+
+Tipos previstos:
+
+```text
+Standard
+Pizza
+PizzaFlavor
+Beverage
+Portion
+Dessert
+Combo
+Additional
+```
+
+Comportamentos:
+
+```text
+Activate
+Deactivate
+MakeAvailable
+MakeUnavailable
+ChangePrice
+ChangeCategory
+UpdateInformation
+MarkAsFeatured
+RemoveFromFeatured
+```
+
+### `ProductVariant`
+
+```text
+Id
+ProductId
+Name
+Sku
+Price
+IsDefault
+IsActive
+IsAvailable
+DisplayOrder
+```
+
+### `ProductImage`
+
+```text
+Id
+ProductId
+Url
+AltText
+DisplayOrder
+IsPrimary
+```
+
+### `PizzaSize`
+
+```text
+Id
+UnitId
+Name
+ShortName
+Slices
+DiameterCm
+BasePrice
+MaxFlavors
+DisplayOrder
+IsActive
+```
+
+Invariantes:
+
+* quantidade de fatias maior que zero;
+* preço não negativo;
+* máximo de sabores entre 1 e 3;
+* nome obrigatório.
+
+Cadastre inicialmente por seed:
+
+```text
+Broto
+Média
+Grande
+Família
+```
+
+Não utilize enum para os tamanhos.
+
+### `PizzaFlavor`
+
+```text
+Id
+UnitId
+CategoryId
+Name
+Description
+FlavorType
+IsPremium
+IsVegetarian
+IsActive
+IsAvailable
+SoldOutReason
+ImageUrl
+DisplayOrder
+```
+
+Tipos:
+
+```text
+Savory
+Sweet
+```
+
+### `PizzaFlavorPrice`
+
+```text
+Id
+PizzaFlavorId
+PizzaSizeId
+Price
+AdditionalPrice
+IsAvailable
+```
+
+A combinação sabor e tamanho deve ser única.
+
+### `PizzaCrust`
+
+```text
+Id
+UnitId
+Name
+Description
+IsActive
+IsAvailable
+DisplayOrder
+```
+
+### `PizzaCrustPrice`
+
+```text
+Id
+PizzaCrustId
+PizzaSizeId
+AdditionalPrice
+```
+
+### `Ingredient`
+
+```text
+Id
+UnitId
+Name
+Description
+InventoryItemId
+IsActive
+IsAllergen
+AllergenDescription
+```
+
+### `PizzaFlavorIngredient`
+
+```text
+PizzaFlavorId
+IngredientId
+Quantity
+UnitOfMeasure
+IsRemovable
+IsDefault
+DisplayOrder
+```
+
+---
+
+## Inventory
+
+### `InventoryItem`
+
+```text
+Id
+UnitId
+Name
+Sku
+UnitOfMeasure
+MinimumStock
+IsActive
+```
+
+### `StockBalance`
+
+```text
+Id
+InventoryItemId
+CurrentQuantity
+ReservedQuantity
+UpdatedAt
+```
+
+### `StockMovement`
+
+```text
+Id
+InventoryItemId
+MovementType
+Quantity
+UnitCost
+Reason
+OrderItemId
+CreatedByEmployeeId
+CreatedAt
+```
+
+Tipos:
+
+```text
+Entry
+Consumption
+Adjustment
+Loss
+Return
+Reservation
+ReservationRelease
+```
+
+### `Recipe`
+
+```text
+Id
+ProductId
+ProductVariantId
+PizzaFlavorId
+PizzaSizeId
+YieldQuantity
+```
+
+### `RecipeItem`
+
+```text
+Id
+RecipeId
+InventoryItemId
+Quantity
+UnitOfMeasure
+```
+
+---
+
+## Dining
+
+### `DiningArea`
+
+```text
+Id
+UnitId
+Name
+Description
+DisplayOrder
+IsActive
+```
+
+### `RestaurantTable`
+
+```text
+Id
+UnitId
+DiningAreaId
+Number
+Name
+Capacity
+DisplayOrder
+IsActive
+CreatedAt
+UpdatedAt
+```
+
+Invariantes:
+
+* número maior que zero;
+* capacidade maior que zero;
+* número único por unidade;
+* mesa inativa não pode iniciar atendimento.
+
+Comportamentos:
+
+```text
+Activate
+Deactivate
+ChangeCapacity
+Rename
+```
+
+Não salve diretamente na mesa:
+
+```text
+CurrentOrderId
+CurrentTotal
+OpenedAt
+WaiterName
+```
+
+Esses dados pertencem ao atendimento.
+
+### `TableSession`
+
+Representa a comanda ou atendimento aberto.
+
+```text
+Id
+UnitId
+SessionNumber
+Status
+GuestCount
+PrimaryWaiterId
+ServiceFeePercentageSnapshot
+OpenedAt
+OpenedByEmployeeId
+BillRequestedAt
+ClosedAt
+ClosedByEmployeeId
+Notes
+```
+
+Status:
+
+```text
+Open
+BillRequested
+PaymentPending
+Closed
+Cancelled
+```
+
+Comportamentos:
+
+```text
+Open
+AssignWaiter
+ChangeGuestCount
+RequestBill
+MarkPaymentPending
+Close
+Cancel
+```
+
+Invariantes:
+
+* sessão precisa possuir pelo menos uma mesa;
+* quantidade de clientes maior que zero;
+* sessão fechada não pode receber novos pedidos;
+* uma mesa não pode participar de duas sessões abertas ao mesmo tempo.
+
+### `TableSessionTable`
+
+Permite juntar mesas.
+
+```text
+TableSessionId
+RestaurantTableId
+IsPrimary
+LinkedAt
+UnlinkedAt
+LinkedByEmployeeId
+```
+
+### `WaiterAssignment`
+
+```text
+Id
+TableSessionId
+EmployeeId
+AssignedAt
+UnassignedAt
+AssignedByEmployeeId
+```
+
+### `ServiceCallType`
+
+Tipos iniciais:
+
+```text
+CallWaiter
+RequestCutlery
+RequestNapkins
+RequestCleaning
+ReportOrderProblem
+AskQuestion
+RequestBill
+```
+
+### `ServiceCall`
+
+```text
+Id
+UnitId
+TableSessionId
+ServiceCallTypeId
+RequestedByDeviceId
+Details
+Status
+AssignedEmployeeId
+CreatedAt
+AcknowledgedAt
+CompletedAt
+CancelledAt
+```
+
+Status:
+
+```text
+Pending
+Acknowledged
+InProgress
+Completed
+Cancelled
+```
+
+---
+
+## Ordering
+
+### `Order`
+
+```text
+Id
+UnitId
+OrderNumber
+TableSessionId
+CustomerId
+SalesChannel
+FulfillmentType
+Status
+PaymentStatus
+Subtotal
+ServiceFee
+DeliveryFee
+Discount
+Total
+Notes
+PlacedAt
+CreatedByEmployeeId
+CreatedByDeviceId
+CancelledAt
+CancellationReason
+CreatedAt
+UpdatedAt
+```
+
+Status:
+
+```text
+Draft
+Submitted
+Accepted
+InProduction
+Ready
+Completed
+Cancelled
+```
+
+Canais:
+
+```text
+DineIn
+Delivery
+Pickup
+Website
+Application
+Administrative
+```
+
+Comportamentos:
+
+```text
+AddItem
+RemoveItem
+Submit
+Accept
+StartProduction
+MarkReady
+Complete
+Cancel
+RecalculateTotals
+```
+
+### `OrderItem`
+
+```text
+Id
+OrderId
+ProductId
+ProductVariantId
+ProductNameSnapshot
+VariantNameSnapshot
+Quantity
+UnitPrice
+TotalPrice
+Status
+Notes
+ProductionStationId
+SentToProductionAt
+StartedAt
+ReadyAt
+DeliveredAt
+CancelledAt
+CancellationReason
+```
+
+Invariantes:
+
+* quantidade maior que zero;
+* preço não negativo;
+* item cancelado não pode avançar para produção;
+* snapshot de nome e preço obrigatório.
+
+### `OrderItemPizza`
+
+```text
+OrderItemId
+PizzaSizeId
+SizeNameSnapshot
+SliceCountSnapshot
+PizzaCrustId
+CrustNameSnapshot
+FlavorCount
+PricingPolicySnapshot
+BasePrice
+CrustPrice
+ExtrasPrice
+```
+
+### `OrderItemPizzaFlavor`
+
+```text
+Id
+OrderItemId
+PizzaFlavorId
+FlavorNameSnapshot
+PartNumber
+TotalParts
+CalculatedPrice
+```
+
+Invariantes:
+
+* mínimo de um sabor;
+* máximo de três sabores;
+* sabores não podem ser repetidos quando a configuração não permitir;
+* `FlavorCount` precisa corresponder à quantidade de sabores;
+* partes devem ser válidas;
+* composição deve respeitar o limite do tamanho selecionado.
+
+Não utilize:
+
+```text
+Flavor1Id
+Flavor2Id
+Flavor3Id
+```
+
+### `OrderItemModifier`
+
+```text
+Id
+OrderItemId
+PizzaFlavorId
+ModifierType
+IngredientId
+OptionId
+NameSnapshot
+Quantity
+UnitPrice
+TotalPrice
+```
+
+Tipos:
+
+```text
+Add
+Remove
+Extra
+```
+
+---
+
+## Production
+
+### `ProductionStation`
+
+Estações iniciais:
+
+```text
+Pizzaria
+Cozinha Quente
+Bar
+```
+
+Propriedades:
+
+```text
+Id
+UnitId
+Name
+Code
+TargetPreparationMinutes
+DisplayOrder
+IsActive
+```
+
+### `KitchenTicket`
+
+```text
+Id
+UnitId
+OrderId
+ProductionStationId
+TicketNumber
+Status
+CreatedAt
+ConfirmedAt
+StartedAt
+ReadyAt
+DispatchedAt
+```
+
+Status:
+
+```text
+New
+Confirmed
+Preparing
+Ready
+Dispatched
+Cancelled
+```
+
+### `KitchenTicketItem`
+
+```text
+Id
+KitchenTicketId
+OrderItemId
+Quantity
+Status
+```
+
+---
+
+## Billing
+
+### `Bill`
+
+```text
+Id
+UnitId
+TableSessionId
+Status
+Subtotal
+ServiceFeePercentage
+ServiceFeeAmount
+DiscountAmount
+TotalAmount
+PaidAmount
+RemainingAmount
+RequestedAt
+ConfirmedAt
+ClosedAt
+```
+
+Status:
+
+```text
+Open
+Requested
+PaymentInProgress
+Paid
+Cancelled
+```
+
+### `BillItem`
+
+```text
+Id
+BillId
+OrderItemId
+Quantity
+GrossAmount
+ServiceFeeAmount
+DiscountAmount
+NetAmount
+```
+
+### `BillSplit`
+
+```text
+Id
+BillId
+Name
+SplitNumber
+Status
+TotalAmount
+PaidAmount
+RemainingAmount
+CreatedAt
+```
+
+### `BillSplitItem`
+
+```text
+BillSplitId
+BillItemId
+Quantity
+AllocatedAmount
+```
+
+### `PaymentMethod`
+
+Cadastre inicialmente:
+
+```text
+Dinheiro
+Pix
+Cartão de Crédito
+Cartão de Débito
+Vale Refeição
+```
+
+Propriedades:
+
+```text
+Id
+UnitId
+Code
+Name
+RequiresExternalReference
+AllowsChange
+IsActive
+DisplayOrder
+```
+
+### `Payment`
+
+```text
+Id
+UnitId
+BillId
+BillSplitId
+CashShiftId
+PaymentMethodId
+Status
+Amount
+ReceivedAmount
+ChangeAmount
+ExternalReference
+AuthorizationCode
+PaidAt
+ReceivedByEmployeeId
+CancelledAt
+CancellationReason
+```
+
+Status:
+
+```text
+Pending
+Authorized
+Paid
+Failed
+Cancelled
+Refunded
+PartiallyRefunded
+```
+
+Invariantes:
+
+* pagamento deve ser maior que zero;
+* troco somente em métodos que o permitam;
+* valor recebido não pode ser inferior ao valor em pagamento em dinheiro;
+* pagamento cancelado não pode ser cancelado novamente;
+* pagamentos não devem ser excluídos fisicamente.
+
+---
+
+## Cashier
+
+### `CashRegister`
+
+```text
+Id
+UnitId
+Name
+Code
+IsActive
+```
+
+### `CashShift`
+
+```text
+Id
+CashRegisterId
+OperatorEmployeeId
+Status
+OpenedAt
+OpeningAmount
+ClosedAt
+ClosedByEmployeeId
+ExpectedCashAmount
+CountedCashAmount
+DifferenceAmount
+ClosingNotes
+```
+
+Status:
+
+```text
+Open
+Closing
+Closed
+Cancelled
+```
+
+### `CashMovement`
+
+```text
+Id
+CashShiftId
+MovementType
+PaymentId
+Amount
+Description
+Reason
+CreatedByEmployeeId
+AuthorizedByEmployeeId
+CreatedAt
+```
+
+Tipos:
+
+```text
+Opening
+Sale
+Supply
+Withdrawal
+Refund
+Adjustment
+Closing
+```
+
+---
+
+## Devices
+
+### `Device`
+
+```text
+Id
+UnitId
+Name
+SerialNumber
+DeviceType
+Platform
+AppVersion
+Status
+BatteryPercentage
+IsCharging
+NetworkStatus
+IpAddress
+LastSeenAt
+LinkedTableId
+IsLocked
+CreatedAt
+UpdatedAt
+```
+
+Status:
+
+```text
+Online
+Offline
+Idle
+Blocked
+Maintenance
+```
+
+### `DeviceSession`
+
+```text
+Id
+DeviceId
+TableSessionId
+StartedAt
+EndedAt
+SessionTokenHash
+EndedReason
+```
+
+---
+
+# 8. Persistência e EF Core
+
+Crie configurações individuais para todas as entidades implementadas.
+
+Exemplo:
+
+```text
+Infrastructure/
+  Persistence/
+    ProjetoPizzaDbContext.cs
+    Configurations/
+      Core/
+      Catalog/
+      Dining/
+      Ordering/
+      Production/
+      Billing/
+      Cashier/
+      Devices/
+      Inventory/
+```
+
+Configure corretamente:
+
+* nomes das tabelas;
+* schemas;
+* chaves;
+* índices;
+* foreign keys;
+* conversões de IDs fortemente tipados;
+* owned types ou conversões para `Money`;
+* precisão decimal;
+* tamanho máximo das strings;
+* comportamento de exclusão;
+* restrições únicas;
+* concorrência otimista.
+
+Crie índices para consultas frequentes, incluindo:
+
+```text
+restaurant_tables(unit_id, number)
+table_sessions(unit_id, status)
+orders(unit_id, status, placed_at)
+order_items(order_id, status)
+service_calls(unit_id, status, created_at)
+kitchen_tickets(production_station_id, status)
+payments(bill_id, status)
+cash_shifts(cash_register_id, status)
+devices(unit_id, status)
+products(unit_id, category_id, is_active)
+pizza_flavor_prices(pizza_flavor_id, pizza_size_id)
+```
+
+Não utilize cascade delete em registros transacionais importantes.
+
+Pedidos, pagamentos, caixas e auditoria nunca devem ser apagados automaticamente.
+
+Crie a migration inicial:
+
+```text
+InitialCreate
+```
+
+A migration deve corresponder somente às entidades realmente implementadas.
+
+---
+
+# 9. Application
+
+Organize a camada Application por módulo e caso de uso.
+
+Exemplo:
+
+```text
+Application/
+  Catalog/
+    Products/
+      CreateProduct/
+      UpdateProduct/
+      GetProduct/
+      ListProducts/
+  Dining/
+    Tables/
+    TableSessions/
+  Ordering/
+    Orders/
+  Production/
+    Kitchen/
+```
+
+Não organize tudo em pastas genéricas chamadas:
+
+```text
+Services
+Managers
+Helpers
+Utils
+```
+
+Não utilize MediatR nesta primeira etapa.
+
+Não utilize AutoMapper nesta primeira etapa.
+
+Não crie Repository genérico.
+
+Não crie Unit of Work manual sobre o EF Core.
+
+Crie uma abstração específica para o contexto, quando necessário:
+
+```csharp
+IProjetoPizzaDbContext
+```
+
+Implemente apenas os primeiros casos de uso necessários para alimentar a interface administrativa:
+
+* listar mesas com estado atual;
+* obter detalhes de uma mesa;
+* listar categorias;
+* listar produtos;
+* listar sabores;
+* listar tamanhos de pizza;
+* listar chamados pendentes;
+* listar pedidos da cozinha;
+* obter indicadores básicos do dashboard.
+
+---
+
+# 10. API
+
+Utilize ASP.NET Core com .NET 10.
+
+Crie:
+
+* tratamento global de exceções;
+* Problem Details;
+* OpenAPI;
+* health checks;
+* autenticação preparada;
+* autorização por policies;
+* versionamento simples de rotas;
+* logging estruturado usando as abstrações nativas do .NET;
+* configuração de CORS para desenvolvimento.
+
+Rotas iniciais:
+
+```text
+GET /api/v1/health
+GET /api/v1/system/info
+
+GET /api/v1/admin/dashboard
+GET /api/v1/admin/tables
+GET /api/v1/admin/tables/{id}
+GET /api/v1/admin/categories
+GET /api/v1/admin/products
+GET /api/v1/admin/pizza-sizes
+GET /api/v1/admin/pizza-flavors
+GET /api/v1/admin/service-calls
+GET /api/v1/admin/kitchen/tickets
+```
+
+Endpoints devem ser pequenos.
+
+Não coloque regras de domínio nos endpoints.
+
+---
+
+# 11. Frontend administrativo
+
+Como os arquivos do Stitch são HTMLs independentes e não formam uma aplicação integrada, crie em:
+
+```text
+src/ProjetoPizza.Web
+```
+
+uma aplicação utilizando:
+
+```text
+React
+TypeScript
+Vite
+Tailwind CSS
+```
+
+Utilize as versões estáveis disponíveis no ambiente.
+
+Não carregue Tailwind por CDN na aplicação final.
+
+Não copie todo o HTML de forma desorganizada.
+
+Transforme os designs em:
+
+* layout administrativo;
+* componentes reutilizáveis;
+* rotas;
+* páginas;
+* design tokens;
+* componentes de formulário;
+* tabelas;
+* cards;
+* modais;
+* status badges;
+* notificações;
+* menu lateral;
+* cabeçalho.
+
+Preserve visualmente:
+
+* cores;
+* tipografia;
+* ícones;
+* hierarquia;
+* espaçamentos;
+* bordas;
+* sombras;
+* estados;
+* responsividade.
+
+Crie inicialmente as rotas:
+
+```text
+/login
+/admin/dashboard
+/admin/tables
+/admin/tables/:id
+/admin/kitchen
+/admin/orders
+/admin/catalog
+/admin/catalog/products
+/admin/catalog/categories
+/admin/catalog/pizza-sizes
+/admin/catalog/pizza-flavors
+/admin/catalog/crusts
+/admin/cashier
+/admin/payments
+/admin/users
+/admin/roles
+/admin/devices
+/admin/audit
+/admin/settings
+```
+
+Implemente visualmente, nesta primeira tarefa:
+
+1. login;
+2. layout administrativo;
+3. dashboard;
+4. mapa de mesas;
+5. detalhes da mesa/comanda;
+6. cozinha;
+7. listagem de produtos;
+8. listagem de categorias;
+9. configurações de pizza.
+
+As demais rotas podem possuir páginas estruturadas com indicação clara de que ainda serão implementadas.
+
+Não use dados hardcoded diretamente nos componentes.
+
+Crie uma camada de acesso a dados:
+
+```text
+src/api
+src/services
+src/types
+```
+
+Quando o backend ainda não possuir dados suficientes, utilize mocks centralizados e tipados, com possibilidade de troca por chamadas HTTP.
+
+---
+
+# 12. Estado visual das mesas
+
+Não grave no banco um status visual manual contendo toda a situação da mesa.
+
+Calcule os estados a partir dos dados reais:
+
+```text
+Livre
+Ocupada
+Chamando
+Conta solicitada
+Pagamento pendente
+```
+
+Regras:
+
+```text
+Livre:
+não existe TableSession ativa
+
+Ocupada:
+existe TableSession ativa
+
+Chamando:
+existe ServiceCall pendente
+
+Conta solicitada:
+TableSession ou Bill está em estado Requested
+
+Pagamento pendente:
+Bill possui RemainingAmount maior que zero e pagamento iniciado
+```
+
+Caso seja necessário um campo cacheado para desempenho, documente que ele não é a fonte principal da verdade.
+
+---
+
+# 13. Seed inicial
+
+Crie um seed de desenvolvimento idempotente.
+
+Inclua:
+
+* uma unidade principal;
+* uma área chamada Salão Principal;
+* 32 mesas;
+* tamanhos Broto, Média, Grande e Família;
+* limite máximo de três sabores;
+* categorias encontradas nos designs;
+* alguns produtos;
+* sabores de pizza;
+* bordas;
+* ingredientes;
+* estações Pizzaria, Cozinha Quente e Bar;
+* métodos de pagamento;
+* tipos de chamada;
+* um caixa;
+* alguns dispositivos;
+* dados suficientes para exibir o dashboard e o mapa de mesas.
+
+Utilize valores de exemplo claramente identificados como dados de desenvolvimento.
+
+Não copie inconsistências de preços existentes nos designs.
+
+Centralize os valores no seed.
+
+---
+
+# 14. Testes
+
+Utilize:
+
+```text
+xUnit
+FluentAssertions
+```
+
+Crie testes de domínio para pelo menos:
+
+## Money
+
+* criar valor válido;
+* rejeitar valor inválido;
+* somar valores;
+* multiplicar por quantidade;
+* rejeitar moedas diferentes.
+
+## RestaurantTable
+
+* criar mesa válida;
+* rejeitar número inválido;
+* rejeitar capacidade inválida;
+* inativar mesa;
+* impedir abertura de atendimento em mesa inativa.
+
+## PizzaSize
+
+* aceitar limite entre um e três sabores;
+* rejeitar zero;
+* rejeitar mais de três sabores.
+
+## TableSession
+
+* abrir sessão válida;
+* impedir sessão sem mesa;
+* impedir pedido depois do fechamento;
+* solicitar conta;
+* fechar atendimento.
+
+## Order
+
+* adicionar item;
+* rejeitar quantidade inválida;
+* recalcular total;
+* cancelar pedido;
+* impedir alteração indevida após cancelamento.
+
+## Pizza
+
+* criar pizza com um sabor;
+* criar pizza com dois sabores;
+* criar pizza com três sabores;
+* rejeitar quatro sabores;
+* rejeitar sabores repetidos quando não permitido;
+* respeitar limite do tamanho.
+
+## Payment
+
+* registrar pagamento válido;
+* rejeitar valor zero;
+* calcular troco;
+* impedir troco em método não permitido.
+
+## CashShift
+
+* abrir caixa;
+* impedir dois fechamentos;
+* registrar movimentação;
+* calcular diferença de fechamento.
+
+Crie também testes de integração usando PostgreSQL.
+
+Não utilize SQLite para validar comportamento específico do PostgreSQL.
+
+Testes de integração podem utilizar Testcontainers, caso o ambiente permita. Se não permitir, documente claramente a limitação.
+
+---
+
+# 15. Documentação
+
+Crie:
+
+## `README.md`
+
+Inclua:
+
+* visão geral;
+* stack;
+* estrutura;
+* requisitos;
+* instalação;
+* execução do PostgreSQL;
+* migrations;
+* seed;
+* execução da API;
+* execução do frontend;
+* execução dos testes;
+* variáveis de ambiente.
+
+## `docs/architecture.md`
+
+Inclua:
+
+* Clean Architecture;
+* monólito modular;
+* dependências;
+* módulos;
+* integração frontend e backend;
+* diagrama Mermaid;
+* decisões tomadas;
+* riscos;
+* decisões pendentes.
+
+## `docs/domain-model.md`
+
+Inclua:
+
+* agregados;
+* entidades;
+* value objects;
+* invariantes;
+* regras das pizzas;
+* fluxo das mesas;
+* fluxo dos pedidos;
+* fluxo da cozinha;
+* fluxo dos pagamentos;
+* fluxo do caixa.
+
+## `docs/database-model.md`
+
+Inclua:
+
+* schemas;
+* tabelas;
+* chaves;
+* relacionamentos;
+* índices;
+* convenções;
+* estratégia de migrations;
+* diagrama Mermaid ER.
+
+## `docs/development.md`
+
+Inclua:
+
+* comandos;
+* convenções;
+* como criar migration;
+* como aplicar migration;
+* como executar seed;
+* como criar um novo caso de uso;
+* como adicionar uma nova entidade;
+* regras para dependências externas.
+
+## `AGENTS.md`
+
+Crie um arquivo curto na raiz contendo:
+
+* arquitetura;
+* comandos de build e testes;
+* regras de dependência;
+* convenções;
+* obrigação de analisar os designs;
+* proibição de alterar arquivos originais do Stitch;
+* obrigação de atualizar documentação;
+* obrigação de executar validações antes de concluir;
+* proibição de implementar funcionalidades fora do escopo solicitado.
+
+---
+
+# 16. Regras de qualidade
+
+Siga obrigatoriamente:
+
+* nullable reference types habilitado;
+* implicit usings habilitado;
+* warnings relevantes tratados;
+* nomes em inglês no código;
+* documentação em português;
+* métodos pequenos;
+* classes coesas;
+* dependências explícitas;
+* sem código morto;
+* sem comentários redundantes;
+* sem regiões artificiais;
+* sem classes `Helper` genéricas;
+* sem Repository genérico;
+* sem Unit of Work redundante;
+* sem AutoMapper;
+* sem MediatR;
+* sem service locator;
+* sem microsserviços;
+* sem lógica de negócio no frontend;
+* sem lógica de negócio nos endpoints;
+* sem dependência de Infrastructure no Domain;
+* sem setters públicos indiscriminados;
+* sem criação de interfaces sem necessidade concreta.
+
+Aplique DDD, Clean Architecture, Clean Code e SOLID de maneira pragmática.
+
+Não confunda qualidade arquitetural com quantidade de projetos, interfaces ou padrões.
+
+---
+
+# 17. Validação obrigatória
+
+Antes de finalizar, execute:
+
+```text
+dotnet --info
+dotnet restore
+dotnet build
+dotnet test
+```
+
+Para o frontend:
+
+```text
+npm install
+npm run lint
+npm run build
+```
+
+Para o banco:
+
+* valide o `compose.yaml`;
+* suba o PostgreSQL, caso o ambiente permita;
+* aplique a migration;
+* execute o seed;
+* valide a conexão;
+* execute os testes de integração.
+
+Verifique também:
+
+* referências entre projetos;
+* dependências circulares;
+* credenciais expostas;
+* arquivos desnecessários;
+* warnings;
+* erros de TypeScript;
+* erros de lint;
+* consistência da documentação.
+
+Não afirme que um comando funcionou sem realmente executá-lo.
+
+Caso algum comando não possa ser executado, informe:
+
+* qual comando;
+* motivo;
+* impacto;
+* como executar manualmente.
+
+---
+
+# 18. Critérios de aceite
+
+A tarefa estará concluída quando:
+
+1. todos os designs tiverem sido analisados;
+2. `docs/design-inventory.md` estiver criado;
+3. a solução estiver em .NET 10;
+4. a arquitetura estiver respeitada;
+5. os projetos estiverem compilando;
+6. as entidades iniciais estiverem implementadas;
+7. as invariantes principais estiverem testadas;
+8. o `DbContext` estiver configurado;
+9. a migration inicial estiver criada;
+10. o PostgreSQL estiver configurado;
+11. o seed de desenvolvimento estiver criado;
+12. a API estiver executando;
+13. o OpenAPI estiver disponível;
+14. o health check estiver funcionando;
+15. o frontend administrativo estiver estruturado;
+16. as telas administrativas prioritárias estiverem implementadas;
+17. o frontend estiver compilando;
+18. os testes estiverem passando;
+19. o README estiver completo;
+20. o `AGENTS.md` estiver criado;
+21. nenhum segredo real estiver no repositório.
+
+---
+
+# 19. Resposta final
+
+Ao concluir, apresente:
+
+1. resumo da análise dos designs;
+2. telas encontradas;
+3. inconsistências encontradas;
+4. arquitetura criada;
+5. módulos criados;
+6. entidades implementadas;
+7. invariantes implementadas;
+8. estrutura resumida dos arquivos;
+9. tabelas e schemas criados;
+10. migration criada;
+11. seed criado;
+12. páginas administrativas implementadas;
+13. dependências adicionadas e justificativas;
+14. comandos executados;
+15. resultado do build;
+16. resultado dos testes;
+17. resultado do frontend;
+18. limitações encontradas;
+19. decisões pendentes;
+20. recomendação objetiva para a próxima tarefa.
+
+Comece agora pela análise completa de `C:\teste\designs`.
+
+Apresente um plano curto e depois execute a implementação sem solicitar nova confirmação, exceto em caso de bloqueio técnico real.

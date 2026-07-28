@@ -1,0 +1,539 @@
+<!DOCTYPE html><html class="light" lang="pt-BR"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Pizzaria Forno 27 - Visão Geral</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Setup -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#ffdbd0",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed": "#3a0a00",
+                    "tertiary-fixed-dim": "#85cfff",
+                    "error-container": "#ffdad6",
+                    "background": "#f8f9ff",
+                    "on-secondary-container": "#631800",
+                    "surface-variant": "#dde3ee",
+                    "surface-dim": "#d5dae5",
+                    "secondary-container": "#ff6e40",
+                    "on-error": "#ffffff",
+                    "surface-container": "#e9eef9",
+                    "surface-container-highest": "#dde3ee",
+                    "outline": "#8d7168",
+                    "on-secondary-fixed-variant": "#852400",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#eef4ff",
+                    "on-primary-fixed": "#390c00",
+                    "tertiary": "#00628b",
+                    "surface-bright": "#f8f9ff",
+                    "on-primary-fixed-variant": "#832600",
+                    "inverse-surface": "#2b3139",
+                    "tertiary-container": "#007cae",
+                    "surface-container-high": "#e3e8f3",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed": "#001e2e",
+                    "on-tertiary-fixed-variant": "#004c6c",
+                    "inverse-primary": "#ffb59d",
+                    "on-primary": "#ffffff",
+                    "surface-tint": "#ac3500",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#cc4916",
+                    "on-background": "#161c24",
+                    "on-surface": "#161c24",
+                    "on-tertiary-container": "#fcfcff",
+                    "primary": "#a83300",
+                    "outline-variant": "#e1bfb5",
+                    "primary-fixed": "#ffdbd0",
+                    "on-primary-container": "#fffbff",
+                    "tertiary-fixed": "#c7e7ff",
+                    "on-surface-variant": "#59413a",
+                    "secondary-fixed-dim": "#ffb59f",
+                    "primary-fixed-dim": "#ffb59d",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary": "#ad3305",
+                    "inverse-on-surface": "#ebf1fc",
+                    "surface": "#f8f9ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-margin": "32px",
+                    "card-padding": "20px",
+                    "topbar-height": "64px",
+                    "gutter": "24px",
+                    "sidebar-width": "260px",
+                    "stack-gap": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "display-financial": ["Inter"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "30px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg": ["28px", {"lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["22px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "display-financial": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+            }
+          }
+        }
+      }
+    </script>
+<style type="text/tailwindcss">
+        @layer utilities {
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md overflow-hidden flex">
+<!-- Shared Component: SideNavBar -->
+<nav class="bg-inverse-surface fixed left-0 top-0 h-full w-[260px] flex flex-col py-6 z-20"><!-- Brand / Header -->
+<div class="px-6 mb-8 flex flex-col gap-1">
+  <h1 class="font-headline-md text-headline-md font-bold text-on-primary-fixed">Forno 27</h1>
+  <span class="font-label-md text-label-md text-surface-variant opacity-80">Unidade Principal</span>
+</div>
+<!-- CTA -->
+<div class="px-4 mb-6">
+  <button class="w-full bg-primary text-on-primary rounded-lg py-2.5 font-label-md text-label-md font-bold hover:opacity-90 transition-opacity flex justify-center items-center gap-2">
+    <span class="material-symbols-outlined text-sm">add</span>
+    Novo Pedido
+  </button>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto scrollbar-hide flex flex-col gap-1">
+  <a class="flex items-center gap-3 px-4 py-3 text-on-primary bg-primary-container border-l-4 border-primary transition-transform duration-150 scale-[0.99]" href="#">
+    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+    <span class="font-label-md text-label-md">Visão Geral</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">restaurant</span>
+    <span class="font-label-md text-label-md">Mesas</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">receipt_long</span>
+    <span class="font-label-md text-label-md">Comandas</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">shopping_cart</span>
+    <span class="font-label-md text-label-md">Pedidos</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">oven_gen</span>
+    <span class="font-label-md text-label-md">Cozinha</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">notifications_active</span>
+    <span class="font-label-md text-label-md">Chamados</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">payments</span>
+    <span class="font-label-md text-label-md">Caixa</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">credit_card</span>
+    <span class="font-label-md text-label-md">Pagamentos</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">account_balance_wallet</span>
+    <span class="font-label-md text-label-md">Fechamentos</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">menu_book</span>
+    <span class="font-label-md text-label-md">Cardápio</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">analytics</span>
+    <span class="font-label-md text-label-md">Relatórios</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">tablet_android</span>
+    <span class="font-label-md text-label-md">Tablets</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">group</span>
+    <span class="font-label-md text-label-md">Usuários</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">security</span>
+    <span class="font-label-md text-label-md">Auditoria</span>
+  </a>
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+    <span class="material-symbols-outlined">settings</span>
+    <span class="font-label-md text-label-md">Configurações</span>
+  </a>
+</div>
+<!-- Footer -->
+<div class="mt-auto px-2 pt-4">
+  <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+    <span class="material-symbols-outlined">logout</span>
+    <span class="font-label-md text-label-md">Sair</span>
+  </a>
+</div></nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 ml-[260px] flex flex-col h-screen relative">
+<!-- Shared Component: TopNavBar -->
+<header class="bg-surface docked full-width top-0 h-[64px] border-b border-outline-variant shadow-sm flex justify-between items-center px-gutter z-10 shrink-0 sticky">
+<!-- Left: Navigation Context -->
+<div class="flex items-center gap-6">
+<div class="flex gap-4">
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-label-md text-label-md" href="#">Visão Geral</a>
+<a class="text-on-surface-variant font-medium hover:text-primary hover:bg-surface-container-low transition-all px-2 py-1 rounded font-label-md text-label-md" href="#">Mesas</a>
+</div>
+</div>
+<!-- Middle: Search (Optional based on JSON 'search_bar': 'on_left' but fits better center/right in operational) -->
+<div class="flex-1 max-w-md mx-8">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-50">search</span>
+<input class="w-full bg-surface-container-lowest border border-surface-dim rounded-lg pl-10 pr-4 py-1.5 font-body-md text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" placeholder="Buscar pedido, mesa ou item (CMD+K)" type="text">
+</div>
+</div>
+<!-- Right: Actions -->
+<div class="flex items-center gap-3 text-on-surface-variant">
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors relative hover:text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined">schedule</span>
+</button>
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors relative hover:text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border border-surface"></span>
+</button>
+</div>
+</header>
+<!-- Scrollable Canvas -->
+<main class="flex-1 overflow-y-auto p-section-margin pb-20">
+<div class="max-w-[1440px] mx-auto flex flex-col gap-section-margin">
+<!-- Page Header -->
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-background mb-1">Visão Geral</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Terça-feira, 24 de Outubro de 2023</p>
+</div>
+<div class="flex gap-3">
+<select class="bg-surface-container-lowest border border-surface-dim rounded-lg px-3 py-2 font-label-md text-label-md focus:border-primary focus:ring-primary text-on-surface">
+<option>Hoje (Turno Atual)</option>
+<option>Ontem</option>
+<option>Esta Semana</option>
+</select>
+<button class="bg-surface-container-lowest border border-surface-dim text-on-surface hover:border-primary hover:text-primary px-3 py-2 rounded-lg flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[20px]">refresh</span>
+</button>
+</div>
+</div>
+<!-- Section 1: KPI Row -->
+<div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-stack-gap">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-card-padding shadow-sm flex flex-col gap-2 relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">payments</span> Vendas do dia
+                        </span>
+<div class="font-display-financial text-display-financial text-on-background">R$ 4.580</div>
+<span class="font-label-md text-label-md text-primary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +12% vs ontem
+                        </span>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-card-padding shadow-sm flex flex-col gap-2 relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">shopping_cart</span> Pedidos
+                        </span>
+<div class="font-display-financial text-display-financial text-on-background">87</div>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-1">
+                            45 salão, 42 delivery
+                        </span>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-card-padding shadow-sm flex flex-col gap-2 relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span> Ticket médio
+                        </span>
+<div class="font-display-financial text-display-financial text-on-background">R$ 52,65</div>
+<span class="font-label-md text-label-md text-primary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +R$ 2,10
+                        </span>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-card-padding shadow-sm flex flex-col gap-2 relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">deck</span> Mesas ocupadas
+                        </span>
+<div class="font-display-financial text-display-financial text-on-background">14<span class="text-xl text-surface-dim">/22</span></div>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-1">
+                            63% de ocupação
+                        </span>
+</div>
+<!-- KPI 5 -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-card-padding shadow-sm flex flex-col gap-2 relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">oven_gen</span> Em preparo
+                        </span>
+<div class="font-display-financial text-display-financial text-on-background">6</div>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-1">
+                            Tempo médio: 18m
+                        </span>
+</div>
+<!-- KPI 6 -->
+<div class="bg-surface-container-lowest border border-surface-dim border-l-4 border-l-error rounded-xl p-card-padding shadow-sm flex flex-col gap-2">
+<span class="font-label-md text-label-md text-error flex items-center gap-2 font-bold">
+<span class="material-symbols-outlined text-[18px]">notifications_active</span> Chamados pendentes
+                        </span>
+<div class="font-display-financial text-display-financial text-on-background">3</div>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-1">
+                            Ação imediata necessária
+                        </span>
+</div>
+</div>
+<!-- Grid Layout for Main Content -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-stack-gap">
+<!-- Left Column (Status & Alerts) -->
+<div class="flex flex-col gap-stack-gap">
+<!-- Section 2: Table Status -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-card-padding shadow-sm flex flex-col gap-4">
+<div class="flex justify-between items-center">
+<h3 class="font-headline-md text-[18px] font-semibold text-on-background">Status das Mesas</h3>
+<a class="text-primary font-label-md text-label-md hover:underline" href="#">Ver mapa</a>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-surface flex items-center gap-3 p-3 rounded-lg border border-surface-dim">
+<div class="w-3 h-3 rounded-full bg-surface-dim"></div>
+<div class="flex flex-col">
+<span class="font-headline-md text-[16px] font-bold">8</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Livres</span>
+</div>
+</div>
+<div class="bg-primary-container/10 flex items-center gap-3 p-3 rounded-lg border border-primary-container/20">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<div class="flex flex-col">
+<span class="font-headline-md text-[16px] font-bold text-primary">10</span>
+<span class="font-label-md text-label-md text-primary">Ocupadas</span>
+</div>
+</div>
+<div class="bg-error-container/20 flex items-center gap-3 p-3 rounded-lg border border-error/20">
+<div class="w-3 h-3 rounded-full bg-error"></div>
+<div class="flex flex-col">
+<span class="font-headline-md text-[16px] font-bold text-error">2</span>
+<span class="font-label-md text-label-md text-error">Chamando</span>
+</div>
+</div>
+<div class="bg-tertiary-container/10 flex items-center gap-3 p-3 rounded-lg border border-tertiary-container/20">
+<div class="w-3 h-3 rounded-full bg-tertiary"></div>
+<div class="flex flex-col">
+<span class="font-headline-md text-[16px] font-bold text-tertiary">2</span>
+<span class="font-label-md text-label-md text-tertiary">Aguardando Pag.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 4: Operational Alerts -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-card-padding shadow-sm flex flex-col gap-4 flex-1">
+<h3 class="font-headline-md text-[18px] font-semibold text-on-background flex items-center gap-2">
+<span class="material-symbols-outlined text-error">warning</span>
+                                Alertas Operacionais
+                            </h3>
+<div class="flex flex-col gap-2">
+<!-- Alert Item -->
+<div class="bg-error-container/30 border-l-2 border-error p-3 rounded-r-lg flex gap-3 items-start">
+<span class="material-symbols-outlined text-error text-[20px] mt-0.5">room_service</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-background">Mesa 12 solicitou serviço</span>
+<span class="font-label-md text-[11px] text-on-surface-variant">Há 2 minutos - Garçom Carlos notificado</span>
+</div>
+</div>
+<!-- Alert Item -->
+<div class="bg-primary-container/10 border-l-2 border-primary p-3 rounded-r-lg flex gap-3 items-start">
+<span class="material-symbols-outlined text-primary text-[20px] mt-0.5">timer</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-background">Pedido #1045 em atraso</span>
+<span class="font-label-md text-[11px] text-on-surface-variant">Tempo na cozinha: 35m (Meta: 25m)</span>
+</div>
+</div>
+<!-- Alert Item -->
+<div class="bg-surface border-l-2 border-surface-dim p-3 rounded-r-lg flex gap-3 items-start">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px] mt-0.5">inventory_2</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold text-on-background">Estoque baixo: Muçarela</span>
+<span class="font-label-md text-[11px] text-on-surface-variant">Restam aprox. 5kg (suficiente para 2h)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column (Orders & Charts) - Spans 2 columns -->
+<div class="xl:col-span-2 flex flex-col gap-stack-gap">
+<!-- Section 3: Pedidos em Andamento -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl shadow-sm flex flex-col flex-1 overflow-hidden">
+<div class="p-card-padding border-b border-surface-dim flex justify-between items-center bg-surface-bright">
+<h3 class="font-headline-md text-[18px] font-semibold text-on-background">Pedidos em Andamento</h3>
+<button class="text-primary font-label-md text-label-md font-bold flex items-center gap-1 hover:bg-surface-container-low px-2 py-1 rounded transition-colors">
+                                    Ver todos <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-surface-dim bg-surface-container-low/50">
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant font-semibold">Pedido</th>
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant font-semibold">Origem</th>
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant font-semibold">Tempo</th>
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant font-semibold">Status</th>
+<th class="py-3 px-4 font-label-md text-label-md text-on-surface-variant font-semibold text-right">Valor</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-dim font-body-md text-[13px]">
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="py-3 px-4 font-medium text-on-background">#1047</td>
+<td class="py-3 px-4">Mesa 04</td>
+<td class="py-3 px-4">12m</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface text-on-surface border border-surface-dim font-label-md text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Preparando
+                                                </span>
+</td>
+<td class="py-3 px-4 text-right font-medium">R$ 145,00</td>
+</tr>
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="py-3 px-4 font-medium text-on-background">#1048</td>
+<td class="py-3 px-4 flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-primary">moped</span> Delivery</td>
+<td class="py-3 px-4 text-error font-medium">28m</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface text-on-surface border border-surface-dim font-label-md text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Preparando
+                                                </span>
+</td>
+<td class="py-3 px-4 text-right font-medium">R$ 89,90</td>
+</tr>
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="py-3 px-4 font-medium text-on-background">#1049</td>
+<td class="py-3 px-4">Mesa 12</td>
+<td class="py-3 px-4">5m</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface text-on-surface border border-surface-dim font-label-md text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-surface-dim"></span> Na Fila
+                                                </span>
+</td>
+<td class="py-3 px-4 text-right font-medium">R$ 210,50</td>
+</tr>
+<tr class="hover:bg-surface-container-low/30 transition-colors">
+<td class="py-3 px-4 font-medium text-on-background">#1046</td>
+<td class="py-3 px-4">Mesa 02</td>
+<td class="py-3 px-4">18m</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface text-on-surface border border-surface-dim font-label-md text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Pronto
+                                                </span>
+</td>
+<td class="py-3 px-4 text-right font-medium">R$ 65,00</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Section 5: Sales & Top Products (Split horizontally) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-gap">
+<!-- Top Products -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-card-padding shadow-sm flex flex-col gap-4">
+<h3 class="font-headline-md text-[16px] font-semibold text-on-background">Top 5 Mais Vendidos</h3>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="font-label-md font-bold text-surface-dim w-4">1</span>
+<span class="font-body-md text-[13px] font-medium">Pizza Margherita (G)</span>
+</div>
+<span class="font-label-md text-on-surface-variant">24 un</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="font-label-md font-bold text-surface-dim w-4">2</span>
+<span class="font-body-md text-[13px] font-medium">Pizza Calabresa (G)</span>
+</div>
+<span class="font-label-md text-on-surface-variant">18 un</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="font-label-md font-bold text-surface-dim w-4">3</span>
+<span class="font-body-md text-[13px] font-medium">Refrigerante 2L</span>
+</div>
+<span class="font-label-md text-on-surface-variant">15 un</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="font-label-md font-bold text-surface-dim w-4">4</span>
+<span class="font-body-md text-[13px] font-medium">Pizza Quatro Queijos (G)</span>
+</div>
+<span class="font-label-md text-on-surface-variant">12 un</span>
+</div>
+</div>
+</div>
+<!-- Sales by Payment -->
+<div class="bg-surface-container-lowest border border-surface-dim rounded-xl p-card-padding shadow-sm flex flex-col gap-4">
+<h3 class="font-headline-md text-[16px] font-semibold text-on-background">Receitas por Pagamento</h3>
+<div class="flex flex-col gap-4 mt-1">
+<!-- Bar 1 -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between font-label-md text-label-md">
+<span class="">Cartão de Crédito</span>
+<span class="font-bold">65%</span>
+</div>
+<div class="w-full bg-surface rounded-full h-2 overflow-hidden border border-surface-dim">
+<div class="bg-primary h-full" style="width: 65%"></div>
+</div>
+</div>
+<!-- Bar 2 -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between font-label-md text-label-md">
+<span class="">PIX</span>
+<span class="font-bold">25%</span>
+</div>
+<div class="w-full bg-surface rounded-full h-2 overflow-hidden border border-surface-dim">
+<div class="bg-tertiary h-full" style="width: 25%"></div>
+</div>
+</div>
+<!-- Bar 3 -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between font-label-md text-label-md">
+<span class="">Dinheiro / Débito</span>
+<span class="font-bold">10%</span>
+</div>
+<div class="w-full bg-surface rounded-full h-2 overflow-hidden border border-surface-dim">
+<div class="bg-outline h-full" style="width: 10%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+
+</body></html>

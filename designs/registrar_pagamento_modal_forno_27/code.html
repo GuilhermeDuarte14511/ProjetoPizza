@@ -1,0 +1,391 @@
+<!DOCTYPE html><html lang="pt-BR"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Forno 27 - Registrar Pagamento</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-fixed": "#c7e7ff",
+                      "on-secondary-fixed": "#3a0a00",
+                      "on-tertiary-container": "#fcfcff",
+                      "inverse-primary": "#ffb59d",
+                      "primary-fixed": "#ffdbd0",
+                      "surface-tint": "#ac3500",
+                      "primary-container": "#cc4916",
+                      "on-background": "#161c24",
+                      "outline": "#8d7168",
+                      "inverse-on-surface": "#ebf1fc",
+                      "surface-container-highest": "#dde3ee",
+                      "inverse-surface": "#2b3139",
+                      "surface-container-low": "#eef4ff",
+                      "on-primary-container": "#fffbff",
+                      "on-tertiary-fixed-variant": "#004c6c",
+                      "on-primary-fixed": "#390c00",
+                      "outline-variant": "#e1bfb5",
+                      "primary-fixed-dim": "#ffb59d",
+                      "tertiary-container": "#007cae",
+                      "primary": "#a83300",
+                      "on-secondary-fixed-variant": "#852400",
+                      "on-primary-fixed-variant": "#832600",
+                      "on-error-container": "#93000a",
+                      "surface-dim": "#d5dae5",
+                      "surface": "#f8f9ff",
+                      "secondary-container": "#ff6e40",
+                      "tertiary-fixed-dim": "#85cfff",
+                      "on-secondary": "#ffffff",
+                      "surface-variant": "#dde3ee",
+                      "tertiary": "#00628b",
+                      "background": "#f8f9ff",
+                      "on-primary": "#ffffff",
+                      "secondary-fixed-dim": "#ffb59f",
+                      "surface-container-high": "#e3e8f3",
+                      "error-container": "#ffdad6",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-fixed": "#ffdbd0",
+                      "on-surface": "#161c24",
+                      "on-surface-variant": "#59413a",
+                      "on-error": "#ffffff",
+                      "surface-container": "#e9eef9",
+                      "surface-bright": "#f8f9ff",
+                      "on-tertiary": "#ffffff",
+                      "on-tertiary-fixed": "#001e2e",
+                      "on-secondary-container": "#631800",
+                      "error": "#ba1a1a",
+                      "secondary": "#ad3305"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "card-padding": "20px",
+                      "section-margin": "32px",
+                      "topbar-height": "64px",
+                      "sidebar-width": "260px",
+                      "stack-gap": "16px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "display-financial": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "30px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "22px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "28px",
+                              {
+                                      "lineHeight": "34px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-financial": [
+                              "30px",
+                              {
+                                      "lineHeight": "36px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen w-screen overflow-hidden flex relative">
+<!-- Blurred Background Context (representing the main dashboard) -->
+<div class="absolute inset-0 flex pointer-events-none filter blur-sm transition-all duration-300">
+<!-- SideNavBar -->
+<nav class="bg-inverse-surface dark:bg-inverse-surface fixed left-0 top-0 h-full w-[260px] flex flex-col py-6 shadow-none border-none z-10 hidden md:flex">
+<div class="px-6 mb-8 flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-primary font-bold text-lg shadow-sm">
+                    F27
+                </div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-primary-fixed">Forno 27</h1>
+<p class="font-label-md text-label-md text-surface-variant opacity-70">Unidade Principal</p>
+</div>
+</div>
+<div class="px-4 mb-6">
+<button class="w-full bg-primary hover:bg-primary-container text-on-primary transition-colors py-3 rounded-lg font-label-md text-label-md font-semibold shadow-sm flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span> Novo Pedido
+                </button>
+</div>
+<div class="flex-1 overflow-y-auto px-2 space-y-1 scrollbar-hide">
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg mx-2" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Visão Geral</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg mx-2" href="#">
+<span class="material-symbols-outlined">restaurant</span>
+<span class="font-label-md text-label-md">Mesas</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg mx-2" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-md text-label-md">Comandas</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg mx-2" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-label-md text-label-md">Pedidos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg mx-2" href="#">
+<span class="material-symbols-outlined">oven_gen</span>
+<span class="font-label-md text-label-md">Cozinha</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary bg-primary-container border-l-4 border-primary rounded-r-lg mx-2 pl-[12px]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">payments</span>
+<span class="font-label-md text-label-md font-semibold">Caixa</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg mx-2" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Configurações</span>
+</a>
+</div>
+<div class="px-4 mt-auto pt-4 border-t border-surface-variant/20">
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Sair</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area Context -->
+<main class="flex-1 md:ml-[260px] flex flex-col h-full bg-background relative z-0">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface-container docked full-width top-0 h-[64px] border-b border-outline-variant shadow-sm flex justify-between items-center px-gutter w-full z-20">
+<div class="flex items-center gap-6">
+<h2 class="font-headline-md text-headline-md font-bold text-primary hidden md:block">Forno 27</h2>
+<nav class="hidden md:flex gap-6 h-full items-center">
+<a class="text-on-surface-variant font-medium text-label-md font-label-md hover:text-primary hover:bg-surface-container-low transition-all py-2 px-3 rounded-md" href="#">Visão Geral</a>
+<a class="text-on-surface-variant font-medium text-label-md font-label-md hover:text-primary hover:bg-surface-container-low transition-all py-2 px-3 rounded-md" href="#">Mesas</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-[10px] pt-[12px] text-label-md font-label-md px-2" href="#">Caixa</a>
+</nav>
+</div>
+<div class="flex-1 max-w-md mx-6 hidden lg:block">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-full py-2 pl-10 pr-4 text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm group-hover:border-primary/50" placeholder="Buscar pedido, mesa ou cliente (Cmd+K)" type="text">
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-low flex items-center justify-center text-on-surface-variant transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="h-8 w-px bg-outline-variant mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="font-label-md text-label-md font-semibold text-on-surface">Admin User</p>
+<p class="font-label-md text-[10px] text-on-surface-variant">Gerente</p>
+</div>
+<div class="w-9 h-9 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold shadow-sm">
+                            AD
+                        </div>
+</div>
+</div>
+</header>
+<div class="flex-1 p-gutter bg-background">
+<!-- Fake content for background context -->
+<div class="w-full h-full border-2 border-dashed border-outline-variant/30 rounded-xl flex items-center justify-center text-on-surface-variant/50 font-body-lg">
+                    Conteúdo do Caixa...
+                </div>
+</div>
+</main>
+</div>
+<!-- MODAL OVERLAY START -->
+<div aria-modal="true" class="fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/60 backdrop-blur-[2px] p-4 sm:p-6" role="dialog">
+<!-- Modal Container -->
+<div class="bg-surface-container-lowest w-full max-w-[560px] rounded-xl shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1)] flex flex-col overflow-hidden animate-[fadeIn_0.2s_ease-out]">
+<!-- Modal Header -->
+<div class="px-6 py-5 border-b border-outline-variant flex justify-between items-start bg-surface">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Registrar Pagamento</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Pedido #1024 - Carlos Eduardo Silva</p>
+</div>
+<button aria-label="Fechar modal" class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Body -->
+<div class="p-6 flex flex-col gap-6 overflow-y-auto">
+<!-- Total Display -->
+<div class="bg-primary-container/10 border border-primary/20 rounded-lg p-5 flex flex-col items-center justify-center text-center">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-1">Total a Pagar</span>
+<span class="font-display-financial text-display-financial text-primary">R$ 85,90</span>
+</div>
+<!-- Payment Methods Grid -->
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant block mb-3">Método de Pagamento</label>
+<div class="grid grid-cols-3 sm:grid-cols-5 gap-3"><!-- Dinheiro (Selected) -->
+<label class="cursor-pointer group relative">
+<input checked="" class="peer sr-only" name="payment_method" type="radio">
+<div class="h-20 border border-outline-variant rounded-lg flex flex-col items-center justify-center gap-2 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary text-on-surface-variant hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">payments</span>
+<span class="font-label-md text-[11px] font-medium">Dinheiro</span>
+</div>
+<div class="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full text-on-primary flex items-center justify-center opacity-0 peer-checked:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[10px] font-bold">check</span>
+</div>
+</label>
+<!-- Pix -->
+<label class="cursor-pointer group relative">
+<input class="peer sr-only" name="payment_method" type="radio">
+<div class="h-20 border border-outline-variant rounded-lg flex flex-col items-center justify-center gap-2 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary text-on-surface-variant hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+<span class="font-label-md text-[11px] font-medium">Pix</span>
+</div>
+</label>
+<!-- Cartão de Crédito -->
+<label class="cursor-pointer group relative">
+<input class="peer sr-only" name="payment_method" type="radio">
+<div class="h-20 border border-outline-variant rounded-lg flex flex-col items-center justify-center gap-2 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary text-on-surface-variant hover:bg-surface-container transition-all text-center px-1">
+<span class="material-symbols-outlined">credit_card</span>
+<span class="font-label-md text-[11px] font-medium leading-tight">Cartão de Crédito</span>
+</div>
+</label>
+<!-- Cartão de Débito -->
+<label class="cursor-pointer group relative">
+<input class="peer sr-only" name="payment_method" type="radio">
+<div class="h-20 border border-outline-variant rounded-lg flex flex-col items-center justify-center gap-2 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary text-on-surface-variant hover:bg-surface-container transition-all text-center px-1">
+<span class="material-symbols-outlined">credit_score</span>
+<span class="font-label-md text-[11px] font-medium leading-tight">Cartão de Débito</span>
+</div>
+</label>
+<!-- Vale Refeição -->
+<label class="cursor-pointer group relative">
+<input class="peer sr-only" name="payment_method" type="radio">
+<div class="h-20 border border-outline-variant rounded-lg flex flex-col items-center justify-center gap-2 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary text-on-surface-variant hover:bg-surface-container transition-all text-center px-1">
+<span class="material-symbols-outlined">restaurant</span>
+<span class="font-label-md text-[11px] font-medium leading-tight">Vale Refeição</span>
+</div>
+</label></div>
+</div>
+<!-- Input Fields & Quick Buttons -->
+<div class="space-y-4">
+<div class="flex flex-col sm:flex-row gap-4">
+<!-- Valor Pago -->
+<div class="flex-1">
+<label class="font-label-md text-label-md text-on-surface-variant block mb-1" for="valor_pago">Valor Pago (R$)</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-body-lg">R$</span>
+<input class="w-full bg-surface border border-outline-variant rounded-lg py-3 pl-10 pr-4 font-body-lg text-body-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-semibold" id="valor_pago" type="text" value="100,00">
+</div>
+</div>
+<!-- Troco (Read Only) -->
+<div class="flex-1">
+<label class="font-label-md text-label-md text-on-surface-variant block mb-1" for="troco">Troco (R$)</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-body-lg">R$</span>
+<input class="w-full bg-surface-container-highest border border-transparent rounded-lg py-3 pl-10 pr-4 font-body-lg text-body-lg text-tertiary focus:outline-none font-semibold cursor-not-allowed" id="troco" readonly="" type="text" value="14,10">
+</div>
+</div>
+</div>
+<!-- Quick Value Buttons -->
+<div class="flex flex-wrap gap-2 pt-1">
+<button class="px-4 py-2 bg-surface border border-outline-variant rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface hover:border-outline transition-colors">
+                            R$ 50,00
+                        </button>
+<button class="px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg font-label-md text-label-md text-primary font-medium hover:bg-primary/20 transition-colors">
+                            R$ 100,00
+                        </button>
+<button class="px-4 py-2 bg-surface border border-outline-variant rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface hover:border-outline transition-colors ml-auto">
+                            Valor Exato
+                        </button>
+</div>
+</div>
+</div>
+<!-- Modal Footer (Actions) -->
+<div class="px-6 py-4 border-t border-outline-variant bg-surface flex justify-end gap-3 rounded-b-xl">
+<button class="px-6 py-2.5 bg-surface border border-outline-variant rounded-lg font-label-md text-label-md font-semibold text-on-surface hover:bg-surface-container transition-colors">
+                    Cancelar
+                </button>
+<button class="px-6 py-2.5 bg-primary hover:bg-primary-container text-on-primary rounded-lg font-label-md text-label-md font-semibold shadow-sm transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                    Confirmar Pagamento
+                </button>
+</div>
+</div>
+</div>
+<style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        /* Utilities for hiding scrollbar in sidebar */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+
+
+</body></html>

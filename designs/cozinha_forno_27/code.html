@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cozinha - Forno 27</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#ffdbd0",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#3a0a00",
+                        "tertiary-fixed-dim": "#85cfff",
+                        "error-container": "#ffdad6",
+                        "background": "#f8f9ff",
+                        "on-secondary-container": "#631800",
+                        "surface-variant": "#dde3ee",
+                        "surface-dim": "#d5dae5",
+                        "secondary-container": "#ff6e40",
+                        "on-error": "#ffffff",
+                        "surface-container": "#e9eef9",
+                        "surface-container-highest": "#dde3ee",
+                        "outline": "#8d7168",
+                        "on-secondary-fixed-variant": "#852400",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#eef4ff",
+                        "on-primary-fixed": "#390c00",
+                        "tertiary": "#00628b",
+                        "surface-bright": "#f8f9ff",
+                        "on-primary-fixed-variant": "#832600",
+                        "inverse-surface": "#2b3139",
+                        "tertiary-container": "#007cae",
+                        "surface-container-high": "#e3e8f3",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#001e2e",
+                        "on-tertiary-fixed-variant": "#004c6c",
+                        "inverse-primary": "#ffb59d",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#ac3500",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#cc4916",
+                        "on-background": "#161c24",
+                        "on-surface": "#161c24",
+                        "on-tertiary-container": "#fcfcff",
+                        "primary": "#a83300",
+                        "outline-variant": "#e1bfb5",
+                        "primary-fixed": "#ffdbd0",
+                        "on-primary-container": "#fffbff",
+                        "tertiary-fixed": "#c7e7ff",
+                        "on-surface-variant": "#59413a",
+                        "secondary-fixed-dim": "#ffb59f",
+                        "primary-fixed-dim": "#ffb59d",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#ad3305",
+                        "inverse-on-surface": "#ebf1fc",
+                        "surface": "#f8f9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-margin": "32px",
+                        "card-padding": "20px",
+                        "topbar-height": "64px",
+                        "gutter": "24px",
+                        "sidebar-width": "260px",
+                        "stack-gap": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "display-financial": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", { "lineHeight": "30px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-financial": ["30px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom scrollbar for kanban board */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #dde3ee;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d5dae5;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface h-screen overflow-hidden flex">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[260px] bg-inverse-surface dark:bg-inverse-surface flex flex-col h-full w-[260px] py-6 z-50 shadow-none">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-on-primary font-bold">F</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-primary-fixed">Forno 27</h1>
+<p class="font-label-md text-label-md text-surface-variant opacity-80">Unidade Principal</p>
+</div>
+</div>
+<div class="px-4 mb-6">
+<button class="w-full bg-primary hover:bg-primary-container hover:text-on-primary-container text-on-primary font-label-md text-label-md py-3 rounded-lg flex items-center justify-center gap-2 transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+                Novo Pedido
+            </button>
+</div>
+<div class="flex-1 overflow-y-auto">
+<ul class="flex flex-col gap-1 px-2">
+<!-- Inactive Nav Items -->
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Visão Geral</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">restaurant</span>
+<span class="font-label-md text-label-md">Mesas</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-md text-label-md">Comandas</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-label-md text-label-md">Pedidos</span>
+</a>
+</li>
+<!-- Active Nav Item (Cozinha) -->
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary bg-primary-container border-l-4 border-primary rounded-r-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">oven_gen</span>
+<span class="font-label-md text-label-md">Cozinha</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">notifications_active</span>
+<span class="font-label-md text-label-md">Chamados</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md">Caixa</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">credit_card</span>
+<span class="font-label-md text-label-md">Pagamentos</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-label-md text-label-md">Fechamentos</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-md text-label-md">Cardápio</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-md text-label-md">Relatórios</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">tablet_android</span>
+<span class="font-label-md text-label-md">Tablets</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md text-label-md">Usuários</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">security</span>
+<span class="font-label-md text-label-md">Auditoria</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Configurações</span>
+</a>
+</li>
+</ul>
+</div>
+<div class="mt-auto px-2 pt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Sair</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col ml-[260px] h-screen overflow-hidden">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface-container docked full-width top-0 h-[64px] border-b border-outline-variant shadow-sm flex justify-between items-center h-16 px-gutter flex-shrink-0">
+<div class="flex items-center gap-4">
+<!-- Breadcrumbs/Navigation Links -->
+<nav class="flex items-center gap-6">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-all" href="#">Visão Geral</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-all" href="#">Mesas</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 h-full flex items-center mt-1" href="#">Cozinha</a>
+</nav>
+</div>
+<!-- Global Search & Actions -->
+<div class="flex items-center gap-6">
+<!-- Filters -->
+<div class="flex items-center bg-surface-container rounded-lg p-1">
+<button class="px-4 py-1.5 rounded-md bg-surface text-primary font-label-md text-label-md shadow-sm">Pizzaria</button>
+<button class="px-4 py-1.5 rounded-md text-on-surface-variant font-label-md text-label-md hover:text-primary">Cozinha Quente</button>
+<button class="px-4 py-1.5 rounded-md text-on-surface-variant font-label-md text-label-md hover:text-primary">Bar</button>
+</div>
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-low transition-colors focus:ring-2 ring-primary ring-offset-2">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-low transition-colors focus:ring-2 ring-primary ring-offset-2" id="fullscreen-toggle">
+<span class="material-symbols-outlined">fullscreen</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Kanban Board Canvas -->
+<main class="flex-1 overflow-x-auto overflow-y-hidden p-6 bg-background">
+<div class="flex h-full gap-6 min-w-max">
+<!-- Column: Novos -->
+<div class="flex flex-col w-[380px] bg-surface-container-lowest rounded-xl border border-surface-variant shadow-sm h-full">
+<div class="p-4 border-b border-surface-variant flex justify-between items-center bg-surface rounded-t-xl">
+<h2 class="font-headline-md text-headline-md font-semibold flex items-center gap-2">
+                            Novos
+                            <span class="bg-error-container text-on-error-container text-sm py-0.5 px-2 rounded-full font-bold">3</span>
+</h2>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3">
+<!-- Ticket Card -->
+<div class="bg-surface rounded-lg p-4 border-l-4 border-error shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-3">
+<div>
+<span class="font-headline-md text-headline-md font-bold text-on-surface">#1042</span>
+<span class="font-body-md text-body-md text-surface-tint font-medium ml-2">Mesa 12</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-md text-label-md text-on-surface-variant">19:42</span>
+<span class="font-label-md text-label-md text-error font-bold flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[14px]">timer</span> 08 min
+                                    </span>
+</div>
+</div>
+<div class="space-y-3 mb-4">
+<div class="pb-2 border-b border-surface-variant last:border-0">
+<p class="font-body-lg text-body-lg font-semibold text-on-surface">1x Pizza Grande (3 Sabores)</p>
+<ul class="ml-4 mt-1 list-disc font-body-md text-body-md text-on-surface-variant">
+<li>1/3 Calabresa</li>
+<li>1/3 Portuguesa</li>
+<li>1/3 Frango com Catupiry</li>
+</ul>
+<div class="mt-2 bg-error-container/30 text-on-error-container p-2 rounded-md font-body-md text-body-md border border-error-container/50">
+<span class="font-bold">Obs:</span> Sem cebola na Portuguesa, massa fina.
+                                    </div>
+</div>
+</div>
+<button class="w-full bg-primary hover:bg-primary-container text-on-primary py-3 rounded-lg font-label-md text-label-md font-bold transition-colors">
+                                Confirmar Recebimento
+                            </button>
+</div>
+</div>
+</div>
+<!-- Column: Confirmados -->
+<div class="flex flex-col w-[380px] bg-surface-container-lowest rounded-xl border border-surface-variant shadow-sm h-full">
+<div class="p-4 border-b border-surface-variant flex justify-between items-center bg-surface rounded-t-xl">
+<h2 class="font-headline-md text-headline-md font-semibold flex items-center gap-2">
+                            Confirmados
+                            <span class="bg-surface-variant text-on-surface-variant text-sm py-0.5 px-2 rounded-full font-bold">2</span>
+</h2>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3">
+<!-- Ticket Card -->
+<div class="bg-surface rounded-lg p-4 border-l-4 border-tertiary shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-3">
+<div>
+<span class="font-headline-md text-headline-md font-bold text-on-surface">#1039</span>
+<span class="font-body-md text-body-md text-surface-tint font-medium ml-2">Mesa 04</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-md text-label-md text-on-surface-variant">19:35</span>
+<span class="font-label-md text-label-md text-tertiary font-bold flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[14px]">timer</span> 15 min
+                                    </span>
+</div>
+</div>
+<div class="space-y-3 mb-4">
+<div class="pb-2 border-b border-surface-variant last:border-0">
+<p class="font-body-lg text-body-lg font-semibold text-on-surface">2x Pizza Média</p>
+<ul class="ml-4 mt-1 list-disc font-body-md text-body-md text-on-surface-variant">
+<li>1x Marguerita</li>
+<li>1x Pepperoni</li>
+</ul>
+</div>
+</div>
+<button class="w-full bg-white border border-outline hover:bg-surface-container-low text-primary py-3 rounded-lg font-label-md text-label-md font-bold transition-colors">
+                                Iniciar Preparo
+                            </button>
+</div>
+</div>
+</div>
+<!-- Column: Em preparo -->
+<div class="flex flex-col w-[380px] bg-surface-container-lowest rounded-xl border border-surface-variant shadow-sm h-full">
+<div class="p-4 border-b border-surface-variant flex justify-between items-center bg-surface rounded-t-xl">
+<h2 class="font-headline-md text-headline-md font-semibold flex items-center gap-2">
+                            Em Preparo
+                            <span class="bg-secondary-fixed text-on-secondary-fixed text-sm py-0.5 px-2 rounded-full font-bold">4</span>
+</h2>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3">
+<!-- Ticket Card -->
+<div class="bg-surface rounded-lg p-4 border-l-4 border-secondary shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-3">
+<div>
+<span class="font-headline-md text-headline-md font-bold text-on-surface">#1035</span>
+<span class="font-body-md text-body-md text-surface-tint font-medium ml-2">Delivery</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-md text-label-md text-on-surface-variant">19:20</span>
+<span class="font-label-md text-label-md text-secondary font-bold flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[14px]">timer</span> 30 min
+                                    </span>
+</div>
+</div>
+<div class="space-y-3 mb-4">
+<div class="pb-2 border-b border-surface-variant last:border-0">
+<p class="font-body-lg text-body-lg font-semibold text-on-surface">1x Calzone Tradicional</p>
+</div>
+</div>
+<button class="w-full bg-green-700 hover:bg-green-800 text-white py-3 rounded-lg font-label-md text-label-md font-bold transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                Marcar como Pronto
+                            </button>
+</div>
+</div>
+</div>
+<!-- Column: Prontos -->
+<div class="flex flex-col w-[380px] bg-surface-container-lowest rounded-xl border border-surface-variant shadow-sm h-full opacity-70">
+<div class="p-4 border-b border-surface-variant flex justify-between items-center bg-surface rounded-t-xl">
+<h2 class="font-headline-md text-headline-md font-semibold flex items-center gap-2">
+                            Prontos
+                            <span class="bg-surface-variant text-on-surface-variant text-sm py-0.5 px-2 rounded-full font-bold">12</span>
+</h2>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3">
+<!-- Completed Ticket Card -->
+<div class="bg-surface rounded-lg p-4 border-l-4 border-gray-400 shadow-sm">
+<div class="flex justify-between items-start mb-2">
+<div>
+<span class="font-headline-md text-headline-md font-bold text-on-surface-variant line-through">#1030</span>
+<span class="font-body-md text-body-md text-on-surface-variant font-medium ml-2">Mesa 08</span>
+</div>
+<span class="material-symbols-outlined text-green-700">done_all</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Despachado às 19:15</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>
+        // Simple full screen toggle
+        document.getElementById('fullscreen-toggle').addEventListener('click', function() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+    </script>
+</body></html>

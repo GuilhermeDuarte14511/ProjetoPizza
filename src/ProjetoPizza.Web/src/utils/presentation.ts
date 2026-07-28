@@ -1,0 +1,78 @@
+const enumLabels: Record<string, string> = {
+  Draft: 'Rascunho',
+  New: 'Novo',
+  Submitted: 'Enviado',
+  Accepted: 'Aceito',
+  Confirmed: 'Confirmado',
+  InProduction: 'Em preparo',
+  Preparing: 'Em preparo',
+  Ready: 'Pronto',
+  Completed: 'Concluído',
+  Complete: 'Conclusão',
+  Cancelled: 'Cancelado',
+  Pending: 'Pendente',
+  Authorized: 'Autorizado',
+  Paid: 'Pago',
+  Failed: 'Falhou',
+  Refunded: 'Estornado',
+  PartiallyRefunded: 'Parcialmente estornado',
+  Open: 'Aberto',
+  Closing: 'Em fechamento',
+  Closed: 'Fechado',
+  Online: 'Conectado',
+  Offline: 'Desconectado',
+  Idle: 'Ocioso',
+  Blocked: 'Bloqueado',
+  Maintenance: 'Em manutenção',
+  DineIn: 'Salão',
+  Delivery: 'Entrega',
+  Pickup: 'Retirada',
+  Takeaway: 'Retirada',
+  Website: 'Site',
+  Application: 'Aplicativo',
+  Administrative: 'Administrativo',
+  Standard: 'Padrão',
+  Pizza: 'Pizza',
+  PizzaFlavor: 'Sabor de pizza',
+  Beverage: 'Bebida',
+  Portion: 'Porção',
+  Dessert: 'Sobremesa',
+  Additional: 'Adicional',
+  Savory: 'Salgado',
+  Sweet: 'Doce',
+  Administrator: 'Administrador',
+  Create: 'Criação',
+  Update: 'Atualização',
+  Pay: 'Pagamento',
+  Request: 'Solicitação',
+  OpenTable: 'Abertura de mesa',
+  CashIn: 'Suprimento',
+  CashOut: 'Sangria',
+  Supply: 'Suprimento',
+  Withdrawal: 'Sangria',
+  Sale: 'Venda',
+  Catalog: 'Cardápio',
+  Dining: 'Salão',
+  Product: 'Produto',
+  TableSession: 'Atendimento de mesa',
+  CustomerTablet: 'Tablet do cliente',
+  Printer: 'Impressora',
+  Network: 'Rede',
+  HighestFlavorPrice: 'Maior valor entre os sabores',
+  AverageFlavorPrice: 'Média dos sabores',
+  ProportionalFlavorPrice: 'Valor proporcional',
+}
+
+export function translateEnum(value?: string | null) {
+  if (!value) return '—'
+  return enumLabels[value] ?? value
+}
+
+export function enumCssToken(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .replace(/\s+/g, '-')
+    .toLowerCase()
+}

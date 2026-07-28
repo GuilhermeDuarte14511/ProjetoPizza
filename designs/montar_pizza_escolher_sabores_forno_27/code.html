@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Forno 27 - Escolha dos Sabores</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#832600",
+                        "on-surface": "#181c22",
+                        "background": "#f8f9ff",
+                        "primary-fixed-dim": "#ffb59d",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#268451",
+                        "surface-bright": "#f8f9ff",
+                        "inverse-surface": "#2d3137",
+                        "secondary-fixed-dim": "#cdbdff",
+                        "on-primary-fixed": "#390c00",
+                        "primary-fixed": "#ffdbd0",
+                        "tertiary": "#006a3b",
+                        "on-tertiary-fixed-variant": "#00522d",
+                        "error": "#ba1a1a",
+                        "surface-tint": "#ac3500",
+                        "primary": "#a83300",
+                        "surface-container-highest": "#dfe2eb",
+                        "on-primary-container": "#fffbff",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#e5e8f0",
+                        "surface-container": "#ebeef6",
+                        "secondary-fixed": "#e8deff",
+                        "on-surface-variant": "#59413a",
+                        "inverse-primary": "#ffb59d",
+                        "outline": "#8d7168",
+                        "on-secondary-fixed": "#20005f",
+                        "on-background": "#181c22",
+                        "outline-variant": "#e1bfb5",
+                        "primary-container": "#cc4916",
+                        "surface": "#f8f9ff",
+                        "surface-container-low": "#f1f3fc",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#32008a",
+                        "tertiary-fixed-dim": "#7ed99e",
+                        "on-tertiary-container": "#f6fff4",
+                        "tertiary-fixed": "#9af6b8",
+                        "surface-dim": "#d7dae2",
+                        "on-tertiary-fixed": "#00210f",
+                        "inverse-on-surface": "#eef1f9",
+                        "surface-variant": "#dfe2eb",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#9c7efe",
+                        "secondary": "#6646c4",
+                        "on-secondary-fixed-variant": "#4e2aab"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-gap": "16px",
+                        "grid-margin": "32px",
+                        "container-padding": "24px",
+                        "gutter": "20px",
+                        "touch-target-min": "52px"
+                    },
+                    "fontFamily": {
+                        "product-title": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "price-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "section-title": ["Inter"]
+                    },
+                    "fontSize": {
+                        "product-title": ["22px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-caps": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "display-md": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "26px", "fontWeight": "400"}],
+                        "price-lg": ["26px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "display-lg": ["34px", {"lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "section-title": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #FFF8F3;
+        }
+        .pizza-slice {
+            clip-path: polygon(50% 50%, 100% 0, 100% 100%, 0 100%, 0 0); /* Adjusted dynamically via JS normally */
+        }
+        /* Custom scrollbar for kiosk optimization */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e1bfb5;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8d7168;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface antialiased pt-[76px] pl-64">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-grid-margin h-[76px] bg-surface dark:bg-surface-container-high shadow-sm">
+<div class="flex items-center gap-4 pl-64">
+<button class="w-[52px] h-[52px] flex items-center justify-center text-primary rounded-full hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+<h1 class="text-display-md font-display-md font-bold text-primary dark:text-primary-fixed-dim">Forno 27</h1>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-6">
+<a class="text-on-surface-variant font-label-caps flex items-center h-[52px] hover:bg-surface-container-highest transition-colors px-4 rounded-xl" href="#">Meus Pedidos</a>
+<a class="text-on-surface-variant font-label-caps flex items-center h-[52px] hover:bg-surface-container-highest transition-colors px-4 rounded-xl" href="#">Chamar Garçom</a>
+</nav>
+<button class="h-[52px] px-6 bg-primary-container text-on-primary-container rounded-xl flex items-center gap-2 hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-weight="fill">shopping_cart</span>
+<span class="font-label-caps text-label-caps">Carrinho · 3 itens · R$ 124,80</span>
+</button>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-64 pt-20 pb-4 flex flex-col z-40 bg-surface-container-low dark:bg-inverse-surface border-r border-outline-variant dark:border-outline">
+<div class="px-6 mb-6">
+<h2 class="text-section-title font-section-title text-primary">Categorias</h2>
+<p class="text-on-surface-variant text-body-md mt-1">Mesa 12</p>
+</div>
+<div class="flex-1 overflow-y-auto flex flex-col gap-1">
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-[52px] group" href="#">
+<span class="material-symbols-outlined mr-3 text-outline group-hover:text-primary transition-colors">star</span>
+<span class="font-label-caps text-label-caps">Destaques</span>
+</a>
+<a class="bg-primary-container text-on-primary-container rounded-xl mx-2 flex items-center px-4 py-3 h-[52px] shadow-sm transform scale-98 duration-150" href="#">
+<span class="material-symbols-outlined mr-3" data-weight="fill">local_pizza</span>
+<span class="font-label-caps text-label-caps">Pizzas Tradicionais</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-[52px] group" href="#">
+<span class="material-symbols-outlined mr-3 text-outline group-hover:text-primary transition-colors">auto_awesome</span>
+<span class="font-label-caps text-label-caps">Pizzas Especiais</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-[52px] group" href="#">
+<span class="material-symbols-outlined mr-3 text-outline group-hover:text-primary transition-colors">bakery_dining</span>
+<span class="font-label-caps text-label-caps">Pizzas Doces</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-[52px] group" href="#">
+<span class="material-symbols-outlined mr-3 text-outline group-hover:text-primary transition-colors">flatware</span>
+<span class="font-label-caps text-label-caps">Porções</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-[52px] group" href="#">
+<span class="material-symbols-outlined mr-3 text-outline group-hover:text-primary transition-colors">local_bar</span>
+<span class="font-label-caps text-label-caps">Bebidas</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-[52px] group" href="#">
+<span class="material-symbols-outlined mr-3 text-outline group-hover:text-primary transition-colors">icecream</span>
+<span class="font-label-caps text-label-caps">Sobremesas</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-[52px] group" href="#">
+<span class="material-symbols-outlined mr-3 text-outline group-hover:text-primary transition-colors">layers</span>
+<span class="font-label-caps text-label-caps">Combos</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="min-h-screen pb-24 p-grid-margin">
+<!-- Progress Header -->
+<div class="mb-8">
+<h2 class="text-display-lg font-display-lg text-primary mb-2">Monte sua Pizza</h2>
+<div class="flex items-center gap-4">
+<div class="flex-1 h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[75%] rounded-full"></div>
+</div>
+<span class="text-label-caps font-label-caps text-on-surface-variant">Etapa 3 de 4</span>
+</div>
+</div>
+<div class="flex flex-col xl:flex-row gap-gutter">
+<!-- Left Column: Pizza Visualizer -->
+<div class="w-full xl:w-[400px] flex-shrink-0 flex flex-col gap-6">
+<!-- Visual Summary Card -->
+<div class="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-outline-variant flex flex-col items-center sticky top-[100px]">
+<h3 class="text-section-title font-section-title text-on-surface mb-6 text-center">Tamanho Grande<br/><span class="text-body-md font-body-md text-on-surface-variant">3 Sabores</span></h3>
+<!-- Interactive Pizza Graphic Placeholder -->
+<div class="relative w-64 h-64 rounded-full border-4 border-outline-variant mb-6 overflow-hidden flex items-center justify-center bg-surface-container">
+<!-- Visual representation of chosen slices -->
+<div class="absolute inset-0 bg-primary-container" style="clip-path: polygon(50% 50%, 100% 0, 100% 100%, 50% 100%);"></div>
+<div class="absolute inset-0" style="clip-path: polygon(50% 50%, 0 0, 100% 0);">
+<div class="w-full h-full bg-surface-variant flex items-center justify-center opacity-80 border-l border-b border-outline-variant">
+<span class="material-symbols-outlined text-outline text-4xl">add</span>
+</div>
+</div>
+<!-- Center Badge -->
+<div class="absolute w-16 h-16 bg-surface-container-lowest rounded-full shadow-sm flex flex-col items-center justify-center border border-outline-variant z-10">
+<span class="text-price-lg font-price-lg text-primary">2</span>
+<span class="text-[10px] uppercase font-bold text-on-surface-variant leading-none">de 3</span>
+</div>
+</div>
+<div class="w-full space-y-3">
+<div class="flex items-center justify-between p-3 bg-surface-container-low rounded-xl border border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-primary-container"></div>
+<span class="font-body-md text-on-surface">1/3 Calabresa</span>
+</div>
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-error hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined text-lg">close</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low rounded-xl border border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-primary-container"></div>
+<span class="font-body-md text-on-surface">1/3 Portuguesa</span>
+</div>
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-error hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined text-lg">close</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-3 border border-dashed border-outline rounded-xl bg-surface opacity-50">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-surface-dim"></div>
+<span class="font-body-md text-on-surface-variant italic">Aguardando escolha...</span>
+</div>
+</div>
+</div>
+<div class="w-full mt-6 flex justify-between items-end border-t border-outline-variant pt-4">
+<span class="text-body-md text-on-surface-variant">Subtotal</span>
+<span class="text-price-lg font-price-lg text-on-surface">R$ 89,90</span>
+</div>
+<button class="w-full mt-6 h-[52px] bg-surface-dim text-on-surface-variant rounded-xl font-label-caps text-label-caps cursor-not-allowed flex items-center justify-center gap-2">
+                        Próxima Etapa
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<p class="text-sm text-center text-error mt-2">Escolha mais 1 sabor</p>
+</div>
+</div>
+<!-- Right Column: Flavor Selection Grid -->
+<div class="flex-1 flex flex-col">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-section-title font-section-title text-on-surface">Escolha o Sabor 3</h3>
+<!-- Filters -->
+<div class="flex gap-2 bg-surface-container-high p-1 rounded-xl">
+<button class="h-[44px] px-4 bg-surface-container-lowest text-primary shadow-sm rounded-lg font-label-caps text-label-caps transition-all">Todos</button>
+<button class="h-[44px] px-4 text-on-surface-variant hover:bg-surface-variant rounded-lg font-label-caps text-label-caps transition-all">Tradicionais</button>
+<button class="h-[44px] px-4 text-on-surface-variant hover:bg-surface-variant rounded-lg font-label-caps text-label-caps transition-all">Especiais</button>
+</div>
+</div>
+<!-- Bento Grid for Flavors -->
+<div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-stack-gap">
+<!-- Flavor Card 1 -->
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant flex flex-col cursor-pointer hover:border-primary hover:shadow-md transition-all group">
+<div class="h-40 w-full relative">
+<img class="w-full h-full object-cover" data-alt="A high resolution top-down close up photo of a classic Margherita pizza on a rustic wooden board. The pizza features bright red San Marzano tomato sauce, large puddles of creamy white melted mozzarella cheese, and fresh vibrant green basil leaves scattered on top. The crust is slightly blistered and golden brown. The lighting is warm and inviting, highlighting the appetizing textures of the fresh ingredients in a casual artisanal dining setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAN6SNdhFPUNjNBYrVFleWOy04LwpQxekyCrOVDtbCgvHnY4DxdG1v64aKFLec60a-gLaHt_BjizZmcClWzxGbr0eLoIq9xeU4KxEd2V3ArYuB84mZzcVNGP3WH6pcP5NerMThwc1dxjuAFa15y2yAo7hMDeA5GqNbkp7kleRJ3-T-DWU-tuPnTjFtuCKvPzhU01P8wlIzpmx84UOz7MWIJUmiZ24EEiuPRF11ilC2cdhVUj9sVRisg"/>
+<div class="absolute top-3 right-3 bg-surface-container-lowest/90 backdrop-blur-sm px-3 py-1 rounded-full border border-outline-variant">
+<span class="text-xs font-bold text-on-surface">+ R$ 0,00</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h4 class="text-product-title font-product-title text-on-surface">Margherita</h4>
+<div class="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center group-hover:bg-primary-container group-hover:border-primary group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-sm">add</span>
+</div>
+</div>
+<p class="text-body-md text-on-surface-variant line-clamp-2 mb-4">Molho de tomate pelati, mussarela artesanal, manjericão fresco e um fio de azeite extra virgem.</p>
+<div class="mt-auto flex gap-2">
+<span class="px-2 py-1 bg-surface-container text-xs font-semibold rounded-md text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">eco</span> Vegetariana</span>
+</div>
+</div>
+</div>
+<!-- Flavor Card 2 -->
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant flex flex-col cursor-pointer hover:border-primary hover:shadow-md transition-all group">
+<div class="h-40 w-full relative">
+<img class="w-full h-full object-cover" data-alt="A high quality appetizing photo of a Quatro Queijos four cheese pizza slice being lifted, showing melted cheese stretching. The pizza is topped with a rich blend of mozzarella, gorgonzola, provolone, and parmesan, bubbling slightly with golden edges. The background is softly out of focus, featuring warm artisanal pizzeria lighting that emphasizes the rich creamy textures and savory appeal of the classic dish." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA64wZUWPXrDgguF7XNiRuFKtGROXkPnGdPGxN0eruRSDouQnu977-EgU3aN-0tBA9ldwjeY14CfPq5sLXjdWJjNoVdB9xbYOG2XWAm5JedD5NOw1xdfpGHtSzUI_rxcVv8-3QwxZ1m2WwqdvKvbyCgjZyQDjRFO9TNA0h0TmiYEEcphuPG276lGWg_ItnT_6n1G0GrdGL239axvkfjhqchiZHxlXsT0Qp4XSVmiYc9KRYcO8NChUkr"/>
+<div class="absolute top-3 right-3 bg-surface-container-lowest/90 backdrop-blur-sm px-3 py-1 rounded-full border border-outline-variant">
+<span class="text-xs font-bold text-on-surface">+ R$ 5,00</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h4 class="text-product-title font-product-title text-on-surface">Quatro Queijos</h4>
+<div class="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center group-hover:bg-primary-container group-hover:border-primary group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-sm">add</span>
+</div>
+</div>
+<p class="text-body-md text-on-surface-variant line-clamp-2 mb-4">Mussarela, provolone, gorgonzola e parmesão gratinado sobre molho de tomate.</p>
+</div>
+</div>
+<!-- Flavor Card 3 (Premium) -->
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant flex flex-col cursor-pointer hover:border-primary hover:shadow-md transition-all group">
+<div class="h-40 w-full relative">
+<img class="w-full h-full object-cover" data-alt="A beautifully plated artisanal pizza topped with thin slices of premium Parma ham, fresh green arugula leaves, and shaved parmesan cheese over a melted mozzarella base. The pizza is presented on a modern ceramic plate set on a warm, textured table surface. The natural light casts soft shadows, highlighting the vibrant colors and high-end gourmet quality of the fresh, premium ingredients." src="https://lh3.googleusercontent.com/aida-public/AB6AXuApx7DBLJz3q4ZQPKvaSZxDjdEh_zo0ivYr8hsn-M1CiY8RLOkKy8OQBY0j-q3G86bPC0rr058IJepGyC1Uu7zUEYdLD0nIJoHaYqKRD7r9dQK0IhDQHJMTBcL8xNEI8cl9hjF_zOscED0dRrlp6x4i3mvwyxHF8dI9-gH08Gux9m0WUlM127bbHZS0anX2CvYQOAcy52TsQVtQes-m6-BC46YywMuwV6yF6rRQYetGgBm04PWWwMuW"/>
+<div class="absolute top-3 left-3 bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[14px]">star</span>
+<span class="text-xs font-bold uppercase tracking-wider">Premium</span>
+</div>
+<div class="absolute top-3 right-3 bg-surface-container-lowest/90 backdrop-blur-sm px-3 py-1 rounded-full border border-outline-variant">
+<span class="text-xs font-bold text-on-surface">+ R$ 12,00</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h4 class="text-product-title font-product-title text-on-surface">Parma &amp; Rúcula</h4>
+<div class="w-8 h-8 rounded-full border border-outline-variant flex items-center justify-center group-hover:bg-primary-container group-hover:border-primary group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-sm">add</span>
+</div>
+</div>
+<p class="text-body-md text-on-surface-variant line-clamp-2 mb-4">Fatias finas de presunto de Parma, rúcula fresca, mussarela de búfala e tomate seco.</p>
+</div>
+</div>
+<!-- Flavor Card 4 -->
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant flex flex-col cursor-pointer hover:border-primary hover:shadow-md transition-all group opacity-50 grayscale-[50%]">
+<div class="h-40 w-full relative">
+<img class="w-full h-full object-cover" data-alt="A close up photo of a classic pepperoni pizza with perfectly curled, slightly crispy pepperoni slices over melted mozzarella cheese and tomato sauce. The lighting is warm and appetizing, typical of a cozy modern pizzeria setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuALRgIobllp_EpCKLpsJELCaweJaQxLl8RD4zGq7C78IZYTNyayDyQBAtlU9E0-c8DIS3PmaPlgrl36jNTuRMW8dKP86uv3XI0D6TqKqwhGA8mpPj5a5KazibLFeCvHsseKu9Kt2TP0EWZ4bii3gUzQe2CWQHDBFK1svTXoazDHoLil4uCHAwJVSIfYvhuj8-yne4evSMD7FqCTTSemZsbOFX5EboQ036244zxB-mbp5snhboTleshG"/>
+<div class="absolute inset-0 bg-surface/50 flex items-center justify-center backdrop-blur-[2px]">
+<span class="bg-surface-container-lowest px-4 py-2 rounded-xl text-sm font-bold text-on-surface border border-outline-variant shadow-sm">Esgotado Temporariamente</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h4 class="text-product-title font-product-title text-on-surface">Pepperoni</h4>
+</div>
+<p class="text-body-md text-on-surface-variant line-clamp-2 mb-4">Fatias generosas de pepperoni levemente picante sobre dupla camada de mussarela.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Forno 27 - Chamar Garçom</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#a83300",
+                        "on-primary-fixed-variant": "#832600",
+                        "surface-container-low": "#f1f3fc",
+                        "secondary-fixed": "#e8deff",
+                        "on-surface": "#181c22",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#ebeef6",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#7ed99e",
+                        "on-primary-fixed": "#390c00",
+                        "surface-bright": "#f8f9ff",
+                        "on-tertiary-fixed": "#00210f",
+                        "tertiary-fixed": "#9af6b8",
+                        "inverse-primary": "#ffb59d",
+                        "primary-fixed": "#ffdbd0",
+                        "on-primary-container": "#fffbff",
+                        "background": "#f8f9ff",
+                        "tertiary": "#006a3b",
+                        "primary-container": "#cc4916",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#6646c4",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#eef1f9",
+                        "on-secondary": "#ffffff",
+                        "surface-variant": "#dfe2eb",
+                        "secondary-container": "#9c7efe",
+                        "on-secondary-fixed": "#20005f",
+                        "tertiary-container": "#268451",
+                        "on-surface-variant": "#59413a",
+                        "on-background": "#181c22",
+                        "on-secondary-fixed-variant": "#4e2aab",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#dfe2eb",
+                        "primary-fixed-dim": "#ffb59d",
+                        "surface": "#f8f9ff",
+                        "outline-variant": "#e1bfb5",
+                        "on-tertiary-fixed-variant": "#00522d",
+                        "secondary-fixed-dim": "#cdbdff",
+                        "on-error-container": "#93000a",
+                        "outline": "#8d7168",
+                        "inverse-surface": "#2d3137",
+                        "on-secondary-container": "#32008a",
+                        "surface-dim": "#d7dae2",
+                        "on-tertiary-container": "#f6fff4",
+                        "surface-tint": "#ac3500",
+                        "surface-container-high": "#e5e8f0",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-gap": "16px",
+                        "grid-margin": "32px",
+                        "container-padding": "24px",
+                        "gutter": "20px",
+                        "touch-target-min": "52px"
+                    },
+                    "fontFamily": {
+                        "price-lg": ["Inter"],
+                        "section-title": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "product-title": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "price-lg": ["26px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "section-title": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-md": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "label-caps": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "400" }],
+                        "product-title": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["34px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #FFF8F3; } /* Cream background for warmth */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid #E8E1DC;
+            box-shadow: 0 4px 24px -8px rgba(168, 51, 0, 0.15); /* Tinted shadow */
+        }
+        .service-card {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .service-card:active {
+            transform: scale(0.98);
+        }
+        .service-card.selected {
+            border-color: #a83300;
+            background-color: #fffbff;
+            box-shadow: 0 0 0 2px #a83300;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface antialiased overflow-hidden select-none touch-manipulation flex flex-col h-screen">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-grid-margin h-touch-target-min bg-surface dark:bg-surface-container-high shadow-sm">
+<div class="flex items-center space-x-8">
+<h1 class="text-display-md font-display-md font-bold text-primary dark:text-primary-fixed-dim">Forno 27</h1>
+<nav class="hidden md:flex space-x-6">
+<a class="text-on-surface-variant font-label-caps hover:bg-surface-container-highest transition-colors px-3 py-2 rounded-lg h-touch-target-min flex items-center" href="#">Meus Pedidos</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 h-touch-target-min flex items-center" href="#">Chamar Garçom</a>
+</nav>
+</div>
+<div class="flex items-center space-x-4">
+<button class="h-touch-target-min px-4 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-2xl mr-2">shopping_cart</span>
+<span class="font-label-caps text-label-caps">Carrinho · 3 itens · R$ 124,80</span>
+</button>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full pt-20 pb-4 flex flex-col z-40 bg-surface-container-low dark:bg-inverse-surface docked left-0 h-full w-64 border-r border-outline-variant dark:border-outline">
+<div class="px-6 py-4 mb-4">
+<h2 class="text-section-title font-section-title text-primary">Categorias</h2>
+<p class="text-on-surface-variant font-body-md text-body-md mt-1">Mesa 12</p>
+</div>
+<nav class="flex-1 overflow-y-auto space-y-2 px-2">
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">star</span>
+<span class="font-label-caps text-label-caps">Destaques</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">local_pizza</span>
+<span class="font-label-caps text-label-caps">Pizzas Tradicionais</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">auto_awesome</span>
+<span class="font-label-caps text-label-caps">Pizzas Especiais</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">bakery_dining</span>
+<span class="font-label-caps text-label-caps">Pizzas Doces</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">flatware</span>
+<span class="font-label-caps text-label-caps">Porções</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">local_bar</span>
+<span class="font-label-caps text-label-caps">Bebidas</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">icecream</span>
+<span class="font-label-caps text-label-caps">Sobremesas</span>
+</a>
+<a class="text-on-surface-variant flex items-center px-4 py-3 mx-2 hover:bg-surface-container-highest rounded-xl transition-all h-touch-target-min" href="#">
+<span class="material-symbols-outlined mr-3">layers</span>
+<span class="font-label-caps text-label-caps">Combos</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 pt-20 h-full flex flex-col relative overflow-y-auto w-full pb-24">
+<div class="px-grid-margin py-8 max-w-5xl mx-auto w-full" id="selection-view">
+<div class="mb-8 text-center">
+<h2 class="text-display-lg font-display-lg text-primary mb-2">Como podemos ajudar?</h2>
+<p class="text-body-lg font-body-lg text-on-surface-variant">Selecione o motivo da chamada para um atendimento mais rápido.</p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+<!-- Option 1 -->
+<div class="service-card glass-card rounded-2xl p-6 flex flex-col items-center justify-center text-center h-40" onclick="selectOption(this, 'Chamar Garçom')">
+<span class="material-symbols-outlined text-4xl text-primary mb-4" style="font-variation-settings: 'FILL' 1;">front_hand</span>
+<span class="font-product-title text-product-title text-on-surface">Chamar Garçom</span>
+</div>
+<!-- Option 2 -->
+<div class="service-card glass-card rounded-2xl p-6 flex flex-col items-center justify-center text-center h-40" onclick="selectOption(this, 'Pedir Talheres')">
+<span class="material-symbols-outlined text-4xl text-primary mb-4" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+<span class="font-product-title text-product-title text-on-surface">Pedir Talheres</span>
+</div>
+<!-- Option 3 -->
+<div class="service-card glass-card rounded-2xl p-6 flex flex-col items-center justify-center text-center h-40" onclick="selectOption(this, 'Pedir Guardanapos')">
+<span class="material-symbols-outlined text-4xl text-primary mb-4" style="font-variation-settings: 'FILL' 1;">cleaning_services</span>
+<span class="font-product-title text-product-title text-on-surface">Pedir Guardanapos</span>
+</div>
+<!-- Option 4 -->
+<div class="service-card glass-card rounded-2xl p-6 flex flex-col items-center justify-center text-center h-40" onclick="selectOption(this, 'Solicitar Limpeza')">
+<span class="material-symbols-outlined text-4xl text-primary mb-4" style="font-variation-settings: 'FILL' 1;">mop</span>
+<span class="font-product-title text-product-title text-on-surface">Solicitar Limpeza</span>
+</div>
+<!-- Option 5 -->
+<div class="service-card glass-card rounded-2xl p-6 flex flex-col items-center justify-center text-center h-40" onclick="selectOption(this, 'Problema no Pedido')">
+<span class="material-symbols-outlined text-4xl text-primary mb-4" style="font-variation-settings: 'FILL' 1;">error</span>
+<span class="font-product-title text-product-title text-on-surface">Problema no Pedido</span>
+</div>
+<!-- Option 6 -->
+<div class="service-card glass-card rounded-2xl p-6 flex flex-col items-center justify-center text-center h-40" onclick="selectOption(this, 'Tirar uma Dúvida')">
+<span class="material-symbols-outlined text-4xl text-primary mb-4" style="font-variation-settings: 'FILL' 1;">help</span>
+<span class="font-product-title text-product-title text-on-surface">Tirar uma Dúvida</span>
+</div>
+</div>
+<!-- Optional Details Field (Hidden by default) -->
+<div class="hidden mb-8 transition-opacity duration-300 opacity-0" id="details-section">
+<label class="block font-label-caps text-label-caps text-on-surface-variant mb-2 ml-2" for="details">Detalhes (Opcional)</label>
+<textarea class="w-full glass-card rounded-xl border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary-fixed resize-none p-4 font-body-md text-body-md text-on-surface" id="details" placeholder="Ex: Precisamos de mais um copo..." rows="2"></textarea>
+</div>
+<div class="flex justify-center">
+<button class="bg-primary text-on-primary font-section-title text-section-title px-12 py-4 rounded-full h-[64px] min-w-[300px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-95" disabled="" id="submit-btn" onclick="submitRequest()">
+                    Enviar Solicitação
+                </button>
+</div>
+</div>
+<!-- Success View (Hidden by default) -->
+<div class="hidden px-grid-margin py-16 flex flex-col items-center justify-center text-center h-full max-w-2xl mx-auto w-full" id="success-view">
+<div class="w-32 h-32 rounded-full bg-tertiary-container flex items-center justify-center mb-8 shadow-sm">
+<span class="material-symbols-outlined text-6xl text-on-tertiary-container" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<h2 class="text-display-lg font-display-lg text-primary mb-4">Solicitação Enviada!</h2>
+<p class="text-section-title font-section-title text-on-surface mb-8">Carlos já foi avisado e está a caminho da sua mesa.</p>
+<button class="bg-surface-variant text-on-surface font-product-title text-product-title px-8 py-3 rounded-full h-touch-target-min min-w-[200px] hover:bg-surface-container-high transition-colors" onclick="resetView()">
+                Voltar ao Cardápio
+            </button>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-4 px-grid-margin flex justify-between items-center bg-surface-container-lowest dark:bg-on-background border-t border-outline-variant fixed bottom-0 left-0 z-50 md:pl-[288px]">
+<p class="text-body-md font-body-md text-on-surface-variant dark:text-surface-variant">© 2024 Forno 27 Pizzeria - Mesa 12</p>
+<div class="flex space-x-6">
+<a class="text-body-md font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Termos de Uso</a>
+<a class="text-body-md font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Política de Privacidade</a>
+<a class="text-body-md font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Ajuda</a>
+</div>
+</footer>
+<script>
+        let selectedService = '';
+
+        function selectOption(element, service) {
+            // Remove selected class from all cards
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked card
+            element.classList.add('selected');
+            selectedService = service;
+
+            // Enable submit button
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = false;
+
+            // Show details section
+            const detailsSection = document.getElementById('details-section');
+            detailsSection.classList.remove('hidden');
+            // Small timeout to allow display block to apply before changing opacity
+            setTimeout(() => {
+                detailsSection.classList.remove('opacity-0');
+            }, 10);
+        }
+
+        function submitRequest() {
+            if (!selectedService) return;
+
+            // Hide selection view
+            document.getElementById('selection-view').classList.add('hidden');
+            
+            // Show success view
+            const successView = document.getElementById('success-view');
+            successView.classList.remove('hidden');
+            successView.classList.add('flex');
+        }
+
+        function resetView() {
+            // Reset state
+            selectedService = '';
+            document.getElementById('details').value = '';
+            
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            document.getElementById('submit-btn').disabled = true;
+            
+            const detailsSection = document.getElementById('details-section');
+            detailsSection.classList.add('opacity-0');
+            setTimeout(() => {
+                detailsSection.classList.add('hidden');
+            }, 300);
+
+            // Toggle views
+            const successView = document.getElementById('success-view');
+            successView.classList.add('hidden');
+            successView.classList.remove('flex');
+            
+            document.getElementById('selection-view').classList.remove('hidden');
+        }
+    </script>
+</body></html>

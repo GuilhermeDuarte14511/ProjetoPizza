@@ -1,0 +1,301 @@
+<!DOCTYPE html><html lang="pt-BR" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Configurações - Forno 27</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#dde3ee",
+                        "inverse-on-surface": "#ebf1fc",
+                        "on-primary-fixed": "#390c00",
+                        "on-secondary-container": "#631800",
+                        "on-primary": "#ffffff",
+                        "surface": "#f8f9ff",
+                        "secondary-container": "#ff6e40",
+                        "primary-fixed": "#ffdbd0",
+                        "primary-fixed-dim": "#ffb59d",
+                        "inverse-primary": "#ffb59d",
+                        "on-tertiary-container": "#fcfcff",
+                        "secondary-fixed-dim": "#ffb59f",
+                        "primary": "#a83300",
+                        "on-surface": "#161c24",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#e1bfb5",
+                        "on-surface-variant": "#59413a",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed": "#c7e7ff",
+                        "surface-container-high": "#e3e8f3",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#852400",
+                        "surface-tint": "#ac3500",
+                        "on-background": "#161c24",
+                        "primary-container": "#cc4916",
+                        "on-secondary-fixed": "#3a0a00",
+                        "tertiary-container": "#007cae",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#dde3ee",
+                        "surface-container-low": "#eef4ff",
+                        "on-primary-container": "#fffbff",
+                        "inverse-surface": "#2b3139",
+                        "on-tertiary-fixed": "#001e2e",
+                        "tertiary-fixed-dim": "#85cfff",
+                        "surface-bright": "#f8f9ff",
+                        "secondary-fixed": "#ffdbd0",
+                        "surface-container": "#e9eef9",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#d5dae5",
+                        "outline": "#8d7168",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#004c6c",
+                        "background": "#f8f9ff",
+                        "tertiary": "#00628b",
+                        "secondary": "#ad3305",
+                        "on-primary-fixed-variant": "#832600"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-gap": "16px",
+                        "topbar-height": "64px",
+                        "sidebar-width": "260px",
+                        "section-margin": "32px",
+                        "gutter": "24px",
+                        "card-padding": "20px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display-financial": ["Inter"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "30px", "fontWeight": "600" }],
+                        "display-financial": ["30px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Custom Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #a83300;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #a83300;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex antialiased">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[260px] bg-inverse-surface flex flex-col py-6 z-20"><div class="px-6 mb-8 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary font-headline-md font-bold">F</div>
+    <div>
+      <h1 class="font-headline-md text-headline-md font-bold text-on-primary-fixed">Forno 27</h1>
+      <p class="font-label-md text-label-md text-surface-variant opacity-80">Unidade Principal</p>
+    </div>
+  </div>
+  <div class="px-6 mb-6">
+    <button class="w-full bg-primary hover:bg-primary/90 text-on-primary font-label-md text-label-md py-3 rounded-lg flex items-center justify-center gap-2 transition-colors">
+      <span class="material-symbols-outlined text-[18px]">add</span>
+      Novo Pedido
+    </button>
+  </div>
+  <div class="flex-1 overflow-y-auto no-scrollbar">
+    <div class="px-6 mb-2">
+      <span class="font-label-md text-label-md text-surface-variant opacity-40 uppercase tracking-wider">Operação</span>
+    </div>
+    <ul class="flex flex-col gap-1 mb-6">
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">dashboard</span>Visão Geral</a></li>
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">restaurant</span>Mesas</a></li>
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">receipt_long</span>Comandas</a></li>
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">shopping_cart</span>Pedidos</a></li>
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">oven_gen</span>Cozinha</a></li>
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">notifications_active</span>Chamados</a></li>
+    </ul>
+    <div class="px-6 mb-2">
+      <span class="font-label-md text-label-md text-surface-variant opacity-40 uppercase tracking-wider">Financeiro</span>
+    </div>
+    <ul class="flex flex-col gap-1 mb-6">
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">payments</span>Caixa</a></li>
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">credit_card</span>Pagamentos</a></li>
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">account_balance_wallet</span>Fechamentos</a></li>
+    </ul>
+    <div class="px-6 mb-2">
+      <span class="font-label-md text-label-md text-surface-variant opacity-40 uppercase tracking-wider">Gestão</span>
+    </div>
+    <ul class="flex flex-col gap-1">
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">menu_book</span>Cardápio</a></li>
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">analytics</span>Relatórios</a></li>
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">tablet_android</span>Tablets</a></li>
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">group</span>Usuários</a></li>
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors font-body-md" href="#"><span class="material-symbols-outlined">security</span>Auditoria</a></li>
+      <li class=""><a class="flex items-center gap-3 px-6 py-3 text-on-primary bg-primary-container border-l-4 border-primary font-body-md" href="#"><span class="material-symbols-outlined fill">settings</span>Configurações</a></li>
+    </ul>
+  </div>
+  <div class="mt-auto pt-4 px-6 border-t border-surface-variant/10">
+    <a class="flex items-center gap-3 py-3 text-surface-variant opacity-60 hover:text-on-primary transition-colors font-body-md" href="#">
+      <span class="material-symbols-outlined">logout</span>
+      Sair
+    </a>
+  </div></nav>
+<!-- Main Content Area -->
+<div class="ml-[260px] flex-1 flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="h-[64px] bg-surface flex justify-between items-center px-gutter border-b border-outline-variant shadow-sm z-10 sticky top-0">
+<div class="flex items-center gap-4">
+<nav class="flex items-center gap-2 text-on-surface-variant font-label-md">
+<span class="hover:text-primary cursor-pointer transition-colors">Gestão</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-primary font-bold border-b-2 border-primary pb-1 mt-1">Configurações</span>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<!-- Global Search -->
+<div class="relative hidden md:block w-72">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-50">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all placeholder:text-on-surface-variant/50" placeholder="Buscar configurações..." type="text">
+<div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+<span class="text-[10px] font-medium text-on-surface-variant/50 border border-outline-variant rounded px-1">⌘</span>
+<span class="text-[10px] font-medium text-on-surface-variant/50 border border-outline-variant rounded px-1">K</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="relative text-on-surface-variant hover:text-primary transition-colors focus:outline-none">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="h-6 w-px bg-outline-variant"></div>
+<div class="flex flex-col items-end justify-center">
+<span class="font-label-md text-on-surface">Caixa Aberto</span>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="text-[11px] text-on-surface-variant">Operando</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<main class="flex-1 p-8 bg-surface-container-lowest overflow-y-auto">
+<div class="max-w-6xl mx-auto">
+<header class="mb-8">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Configurações Gerais</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Gerencie os parâmetros globais da pizzaria Forno 27.</p>
+</header>
+<!-- Tabs Navigation -->
+<div class="flex gap-8 border-b border-outline-variant mb-8 overflow-x-auto no-scrollbar">
+<button class="pb-4 font-body-md font-bold text-primary border-b-2 border-primary whitespace-nowrap transition-colors" onclick="switchTab('dados')">Dados da Pizzaria</button>
+<button class="pb-4 font-body-md text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap" onclick="switchTab('operacao')">Operação</button>
+<button class="pb-4 font-body-md text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap" onclick="switchTab('pizzas')">Regras de Pizzas</button>
+<button class="pb-4 font-body-md text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap" onclick="switchTab('impressoras')">Impressoras</button>
+<button class="pb-4 font-body-md text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap" onclick="switchTab('backup')">Backup &amp; Sistema</button>
+</div>
+<!-- Tab Content: Dados da Pizzaria -->
+<div class="space-y-6" id="tab-dados">
+<div class="bg-surface rounded-xl border border-surface-variant shadow-sm p-6">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">storefront</span>
+                            Informações da Unidade
+                        </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="block font-label-md text-on-surface-variant">Nome da Unidade</label>
+<input class="w-full p-3 bg-surface border border-surface-variant rounded-lg font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="text" value="Forno 27 - Unidade Principal">
+</div>
+<div class="space-y-2">
+<label class="block font-label-md text-on-surface-variant">CNPJ</label>
+<input class="w-full p-3 bg-surface border border-surface-variant rounded-lg font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="text" value="12.345.678/0001-90">
+</div>
+<div class="space-y-2 md:col-span-2">
+<label class="block font-label-md text-on-surface-variant">Endereço Completo</label>
+<input class="w-full p-3 bg-surface border border-surface-variant rounded-lg font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="text" value="Rua das Massas, 123 - Centro, São Paulo - SP, 01000-000">
+</div>
+<div class="space-y-2">
+<label class="block font-label-md text-on-surface-variant">Telefone de Contato</label>
+<input class="w-full p-3 bg-surface border border-surface-variant rounded-lg font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="text" value="(11) 98765-4321">
+</div>
+<div class="space-y-2">
+<label class="block font-label-md text-on-surface-variant">E-mail Administrativo</label>
+<input class="w-full p-3 bg-surface border border-surface-variant rounded-lg font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors" type="email" value="admin@forno27.com.br">
+</div>
+</div>
+</div>
+<div class="bg-surface rounded-xl border border-surface-variant shadow-sm p-6">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">image</span>
+                            Identidade Visual
+                        </h3>
+<div class="flex items-start gap-8">
+<div class="w-32 h-32 rounded-lg border-2 border-dashed border-surface-variant bg-surface-container-low flex flex-col items-center justify-center text-on-surface-variant hover:border-primary hover:bg-surface-variant/10 cursor-pointer transition-all">
+<span class="material-symbols-outlined text-[32px] mb-2">upload_file</span>
+<span class="font-label-md text-center">Trocar Logo</span>
+</div>
+<div class="flex-1 space-y-2">
+<p class="font-body-md text-on-surface-variant">O logotipo será exibido nos tablets das mesas, impressões de cupom e relatórios.</p>
+<ul class="font-label-md text-surface-dim list-disc list-inside mt-2">
+<li class="">Formato recomendado: PNG transparente ou JPG.</li>
+<li class="">Tamanho ideal: 400x400px.</li>
+<li class="">Tamanho máximo: 2MB.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="flex justify-end gap-4 pt-4">
+<button class="px-6 py-2.5 rounded-lg font-label-md text-primary bg-surface border border-surface-variant hover:bg-surface-variant/20 transition-colors">Descartar</button>
+<button class="px-6 py-2.5 rounded-lg font-label-md text-on-primary bg-primary hover:bg-primary/90 transition-colors shadow-sm">Salvar Alterações</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>
+        // Simple tab switching logic for demonstration
+        function switchTab(tabId) {
+            const tabs = ['dados', 'operacao', 'pizzas', 'impressoras', 'backup'];
+            
+            // Visual reset (simulated - in a real app this would query elements properly)
+            const buttons = document.querySelectorAll('button[onclick^="switchTab"]');
+            buttons.forEach(btn => {
+                if(btn.getAttribute('onclick').includes(tabId)) {
+                    btn.className = "pb-4 font-body-md font-bold text-primary border-b-2 border-primary whitespace-nowrap transition-colors";
+                } else {
+                    btn.className = "pb-4 font-body-md text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap";
+                }
+            });
+
+            // Note: Only 'dados' tab content is fully implemented in this example to keep code size reasonable while meeting requirements.
+            // In a full implementation, you'd toggle visibility of distinct content divs here.
+        }
+    </script>
+
+
+</body></html>

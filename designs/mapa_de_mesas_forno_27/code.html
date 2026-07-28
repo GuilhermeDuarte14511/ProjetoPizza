@@ -1,0 +1,543 @@
+<!DOCTYPE html><html lang="pt-BR"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Forno 27 - Mesas</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "secondary-fixed": "#ffdbd0",
+                            "error": "#ba1a1a",
+                            "on-secondary-fixed": "#3a0a00",
+                            "tertiary-fixed-dim": "#85cfff",
+                            "error-container": "#ffdad6",
+                            "background": "#f8f9ff",
+                            "on-secondary-container": "#631800",
+                            "surface-variant": "#dde3ee",
+                            "surface-dim": "#d5dae5",
+                            "secondary-container": "#ff6e40",
+                            "on-error": "#ffffff",
+                            "surface-container": "#e9eef9",
+                            "surface-container-highest": "#dde3ee",
+                            "outline": "#8d7168",
+                            "on-secondary-fixed-variant": "#852400",
+                            "on-tertiary": "#ffffff",
+                            "surface-container-low": "#eef4ff",
+                            "on-primary-fixed": "#390c00",
+                            "tertiary": "#00628b",
+                            "surface-bright": "#f8f9ff",
+                            "on-primary-fixed-variant": "#832600",
+                            "inverse-surface": "#2b3139",
+                            "tertiary-container": "#007cae",
+                            "surface-container-high": "#e3e8f3",
+                            "on-error-container": "#93000a",
+                            "on-tertiary-fixed": "#001e2e",
+                            "on-tertiary-fixed-variant": "#004c6c",
+                            "inverse-primary": "#ffb59d",
+                            "on-primary": "#ffffff",
+                            "surface-tint": "#ac3500",
+                            "on-secondary": "#ffffff",
+                            "primary-container": "#cc4916",
+                            "on-background": "#161c24",
+                            "on-surface": "#161c24",
+                            "on-tertiary-container": "#fcfcff",
+                            "primary": "#a83300",
+                            "outline-variant": "#e1bfb5",
+                            "primary-fixed": "#ffdbd0",
+                            "on-primary-container": "#fffbff",
+                            "tertiary-fixed": "#c7e7ff",
+                            "on-surface-variant": "#59413a",
+                            "secondary-fixed-dim": "#ffb59f",
+                            "primary-fixed-dim": "#ffb59d",
+                            "surface-container-lowest": "#ffffff",
+                            "secondary": "#ad3305",
+                            "inverse-on-surface": "#ebf1fc",
+                            "surface": "#f8f9ff"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {
+                            "section-margin": "32px",
+                            "card-padding": "20px",
+                            "topbar-height": "64px",
+                            "gutter": "24px",
+                            "sidebar-width": "260px",
+                            "stack-gap": "16px"
+                    },
+                    "fontFamily": {
+                            "headline-lg-mobile": ["Inter"],
+                            "body-md": ["Inter"],
+                            "headline-lg": ["Inter"],
+                            "body-lg": ["Inter"],
+                            "headline-md": ["Inter"],
+                            "display-financial": ["Inter"],
+                            "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                            "headline-lg-mobile": ["24px", {"lineHeight": "30px", "fontWeight": "600"}],
+                            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                            "headline-lg": ["28px", {"lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                            "headline-md": ["22px", {"lineHeight": "28px", "fontWeight": "600"}],
+                            "display-financial": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                            "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        .pulse-animation {
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(186, 26, 26, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(186, 26, 26, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(186, 26, 26, 0); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen overflow-x-hidden flex">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[260px] bg-inverse-surface flex flex-col py-6 z-20"><!-- Brand -->
+<div class="px-6 mb-8 flex items-center gap-4">
+    <div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container font-headline-md font-bold shrink-0">
+        F
+    </div>
+    <div>
+        <h1 class="font-headline-md text-headline-md font-bold text-on-primary-fixed">Forno 27</h1>
+        <p class="font-label-md text-label-md text-surface-variant opacity-80">Unidade Principal</p>
+    </div>
+</div>
+<!-- CTA -->
+<div class="px-4 mb-6">
+    <button class="w-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md py-3 rounded-lg flex items-center justify-center gap-2 transition-colors">
+        <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+        Novo Pedido
+    </button>
+</div>
+<!-- Navigation Tabs -->
+<div class="flex-1 overflow-y-auto overflow-x-hidden px-0">
+    <!-- Operação Group -->
+    <div class="px-4 mb-2">
+        <span class="font-label-md text-label-md text-surface-variant opacity-40 uppercase tracking-wider">Operação</span>
+    </div>
+    <div class="flex flex-col mb-6">
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span class="font-body-md text-body-md">Visão Geral</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 text-on-primary bg-primary-container border-l-4 border-primary scale-[0.99] transition-transform duration-150" href="#">
+            <span class="material-symbols-outlined">restaurant</span>
+            <span class="font-body-md text-body-md">Mesas</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">receipt_long</span>
+            <span class="font-body-md text-body-md">Comandas</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">shopping_cart</span>
+            <span class="font-body-md text-body-md">Pedidos</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">oven_gen</span>
+            <span class="font-body-md text-body-md">Cozinha</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">notifications_active</span>
+            <span class="font-body-md text-body-md flex-1">Chamados</span>
+            <span class="bg-error text-on-error font-label-md text-[10px] px-2 py-0.5 rounded-full">3</span>
+        </a>
+    </div>
+    <!-- Financeiro Group -->
+    <div class="px-4 mb-2">
+        <span class="font-label-md text-label-md text-surface-variant opacity-40 uppercase tracking-wider">Financeiro</span>
+    </div>
+    <div class="flex flex-col mb-6">
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">payments</span>
+            <span class="font-body-md text-body-md">Caixa</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">credit_card</span>
+            <span class="font-body-md text-body-md">Pagamentos</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">account_balance_wallet</span>
+            <span class="font-body-md text-body-md">Fechamentos</span>
+        </a>
+    </div>
+    <!-- Gestão Group -->
+    <div class="px-4 mb-2">
+        <span class="font-label-md text-label-md text-surface-variant opacity-40 uppercase tracking-wider">Gestão</span>
+    </div>
+    <div class="flex flex-col">
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">menu_book</span>
+            <span class="font-body-md text-body-md">Cardápio</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">analytics</span>
+            <span class="font-body-md text-body-md">Relatórios</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">tablet_android</span>
+            <span class="font-body-md text-body-md">Tablets</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">group</span>
+            <span class="font-body-md text-body-md">Usuários</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">security</span>
+            <span class="font-body-md text-body-md">Auditoria</span>
+        </a>
+        <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors" href="#">
+            <span class="material-symbols-outlined">settings</span>
+            <span class="font-body-md text-body-md">Configurações</span>
+        </a>
+    </div>
+</div>
+<!-- Footer -->
+<div class="px-4 mt-6">
+    <a class="flex items-center gap-3 px-4 py-3 text-surface-variant opacity-60 hover:bg-surface-variant/10 hover:text-on-primary transition-colors border-t border-surface-variant/20 pt-4" href="#">
+        <span class="material-symbols-outlined">logout</span>
+        <span class="font-body-md text-body-md">Sair</span>
+    </a>
+</div></nav>
+<!-- Main Content Area -->
+<div class="flex-1 ml-[260px] flex flex-col min-h-screen relative">
+<!-- TopNavBar -->
+<header class="h-16 px-gutter bg-surface border-b border-outline-variant shadow-sm flex items-center justify-between z-10 sticky top-0">
+<!-- Breadcrumbs / Nav Links -->
+<div class="flex items-center gap-6">
+<a class="font-headline-md text-headline-md font-bold text-primary" href="#">Forno 27</a>
+<div class="h-6 w-px bg-outline-variant mx-2"></div>
+<div class="flex gap-4">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-all" href="#">Visão Geral</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-[14px] mt-[14px]" href="#">Mesas</a>
+</div>
+</div>
+<!-- Search -->
+<div class="flex-1 max-w-md mx-8">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant text-on-surface text-body-md rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none" placeholder="Buscar mesa ou comanda..." type="text">
+<div class="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
+<kbd class="hidden sm:inline-block border border-outline-variant rounded px-1.5 font-label-md text-[10px] text-on-surface-variant bg-surface">⌘</kbd>
+<kbd class="hidden sm:inline-block border border-outline-variant rounded px-1.5 font-label-md text-[10px] text-on-surface-variant bg-surface">K</kbd>
+</div>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex items-center gap-4">
+<!-- Status Indicators -->
+<div class="flex items-center gap-3 mr-4 border-r border-outline-variant pr-4">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<span class="font-label-md text-label-md text-on-surface-variant">Caixa Aberto</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md font-bold text-on-surface">18/32</span>
+<span class="font-label-md text-label-md text-on-surface-variant">Mesas Ocup.</span>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full ring-2 ring-surface"></span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">schedule</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-sm ml-2">
+                    A
+                </div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 p-gutter bg-background overflow-y-auto">
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-section-margin">
+<div>
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface">Mesas</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Gerencie a ocupação e atendimento do salão principal.</p>
+</div>
+<div class="flex items-center gap-3">
+<!-- Filters -->
+<div class="flex bg-surface-container rounded-lg p-1 border border-outline-variant">
+<button class="px-3 py-1.5 text-label-md font-label-md rounded-md bg-surface text-on-surface shadow-sm">Todas</button>
+<button class="px-3 py-1.5 text-label-md font-label-md rounded-md text-on-surface-variant hover:bg-surface-container-high transition-colors">Ocupadas (18)</button>
+<button class="px-3 py-1.5 text-label-md font-label-md rounded-md text-on-surface-variant hover:bg-surface-container-high transition-colors">Livres (14)</button>
+</div>
+<button class="bg-surface hover:bg-surface-container border border-outline-variant text-on-surface font-label-md text-label-md px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">filter_list</span>
+                        Filtros
+                    </button>
+<button class="bg-primary hover:bg-primary/90 text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm">
+<span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+                        Abrir Mesa
+                    </button>
+</div>
+</div>
+<!-- Grid Mesas -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-stack-gap pr-[340px]">
+<!-- Mesa 1: Livre -->
+<div class="bg-surface rounded-xl p-4 border border-outline-variant shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.05)] flex flex-col gap-3 hover:border-primary/50 transition-colors cursor-pointer">
+<div class="flex justify-between items-start">
+<span class="font-headline-md text-headline-md font-bold text-on-surface">01</span>
+<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Livre</span>
+</div>
+<div class="flex items-center justify-center flex-1 py-4">
+<span class="material-symbols-outlined text-surface-variant/50" style="font-size: 48px;">restaurant</span>
+</div>
+<div class="flex justify-between items-end border-t border-surface-variant/20 pt-3">
+<div class="text-on-surface-variant font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined" style="font-size: 14px;">groups</span>
+                            4 lug.
+                        </div>
+<button class="text-primary font-label-md text-label-md font-bold hover:underline">Abrir</button>
+</div>
+</div>
+<!-- Mesa 2: Ocupada -->
+<div class="bg-surface rounded-xl p-4 border border-outline-variant shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.05)] flex flex-col gap-3 hover:border-primary/50 transition-colors cursor-pointer relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+<div class="flex justify-between items-start pl-2">
+<span class="font-headline-md text-headline-md font-bold text-on-surface">02</span>
+<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Ocupada</span>
+</div>
+<div class="flex flex-col gap-2 pl-2 flex-1">
+<div class="flex items-center gap-2 text-on-surface font-body-md text-body-md font-medium">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-size: 16px;">person</span>
+                            2 Pessoas
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined" style="font-size: 16px;">schedule</span>
+                            45 min
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined" style="font-size: 16px;">badge</span>
+                            Carlos M.
+                        </div>
+</div>
+<div class="flex justify-between items-end border-t border-surface-variant/20 pt-3 pl-2">
+<span class="font-body-md text-body-md font-bold text-on-surface">R$ 145,50</span>
+</div>
+</div>
+<!-- Mesa 3: Chamando Garçom -->
+<div class="bg-surface rounded-xl p-4 border border-error shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.05)] flex flex-col gap-3 cursor-pointer relative overflow-hidden pulse-animation">
+<div class="absolute top-0 left-0 w-1 h-full bg-error"></div>
+<div class="flex justify-between items-start pl-2">
+<span class="font-headline-md text-headline-md font-bold text-on-surface">03</span>
+<span class="bg-error-container text-on-error-container px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined filled text-error" style="font-size: 12px;">notifications_active</span>
+                            Chamando
+                        </span>
+</div>
+<div class="flex flex-col gap-2 pl-2 flex-1">
+<div class="flex items-center gap-2 text-on-surface font-body-md text-body-md font-medium">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-size: 16px;">person</span>
+                            4 Pessoas
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined" style="font-size: 16px;">schedule</span>
+                            1h 20m
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined" style="font-size: 16px;">badge</span>
+                            Ana P.
+                        </div>
+</div>
+<div class="flex justify-between items-end border-t border-surface-variant/20 pt-3 pl-2">
+<span class="font-body-md text-body-md font-bold text-on-surface">R$ 380,00</span>
+</div>
+</div>
+<!-- Mesa 12: Selected / Ocupada -->
+<div class="bg-surface rounded-xl p-4 border-2 border-primary shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1)] flex flex-col gap-3 cursor-pointer relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
+<div class="flex justify-between items-start pl-2">
+<span class="font-headline-md text-headline-md font-bold text-primary">12</span>
+<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Ocupada</span>
+</div>
+<div class="flex flex-col gap-2 pl-2 flex-1">
+<div class="flex items-center gap-2 text-on-surface font-body-md text-body-md font-medium">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-size: 16px;">person</span>
+                            6 Pessoas
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined" style="font-size: 16px;">schedule</span>
+                            2h 15m
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined" style="font-size: 16px;">badge</span>
+                            Roberto S.
+                        </div>
+</div>
+<div class="flex justify-between items-end border-t border-surface-variant/20 pt-3 pl-2">
+<span class="font-body-md text-body-md font-bold text-on-surface">R$ 542,90</span>
+</div>
+</div>
+<!-- Mesa 4: Aguardando Conta -->
+<div class="bg-surface rounded-xl p-4 border border-purple-300 shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.05)] flex flex-col gap-3 hover:border-purple-500 transition-colors cursor-pointer relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
+<div class="flex justify-between items-start pl-2">
+<span class="font-headline-md text-headline-md font-bold text-on-surface">04</span>
+<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Pediu Conta</span>
+</div>
+<div class="flex flex-col gap-2 pl-2 flex-1">
+<div class="flex items-center gap-2 text-on-surface font-body-md text-body-md font-medium">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-size: 16px;">person</span>
+                            2 Pessoas
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined" style="font-size: 16px;">schedule</span>
+                            55 min
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined" style="font-size: 16px;">badge</span>
+                            Ana P.
+                        </div>
+</div>
+<div class="flex justify-between items-end border-t border-surface-variant/20 pt-3 pl-2">
+<span class="font-body-md text-body-md font-bold text-on-surface">R$ 198,00</span>
+</div>
+</div>
+<!-- Mesa 5: Aguardando Pagamento -->
+<div class="bg-surface rounded-xl p-4 border border-yellow-300 shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.05)] flex flex-col gap-3 hover:border-yellow-500 transition-colors cursor-pointer relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-yellow-500"></div>
+<div class="flex justify-between items-start pl-2">
+<span class="font-headline-md text-headline-md font-bold text-on-surface">05</span>
+<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Pgto. Pendente</span>
+</div>
+<div class="flex flex-col gap-2 pl-2 flex-1">
+<div class="flex items-center gap-2 text-on-surface font-body-md text-body-md font-medium">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-size: 16px;">person</span>
+                            3 Pessoas
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined" style="font-size: 16px;">schedule</span>
+                            1h 10m
+                        </div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined" style="font-size: 16px;">badge</span>
+                            Carlos M.
+                        </div>
+</div>
+<div class="flex justify-between items-end border-t border-surface-variant/20 pt-3 pl-2">
+<span class="font-body-md text-body-md font-bold text-on-surface">R$ 285,50</span>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Table Details Sidebar (Mesa 12) -->
+<aside class="fixed right-0 top-16 bottom-0 w-[320px] bg-surface border-l border-outline-variant shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-20 flex flex-col transform transition-transform">
+<!-- Header -->
+<div class="p-6 border-b border-outline-variant bg-surface-container-lowest">
+<div class="flex justify-between items-center mb-4">
+<div class="flex items-center gap-3">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface">Mesa 12</span>
+<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Ocupada</span>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col">
+<span class="text-label-md font-label-md text-on-surface-variant mb-1">Abertura</span>
+<span class="text-body-md font-body-md text-on-surface font-medium">19:30 (2h 15m)</span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-md font-label-md text-on-surface-variant mb-1">Pessoas</span>
+<span class="text-body-md font-body-md text-on-surface font-medium">6</span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-md font-label-md text-on-surface-variant mb-1">Atendente</span>
+<span class="text-body-md font-body-md text-on-surface font-medium">Roberto S.</span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-md font-label-md text-on-surface-variant mb-1">Total Parcial</span>
+<span class="text-headline-md font-headline-md font-bold text-primary">R$ 542,90</span>
+</div>
+</div>
+</div>
+<!-- Quick Actions Grid -->
+<div class="p-6 border-b border-outline-variant grid grid-cols-2 gap-3">
+<button class="bg-surface border border-outline-variant hover:border-primary hover:bg-surface-container-low text-on-surface rounded-lg p-3 flex flex-col items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined text-primary">receipt_long</span>
+<span class="font-label-md text-label-md text-center">Ver Comanda</span>
+</button>
+<button class="bg-surface border border-outline-variant hover:border-primary hover:bg-surface-container-low text-on-surface rounded-lg p-3 flex flex-col items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined text-primary">add_shopping_cart</span>
+<span class="font-label-md text-label-md text-center">Adicionar Pedido</span>
+</button>
+<button class="bg-surface border border-outline-variant hover:border-primary hover:bg-surface-container-low text-on-surface rounded-lg p-3 flex flex-col items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined text-primary">request_quote</span>
+<span class="font-label-md text-label-md text-center">Solicitar Conta</span>
+</button>
+<button class="bg-primary hover:bg-primary/90 text-on-primary rounded-lg p-3 flex flex-col items-center justify-center gap-2 transition-all shadow-sm">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md text-center">Registrar Pgto.</span>
+</button>
+</div>
+<!-- Recent Activity / Items Preview -->
+<div class="p-6 flex-1 overflow-y-auto">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-4">Últimos Pedidos</h3>
+<div class="flex flex-col gap-4">
+<!-- Item -->
+<div class="flex justify-between items-start">
+<div class="flex items-start gap-3">
+<div class="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+<div>
+<p class="font-body-md text-body-md font-medium text-on-surface">1x Pizza Marguerita (G)</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Borda recheada</p>
+</div>
+</div>
+<span class="font-body-md text-body-md text-on-surface">R$ 85,00</span>
+</div>
+<!-- Item -->
+<div class="flex justify-between items-start">
+<div class="flex items-start gap-3">
+<div class="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+<div>
+<p class="font-body-md text-body-md font-medium text-on-surface">1x Pizza Pepperoni (G)</p>
+</div>
+</div>
+<span class="font-body-md text-body-md text-on-surface">R$ 92,00</span>
+</div>
+<!-- Item (Preparando) -->
+<div class="flex justify-between items-start">
+<div class="flex items-start gap-3">
+<div class="w-2 h-2 rounded-full bg-yellow-500 mt-2 pulse-animation"></div>
+<div>
+<p class="font-body-md text-body-md font-medium text-on-surface">2x Chopp Artesanal 500ml</p>
+<p class="font-label-md text-label-md text-yellow-600">Preparando...</p>
+</div>
+</div>
+<span class="font-body-md text-body-md text-on-surface">R$ 36,00</span>
+</div>
+</div>
+<button class="w-full mt-6 text-primary font-label-md text-label-md font-bold hover:underline text-center">Ver todos os 14 itens</button>
+</div>
+</aside>
+
+
+</body></html>
