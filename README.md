@@ -71,7 +71,204 @@ $env:DevelopmentSeed__AdminPassword = "<senha-forte-do-admin-local>"
 dotnet run --project src/ProjetoPizza.Api -- --seed
 ```
 
-## Instalação na máquina do cliente
+## Instalação automatizada na máquina do cliente
+
+O modo recomendado usa o instalador interativo `scripts/install-client.ps1`. Ele prepara PostgreSQL, API e frontend em containers, aplica o banco, valida a saúde do sistema e configura a inicialização automática. Na máquina do cliente não é necessário instalar manualmente Node.js, npm ou o SDK .NET.
+
+### O que a máquina precisa ter
+
+- Windows 11 Pro 64 bits atualizado;
+- usuário com permissão de administrador;
+- virtualização Intel VT-x ou AMD-V habilitada na BIOS/UEFI;
+- conexão com a internet durante a instalação;
+- 8 GB de RAM, preferencialmente 16 GB;
+- SSD com pelo menos 20 GB livres;
+- rede configurada como **Privada** no Windows;
+- IP fixo ou reserva de IP no roteador para a máquina servidor.
+
+O instalador baixa somente componentes oficiais pelo `winget`:
+
+- Git, caso o projeto ainda não esteja na máquina;
+- Docker Desktop;
+- imagens oficiais PostgreSQL 17, .NET 10, Node.js 22 e Nginx.
+
+Node.js e o SDK .NET são utilizados apenas dentro dos containers de build. As senhas nunca são enviadas ao GitHub.
+
+### Instalação mais simples, em uma máquina nova
+
+1. Abra o menu Iniciar.
+2. Procure **PowerShell**.
+3. Clique com o botão direito e escolha **Executar como administrador**.
+4. Execute:
+
+```powershell
+$installer = Join-Path $env:TEMP "install-projeto-pizza.ps1"
+Invoke-WebRequest `
+  -Uri "https://raw.githubusercontent.com/GuilhermeDuarte14511/ProjetoPizza/main/scripts/install-client.ps1" `
+  -OutFile $installer
+Unblock-File $installer
+powershell -ExecutionPolicy Bypass -File $installer
+```
+
+O próprio script baixa o repositório em `C:\ProjetoPizza`. Se os componentes WSL 2 precisarem ser ativados, o instalador solicitará que o Windows seja reiniciado. Depois do reinício, execute os quatro comandos acima novamente; a instalação continuará de forma idempotente.
+
+### Perguntas apresentadas pelo instalador
+
+O assistente solicita:
+
+1. IP fixo ou nome da máquina servidor;
+2. porta pública do sistema, padrão `8080`;
+3. porta local do PostgreSQL, padrão `5432`;
+4. nome do banco, padrão `projeto_pizza`;
+5. login do banco;
+6. senha do banco e confirmação;
+7. senha inicial de `admin@projetopizza.local` e confirmação;
+8. instalação opcional do .NET SDK 10 e Node.js 22+ no Windows;
+9. autorização para executar a carga inicial;
+10. autorização para iniciar o sistema automaticamente no logon.
+
+A senha do banco aceita entre 12 e 128 caracteres usando letras, números e os símbolos informados pelo assistente. A senha administrativa deve possuir maiúscula, minúscula, número e símbolo.
+
+Antes de alterar a máquina, o instalador mostra um resumo e solicita confirmação.
+
+### O que o instalador executa
+
+Na ordem:
+
+1. solicita elevação administrativa;
+2. verifica Windows, virtualização, WSL 2, `winget` e Docker;
+3. instala e inicia o Docker Desktop quando necessário;
+4. oferece a instalação local do .NET SDK 10 e Node.js 22+ para máquinas de manutenção;
+5. coleta e valida os dados sem exibir as senhas;
+6. cria a configuração local com ACL restrita;
+7. inicia o PostgreSQL com volume persistente;
+8. constrói API e frontend;
+9. aplica migrations e a carga inicial idempotente;
+10. inicia API, frontend e banco com política de reinício;
+11. libera somente a porta web no perfil de rede **Privada**;
+12. cria atalhos de administração e tablet na área de trabalho pública;
+13. registra a inicialização após o logon, quando autorizada;
+14. chama o health check e só conclui se o sistema estiver saudável.
+
+O PostgreSQL é publicado somente em `127.0.0.1`; tablets não conseguem acessar o banco diretamente. O Nginx recebe as conexões da rede e encaminha `/backend` para a API dentro da rede privada dos containers.
+
+### Onde ficam os dados e as senhas
+
+Os arquivos operacionais ficam fora do repositório:
+
+```text
+C:\ProgramData\ProjetoPizza\
+  installation.json
+  installation-secrets.clixml
+  LEIA-ME.txt
+  runtime.env
+```
+
+- `LEIA-ME.txt` guarda URLs e logins, mas não contém senhas;
+- `installation-secrets.clixml` guarda as senhas criptografadas pelo DPAPI do Windows;
+- `runtime.env` contém as variáveis necessárias aos containers e possui ACL restrita;
+- somente o mesmo usuário do Windows que instalou, `SYSTEM` e administradores locais possuem acesso.
+
+Para consultar os dados sem revelar as senhas:
+
+```powershell
+C:\ProjetoPizza\scripts\show-client-configuration.ps1
+```
+
+Para revelar as senhas de forma consciente:
+
+```powershell
+C:\ProjetoPizza\scripts\show-client-configuration.ps1 -RevealSecrets
+```
+
+O comando exige a confirmação `EXIBIR`. A senha administrativa registrada é a senha inicial; se ela for trocada pelo sistema, o arquivo não passa a conhecer a nova senha.
+
+### Endereços após a instalação
+
+Considerando o servidor `192.168.1.20` e a porta `8080`:
+
+```text
+Administração: http://192.168.1.20:8080
+Tablet:        http://192.168.1.20:8080/mesa
+Health check:  http://192.168.1.20:8080/backend/api/v1/health
+```
+
+Nos tablets, nunca use `localhost`, pois ele aponta para o próprio tablet.
+
+### Instalação a partir de uma cópia já clonada
+
+Abra o PowerShell como administrador na raiz do projeto:
+
+```powershell
+Set-Location C:\ProjetoPizza
+.\scripts\install-client.ps1
+```
+
+Para conferir os pré-requisitos sem instalar ou alterar nada:
+
+```powershell
+.\scripts\install-client.ps1 -CheckOnly
+```
+
+### Iniciar, parar e diagnosticar
+
+Iniciar novamente:
+
+```powershell
+C:\ProjetoPizza\scripts\start-client.ps1
+```
+
+Parar os aplicativos sem apagar o banco:
+
+```powershell
+$state = "C:\ProgramData\ProjetoPizza"
+docker compose `
+  --project-name projeto-pizza `
+  --env-file "$state\runtime.env" `
+  --file "C:\ProjetoPizza\compose.yaml" `
+  --profile client `
+  stop
+```
+
+Ver containers e logs:
+
+```powershell
+$state = "C:\ProgramData\ProjetoPizza"
+docker compose --project-name projeto-pizza --env-file "$state\runtime.env" --file "C:\ProjetoPizza\compose.yaml" --profile client ps
+docker compose --project-name projeto-pizza --env-file "$state\runtime.env" --file "C:\ProjetoPizza\compose.yaml" logs --tail 200
+```
+
+Nunca execute `docker compose down -v` na máquina do cliente: a opção `-v` remove o volume do PostgreSQL.
+
+### Atualizar uma instalação
+
+Faça backup antes:
+
+```powershell
+C:\ProjetoPizza\scripts\backup-client.ps1
+```
+
+O backup é salvo por padrão em `C:\ProgramData\ProjetoPizza\backups`, no formato próprio do `pg_restore`, e o script mostra o SHA-256 para conferência. Copie o arquivo para outro disco ou armazenamento protegido.
+
+Depois:
+
+```powershell
+Set-Location C:\ProjetoPizza
+git pull --ff-only origin main
+.\scripts\install-client.ps1
+```
+
+Quando detectar a instalação anterior, o assistente oferece reutilizar as credenciais criptografadas. O banco não é recriado, as migrations são incrementais e os containers são reconstruídos.
+
+Se o volume do banco existir e o arquivo de credenciais tiver sido perdido, o instalador interrompe sem trocar a senha. Essa proteção evita tornar a base existente inacessível.
+
+### Dados iniciais
+
+A carga atual é idempotente e cria o administrador, unidade, catálogo e dados necessários para testar os fluxos. Ela ainda inclui massas demonstrativas. Antes de uma operação comercial definitiva, revise e remova pedidos ou dispositivos demonstrativos que não representem a unidade.
+
+## Instalação manual para desenvolvimento ou contingência
+
+> Esta alternativa exige .NET, Node.js e configuração manual. Para uma máquina Windows 11 da pizzaria, prefira o instalador automatizado acima. O fluxo com IIS permanece documentado para ambientes administrados que não permitem Docker Desktop.
 
 ### Topologia recomendada
 

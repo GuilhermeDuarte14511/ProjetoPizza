@@ -52,6 +52,27 @@ O Web ativa um dispositivo previamente provisionado e vinculado a uma mesa. A AP
 
 Preço e disponibilidade são sempre recalculados no servidor. O cliente envia apenas identificadores, quantidades e personalizações; valores exibidos no navegador nunca são aceitos como autoridade. O identificador criado pelo cliente para o pedido funciona como chave de idempotência e evita duplicação em tentativas repetidas.
 
+## Implantação local no cliente
+
+A implantação automatizada mantém o monólito modular e empacota os processos em três containers:
+
+```mermaid
+flowchart LR
+    Client[Computadores e tablets] -->|HTTP porta configurada| Nginx[Nginx + Web estático]
+    Nginx -->|/backend| ApiContainer[ASP.NET Core API]
+    ApiContainer -->|rede Docker privada| Database[(PostgreSQL 17)]
+```
+
+- o frontend é compilado com `VITE_API_URL=/backend`;
+- o Nginx oferece fallback para as rotas da SPA e encaminha HTTP/SignalR para a API;
+- somente a porta web é aberta na rede privada do Windows;
+- a porta publicada do PostgreSQL é vinculada a `127.0.0.1`;
+- o banco utiliza volume persistente e não é recriado em reinstalações;
+- migrations e seed continuam sendo executados pela API, preservando a direção das dependências;
+- credenciais operacionais ficam fora do repositório, com ACL restrita e cópia criptografada pelo DPAPI.
+
+O empacotamento não move regras de negócio para Nginx, scripts ou containers. Eles são apenas infraestrutura de implantação.
+
 ## Decisões
 
 - Um `ProjetoPizzaDbContext`, com schemas por módulo.
