@@ -123,9 +123,16 @@ public sealed class AdminCashierServiceTests
         public IQueryable<Employee> Employees => EmployeeItems.AsQueryable();
         public IQueryable<Category> Categories => Array.Empty<Category>().AsQueryable();
         public IQueryable<Product> Products => Array.Empty<Product>().AsQueryable();
+        public IQueryable<ProductExtra> ProductExtras => Array.Empty<ProductExtra>().AsQueryable();
+        public IQueryable<ProductImage> ProductImages => Array.Empty<ProductImage>().AsQueryable();
         public IQueryable<PizzaSize> PizzaSizes => Array.Empty<PizzaSize>().AsQueryable();
         public IQueryable<PizzaFlavor> PizzaFlavors => Array.Empty<PizzaFlavor>().AsQueryable();
+        public IQueryable<PizzaFlavorPrice> PizzaFlavorPrices => Array.Empty<PizzaFlavorPrice>().AsQueryable();
         public IQueryable<PizzaCrust> PizzaCrusts => Array.Empty<PizzaCrust>().AsQueryable();
+        public IQueryable<PizzaCrustPrice> PizzaCrustPrices => Array.Empty<PizzaCrustPrice>().AsQueryable();
+        public IQueryable<Ingredient> Ingredients => Array.Empty<Ingredient>().AsQueryable();
+        public IQueryable<PizzaFlavorIngredient> PizzaFlavorIngredients => Array.Empty<PizzaFlavorIngredient>().AsQueryable();
+        public IQueryable<PizzaFlavorExtra> PizzaFlavorExtras => Array.Empty<PizzaFlavorExtra>().AsQueryable();
         public IQueryable<InventoryItem> InventoryItems => Array.Empty<InventoryItem>().AsQueryable();
         public IQueryable<StockBalance> StockBalances => Array.Empty<StockBalance>().AsQueryable();
         public IQueryable<DiningArea> DiningAreas => Array.Empty<DiningArea>().AsQueryable();
@@ -136,6 +143,9 @@ public sealed class AdminCashierServiceTests
         public IQueryable<ServiceCall> ServiceCalls => Array.Empty<ServiceCall>().AsQueryable();
         public IQueryable<Order> Orders => Array.Empty<Order>().AsQueryable();
         public IQueryable<OrderItem> OrderItems => Array.Empty<OrderItem>().AsQueryable();
+        public IQueryable<OrderItemPizza> OrderItemPizzas => Array.Empty<OrderItemPizza>().AsQueryable();
+        public IQueryable<OrderItemPizzaFlavor> OrderItemPizzaFlavors => Array.Empty<OrderItemPizzaFlavor>().AsQueryable();
+        public IQueryable<OrderItemModifier> OrderItemModifiers => Array.Empty<OrderItemModifier>().AsQueryable();
         public IQueryable<ProductionStation> ProductionStations => Array.Empty<ProductionStation>().AsQueryable();
         public IQueryable<KitchenTicket> KitchenTickets => Array.Empty<KitchenTicket>().AsQueryable();
         public IQueryable<KitchenTicketItem> KitchenTicketItems => Array.Empty<KitchenTicketItem>().AsQueryable();
@@ -147,6 +157,8 @@ public sealed class AdminCashierServiceTests
         public IQueryable<CashShift> CashShifts => CashShiftItems.AsQueryable();
         public IQueryable<CashMovement> CashMovements => Array.Empty<CashMovement>().AsQueryable();
         public IQueryable<Device> Devices => Array.Empty<Device>().AsQueryable();
+        public IQueryable<DeviceSession> DeviceSessions => Array.Empty<DeviceSession>().AsQueryable();
+        public IQueryable<DeviceProvisioning> DeviceProvisionings => Array.Empty<DeviceProvisioning>().AsQueryable();
         public IQueryable<AuditLog> AuditLogs => AuditLogItems.AsQueryable();
 
         public void Add<TEntity>(TEntity entity) where TEntity : class

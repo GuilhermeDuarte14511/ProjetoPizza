@@ -1,4 +1,5 @@
 using ProjetoPizza.Application.Abstractions.Persistence;
+using ProjetoPizza.Application.Devices;
 using ProjetoPizza.Domain.Audit;
 using ProjetoPizza.Domain.Billing;
 using ProjetoPizza.Domain.Cashier;
@@ -13,7 +14,9 @@ using ProjetoPizza.Domain.SharedKernel;
 
 namespace ProjetoPizza.Application.Admin;
 
-public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAdminManagementService
+public sealed class AdminManagementService(
+    IProjetoPizzaDbContext context,
+    IOperationNumberGenerator? numberGenerator = null) : IAdminManagementService
 {
     public Task<IReadOnlyCollection<OrderManagementDto>> ListOrdersAsync(CancellationToken cancellationToken)
     {
@@ -52,12 +55,56 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
     public Task<IReadOnlyCollection<PizzaCrustDto>> ListPizzaCrustsAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var sizes = context.PizzaSizes
+            .OrderBy(size => size.Slices)
+            .ToArray();
+        var prices = context.PizzaCrustPrices.ToArray();
         var result = context.PizzaCrusts
             .OrderBy(crust => crust.DisplayOrder)
             .ToArray()
-            .Select(crust => new PizzaCrustDto(crust.Id.Value, crust.Name, crust.Description, crust.IsActive, crust.IsAvailable))
+            .Select(crust => new PizzaCrustDto(
+                crust.Id.Value,
+                crust.Name,
+                crust.Description,
+                crust.IsActive,
+                crust.IsAvailable,
+                sizes
+                    .Where(size => size.UnitId == crust.UnitId)
+                    .Select(size =>
+                    {
+                        var price = prices.SingleOrDefault(candidate =>
+                            candidate.PizzaCrustId == crust.Id &&
+                            candidate.PizzaSizeId == size.Id);
+                        return new PizzaCrustPriceDto(
+                            size.Id.Value,
+                            size.Name,
+                            size.Slices,
+                            price?.AdditionalPrice.Amount ?? 0m,
+                            price?.HalfAdditionalPrice.Amount ?? 0m);
+                    })
+                    .ToArray()))
             .ToArray();
         return Task.FromResult<IReadOnlyCollection<PizzaCrustDto>>(result);
+    }
+
+    public Task<IReadOnlyCollection<IngredientDto>> ListIngredientsAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var result = context.Ingredients
+            .OrderBy(ingredient => ingredient.Name)
+            .ToArray()
+            .Select(ingredient => new IngredientDto(
+                ingredient.Id.Value,
+                ingredient.Name,
+                ingredient.Description,
+                ingredient.IsActive,
+                ingredient.IsAllergen,
+                ingredient.AllergenDescription,
+                ingredient.IsAvailableAsExtra,
+                ingredient.ExtraPrice.Amount,
+                ingredient.MaxExtraQuantity))
+            .ToArray();
+        return Task.FromResult<IReadOnlyCollection<IngredientDto>>(result);
     }
 
     public Task<UnitSettingsDto> GetUnitSettingsAsync(CancellationToken cancellationToken)
@@ -418,9 +465,113 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
             product.RemoveFromFeatured();
         }
 
+        if (command.Complements is not null)
+        {
+            SynchronizeProductExtras(product, command.Complements, unit.Id);
+        }
+
         AddAudit(unit.Id, employee.Id, "Catalog", action, nameof(Product), product.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return new CommandResultDto(product.Id.Value, product.IsActive ? "Active" : "Inactive");
+    }
+
+    private void SynchronizeProductExtras(
+        Product product,
+        IReadOnlyCollection<SaveProductExtraCommand> requestedComplements,
+        RestaurantUnitId unitId)
+    {
+        if (product.ProductType != ProductType.Pizza)
+        {
+            if (requestedComplements.Count > 0)
+            {
+                throw new BusinessRuleException(
+                    "product.extras_type",
+                    "Only pizza products can configure complements.");
+            }
+
+            return;
+        }
+
+        var existingIngredients = context.Ingredients
+            .Where(ingredient => ingredient.UnitId == unitId)
+            .ToArray();
+        var currentLinks = context.ProductExtras
+            .Where(link => link.ProductId == product.Id)
+            .ToArray();
+        var selectedIngredientIds = new HashSet<IngredientId>();
+
+        foreach (var requested in requestedComplements)
+        {
+            var normalizedName = requested.Name?.Trim();
+            if (string.IsNullOrWhiteSpace(normalizedName))
+            {
+                throw new BusinessRuleException(
+                    "product.extra_name",
+                    "Complement name is required.");
+            }
+
+            Ingredient? ingredient;
+            if (requested.IngredientId.HasValue)
+            {
+                var ingredientId = new IngredientId(requested.IngredientId.Value);
+                ingredient = existingIngredients.SingleOrDefault(candidate => candidate.Id == ingredientId)
+                    ?? throw new BusinessRuleException(
+                        "product.extra_ingredient",
+                        "Complement ingredient does not exist in this restaurant unit.");
+            }
+            else
+            {
+                ingredient = existingIngredients.SingleOrDefault(candidate =>
+                    string.Equals(candidate.Name, normalizedName, StringComparison.OrdinalIgnoreCase));
+                if (ingredient is null)
+                {
+                    ingredient = new Ingredient(IngredientId.New(), unitId, normalizedName);
+                    context.Add(ingredient);
+                    existingIngredients = [.. existingIngredients, ingredient];
+                }
+            }
+
+            if (!selectedIngredientIds.Add(ingredient.Id))
+            {
+                throw new BusinessRuleException(
+                    "product.extra_duplicate",
+                    "The same complement cannot be selected more than once.");
+            }
+
+            if (!ingredient.IsActive || !ingredient.IsAvailableAsExtra)
+            {
+                ingredient.Update(
+                    ingredient.Name,
+                    ingredient.Description,
+                    isActive: true,
+                    isAllergen: ingredient.IsAllergen,
+                    allergenDescription: ingredient.AllergenDescription,
+                    isAvailableAsExtra: true,
+                    extraPrice: new Money(requested.Price),
+                    maxExtraQuantity: requested.MaxQuantity);
+            }
+
+            var link = currentLinks.SingleOrDefault(candidate => candidate.IngredientId == ingredient.Id);
+            if (link is null)
+            {
+                context.Add(new ProductExtra(
+                    product.Id,
+                    ingredient.Id,
+                    new Money(requested.Price),
+                    requested.MaxQuantity));
+            }
+            else
+            {
+                link.Update(new Money(requested.Price), requested.MaxQuantity, isActive: true);
+            }
+        }
+
+        foreach (var removed in currentLinks.Where(link => !selectedIngredientIds.Contains(link.IngredientId)))
+        {
+            removed.Update(removed.Price, removed.MaxQuantity, isActive: false);
+        }
+
+        product.ConfigureCustomExtras(true);
     }
 
     public async Task<CommandResultDto> SavePizzaSizeAsync(
@@ -478,7 +629,7 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
         if (command.Id.HasValue)
         {
             var crustId = new PizzaCrustId(command.Id.Value);
-            crust = context.PizzaCrusts.Single(item => item.Id == crustId);
+            crust = context.PizzaCrusts.Single(item => item.Id == crustId && item.UnitId == unit.Id);
         }
         else
         {
@@ -488,9 +639,91 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
         }
 
         crust.Update(command.Name, command.Description, command.IsActive, command.IsAvailable);
+        if (command.Prices is not null)
+        {
+            var duplicateSize = command.Prices
+                .GroupBy(price => price.PizzaSizeId)
+                .FirstOrDefault(group => group.Count() > 1);
+            if (duplicateSize is not null)
+            {
+                throw new BusinessRuleException("pizza_crust.duplicate_size", "A crust price can be configured only once per pizza size.");
+            }
+
+            var unitSizes = context.PizzaSizes
+                .Where(size => size.UnitId == unit.Id)
+                .ToArray()
+                .ToDictionary(size => size.Id);
+            var currentPrices = context.PizzaCrustPrices
+                .Where(price => price.PizzaCrustId == crust.Id)
+                .ToArray()
+                .ToDictionary(price => price.PizzaSizeId);
+            foreach (var requestedPrice in command.Prices)
+            {
+                var sizeId = new PizzaSizeId(requestedPrice.PizzaSizeId);
+                if (!unitSizes.ContainsKey(sizeId))
+                {
+                    throw new BusinessRuleException("pizza_crust.invalid_size", "The selected pizza size does not belong to this restaurant unit.");
+                }
+
+                var fullPrice = new Money(requestedPrice.FullPrice);
+                var halfPrice = new Money(requestedPrice.HalfPrice);
+                if (currentPrices.TryGetValue(sizeId, out var currentPrice))
+                {
+                    currentPrice.Update(fullPrice, halfPrice);
+                }
+                else
+                {
+                    context.Add(new PizzaCrustPrice(
+                        PizzaCrustPriceId.New(),
+                        crust.Id,
+                        sizeId,
+                        fullPrice,
+                        halfPrice));
+                }
+            }
+        }
+
         AddAudit(unit.Id, employee.Id, "Catalog", action, nameof(PizzaCrust), crust.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return new CommandResultDto(crust.Id.Value, crust.IsAvailable ? "Available" : "Unavailable");
+    }
+
+    public async Task<CommandResultDto> SaveIngredientAsync(
+        SaveIngredientCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var unit = GetUnit();
+        Ingredient ingredient;
+        var action = "Update";
+        if (command.Id.HasValue)
+        {
+            var ingredientId = new IngredientId(command.Id.Value);
+            ingredient = context.Ingredients.Single(item =>
+                item.Id == ingredientId && item.UnitId == unit.Id);
+        }
+        else
+        {
+            ingredient = new Ingredient(IngredientId.New(), unit.Id, command.Name);
+            context.Add(ingredient);
+            action = "Create";
+        }
+
+        ingredient.Update(
+            command.Name,
+            command.Description,
+            command.IsActive,
+            command.IsAllergen,
+            command.AllergenDescription,
+            command.IsAvailableAsExtra,
+            new Money(command.ExtraPrice),
+            command.MaxExtraQuantity);
+        AddAudit(unit.Id, employee.Id, "Catalog", action, nameof(Ingredient), ingredient.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(
+            ingredient.Id.Value,
+            ingredient.IsAvailableAsExtra ? "AvailableAsExtra" : "UnavailableAsExtra");
     }
 
     public async Task<CommandResultDto> SavePizzaFlavorAsync(
@@ -534,9 +767,74 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
             command.IsActive,
             command.IsAvailable,
             command.SoldOutReason);
+        SynchronizeFlavorExtras(flavor, command.Extras, unit.Id);
         AddAudit(unit.Id, employee.Id, "Catalog", action, nameof(PizzaFlavor), flavor.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return new CommandResultDto(flavor.Id.Value, flavor.IsAvailable ? "Available" : "Unavailable");
+    }
+
+    private void SynchronizeFlavorExtras(
+        PizzaFlavor flavor,
+        IReadOnlyCollection<SavePizzaFlavorExtraCommand>? requestedExtras,
+        RestaurantUnitId unitId)
+    {
+        if (requestedExtras is null)
+        {
+            return;
+        }
+
+        if (requestedExtras
+            .GroupBy(extra => extra.IngredientId)
+            .Any(group => group.Count() > 1))
+        {
+            throw new BusinessRuleException(
+                "pizza_flavor.extra_duplicate",
+                "The same extra ingredient cannot be linked more than once.");
+        }
+
+        var existingExtras = context.PizzaFlavorExtras
+            .Where(extra => extra.PizzaFlavorId == flavor.Id)
+            .ToArray()
+            .ToDictionary(extra => extra.IngredientId);
+        var requestedIngredientIds = requestedExtras
+            .Select(extra => new IngredientId(extra.IngredientId))
+            .ToHashSet();
+
+        foreach (var existing in existingExtras.Values
+                     .Where(extra => !requestedIngredientIds.Contains(extra.IngredientId)))
+        {
+            existing.Update(existing.Price, existing.MaxQuantity, isActive: false);
+        }
+
+        foreach (var requested in requestedExtras)
+        {
+            var ingredientId = new IngredientId(requested.IngredientId);
+            var ingredientExists = context.Ingredients.Any(ingredient =>
+                ingredient.Id == ingredientId &&
+                ingredient.UnitId == unitId &&
+                ingredient.IsActive &&
+                ingredient.IsAvailableAsExtra);
+            if (!ingredientExists)
+            {
+                throw new BusinessRuleException(
+                    "pizza_flavor.extra_unavailable",
+                    "An extra ingredient is inactive or unavailable.");
+            }
+
+            var price = new Money(requested.Price);
+            if (existingExtras.TryGetValue(ingredientId, out var existing))
+            {
+                existing.Update(price, requested.MaxQuantity, isActive: true);
+            }
+            else
+            {
+                context.Add(new PizzaFlavorExtra(
+                    flavor.Id,
+                    ingredientId,
+                    price,
+                    requested.MaxQuantity));
+            }
+        }
     }
 
     public async Task<CommandResultDto> OpenTableAsync(
@@ -561,7 +859,9 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
             throw new BusinessRuleException("table.already_in_open_session", "Table already belongs to an open session.");
         }
 
-        var sessionNumber = context.TableSessions.Any() ? context.TableSessions.Max(session => session.SessionNumber) + 1 : 1;
+        var sessionNumber = numberGenerator is null
+            ? context.TableSessions.Any() ? context.TableSessions.Max(session => session.SessionNumber) + 1 : 1
+            : await numberGenerator.NextTableSessionNumberAsync(cancellationToken);
         var settings = context.OperationSettings.Single();
         var session = TableSession.Open(
             TableSessionId.New(),
@@ -688,7 +988,7 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
         return new CommandResultDto(ticket.Id.Value, ticket.Status.ToString());
     }
 
-    public async Task<CommandResultDto> ResolveServiceCallAsync(
+    public async Task<CommandResultDto> AcknowledgeServiceCallAsync(
         Guid id,
         Guid identityUserId,
         CancellationToken cancellationToken)
@@ -696,11 +996,27 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
         var employee = GetEmployee(identityUserId);
         var callId = new ServiceCallId(id);
         var call = context.ServiceCalls.Single(item => item.Id == callId);
-        if (call.Status == ServiceCallStatus.Pending)
+        if (call.Status != ServiceCallStatus.Pending)
         {
-            call.Acknowledge(employee.Id);
+            throw new BusinessRuleException(
+                "service_call.not_pending",
+                "Only a pending service call can be acknowledged.");
         }
 
+        call.Acknowledge(employee.Id);
+        AddAudit(call.UnitId, employee.Id, "Dining", "Acknowledge", nameof(ServiceCall), call.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(call.Id.Value, call.Status.ToString());
+    }
+
+    public async Task<CommandResultDto> CompleteServiceCallAsync(
+        Guid id,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var callId = new ServiceCallId(id);
+        var call = context.ServiceCalls.Single(item => item.Id == callId);
         call.Complete(employee.Id);
         AddAudit(call.UnitId, employee.Id, "Dining", "Complete", nameof(ServiceCall), call.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
@@ -988,6 +1304,99 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
         return new CommandResultDto(device.Id.Value, device.Status.ToString());
     }
 
+    public async Task<DeviceProvisioningDto> CreateCustomerTabletAsync(
+        CreateCustomerTabletCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var unit = GetUnit();
+        var tableId = new RestaurantTableId(command.LinkedTableId);
+        EnsureTableBelongsToUnit(tableId, unit.Id);
+
+        var device = new Device(
+            DeviceId.New(),
+            unit.Id,
+            command.Name,
+            CreateTabletSerialNumber(),
+            DeviceType.CustomerTablet,
+            command.Platform);
+        device.LinkToTable(tableId);
+        context.Add(device);
+
+        var result = CreateProvisioning(device);
+        AddAudit(unit.Id, employee.Id, "Devices", "Create", nameof(Device), device.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return result;
+    }
+
+    public async Task<DeviceProvisioningDto> ProvisionCustomerTabletAsync(
+        Guid id,
+        ProvisionCustomerTabletCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var deviceId = new DeviceId(id);
+        var device = context.Devices.SingleOrDefault(candidate =>
+            candidate.Id == deviceId &&
+            candidate.DeviceType == DeviceType.CustomerTablet)
+            ?? throw new BusinessRuleException("device.not_found", "Customer tablet does not exist.");
+        if (device.IsLocked)
+        {
+            throw new BusinessRuleException("device.locked", "A locked tablet cannot be linked.");
+        }
+
+        var tableId = new RestaurantTableId(command.LinkedTableId);
+        EnsureTableBelongsToUnit(tableId, device.UnitId);
+        device.LinkToTable(tableId);
+
+        var result = CreateProvisioning(device);
+        AddAudit(device.UnitId, employee.Id, "Devices", "Provision", nameof(Device), device.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return result;
+    }
+
+    private DeviceProvisioningDto CreateProvisioning(Device device)
+    {
+        foreach (var previous in context.DeviceProvisionings
+                     .Where(candidate => candidate.DeviceId == device.Id)
+                     .ToArray()
+                     .Where(candidate => candidate.IsAvailableAt(DateTimeOffset.UtcNow)))
+        {
+            previous.Revoke();
+        }
+
+        var token = DeviceProvisioningTokens.Create();
+        var expiresAt = DateTimeOffset.UtcNow.AddMinutes(30);
+        context.Add(new DeviceProvisioning(
+            DeviceProvisioningId.New(),
+            device.Id,
+            DeviceProvisioningTokens.Hash(token),
+            expiresAt));
+        return new DeviceProvisioningDto(ToDeviceDto(device), token, expiresAt);
+    }
+
+    private void EnsureTableBelongsToUnit(RestaurantTableId tableId, RestaurantUnitId unitId)
+    {
+        if (!context.RestaurantTables.Any(table => table.Id == tableId && table.UnitId == unitId))
+        {
+            throw new BusinessRuleException("device.table", "Linked table does not exist in this restaurant unit.");
+        }
+    }
+
+    private string CreateTabletSerialNumber()
+    {
+        string serialNumber;
+        do
+        {
+            serialNumber = $"TAB-{Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(6))}";
+        }
+        while (context.Devices.Any(device => device.SerialNumber == serialNumber));
+
+        return serialNumber;
+    }
+
     private RestaurantUnit GetUnit() => context.RestaurantUnits.Single();
 
     private Employee GetEmployee(Guid identityUserId) =>
@@ -1029,4 +1438,20 @@ public sealed class AdminManagementService(IProjetoPizzaDbContext context) : IAd
         unit.AdministrativeEmail,
         unit.Timezone,
         unit.CurrencyCode);
+
+    private static DeviceDto ToDeviceDto(Device device) => new(
+        device.Id.Value,
+        device.Name,
+        device.SerialNumber,
+        device.DeviceType.ToString(),
+        device.Platform,
+        device.Status.ToString(),
+        device.BatteryPercentage,
+        device.IsCharging,
+        device.NetworkStatus,
+        device.IpAddress,
+        device.AppVersion,
+        device.LastSeenAt,
+        device.LinkedTableId?.Value,
+        device.IsLocked);
 }

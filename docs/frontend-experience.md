@@ -43,7 +43,7 @@ npm run test:coverage
 npm run test:e2e
 ```
 
-O Vitest cobre componentes, apresentações e schemas. O Playwright executa o fluxo de formulário em Chromium desktop e viewport mobile usando o modo local sem API.
+O Vitest cobre componentes, apresentações, carrinho isolado por sessão, acessibilidade e schemas. O Playwright administrativo executa os fluxos em Chromium desktop e viewport mobile usando o modo local sem API. Com API e banco iniciados, `npm run test:e2e:client` valida a ativação e o cardápio do tablet real em viewport de iPad.
 
 ## Recebimento e auditoria
 
@@ -60,6 +60,20 @@ As listas operacionais de pedidos, mesas, pagamentos e auditoria são exportadas
 O indicador de caixa do cabeçalho consome a mesma consulta e a mesma chave de cache da tela de caixa. Assim, ele mostra aberto somente quando existe um turno com status `Open` e permanece sincronizado após fechamento ou atualização em tempo real.
 
 A tela de caixa apresenta a abertura quando não existe turno corrente. O modal acessível seleciona um caixa ativo, recebe o fundo inicial com máscara monetária e mostra sucesso ou erro tratado. A resposta da abertura e o fechamento atualizam imediatamente a chave compartilhada, mantendo página e cabeçalho consistentes sem recarregar o navegador.
+
+## Tablet do cliente
+
+A rota `/mesa` é carregada separadamente do painel e não inicia a conexão SignalR administrativa. A jornada segue as variantes `*_atualizada` do Stitch: ativação, boas-vindas, cardápio, seis etapas de montagem da pizza, carrinho, confirmação, acompanhamento, chamado e solicitação de conta.
+
+O layout preserva os tokens creme e terracota, alvos de toque de pelo menos 52 px, transições com fallback para movimento reduzido, foco contido no montador e mensagens em português. Toasts confirmam mutações; erros de negócio são traduzidos e estados que bloqueiam o pedido, como conta solicitada, aparecem antes da tentativa.
+
+Em tablets com largura de até 900 px, as categorias usam uma barra lateral compacta de ícones. O botão `Categorias` expande a navegação sobre o conteúdo sem alterar a grade, e ela volta ao estado compacto ao selecionar uma categoria, tocar fora ou pressionar `Esc`. Em celulares, a mesma navegação funciona como gaveta lateral, preservando toda a largura do cardápio.
+
+O carrinho fica na sessão do navegador, separado pelo `tableSessionId`, e não atravessa atendimentos. Ao confirmar, a API recalcula preço e disponibilidade. O acompanhamento consulta somente o estado dinâmico a cada ciclo, pausa em aba oculta e trata expiração da sessão; ao concluir o pagamento, limpa o carrinho conforme a configuração e apresenta a tela de agradecimento sem perder abruptamente a leitura final.
+
+Chamados enviados pelo tablet possuem uma fila administrativa dedicada. O cabeçalho monitora novos chamados, respeita a configuração de som e direciona para a tela de aceite/conclusão. A tolerância operacional configurada controla o destaque de atraso.
+
+Uma resposta HTTP 401 dispara o encerramento centralizado da autenticação administrativa, limpa o cache protegido e redireciona imediatamente para o login. O tablet também volta à ativação com mensagem tratada quando seu token expira.
 
 ## Tempo real
 

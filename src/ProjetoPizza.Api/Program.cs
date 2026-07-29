@@ -8,6 +8,7 @@ using ProjetoPizza.Api.ErrorHandling;
 using ProjetoPizza.Api.Health;
 using ProjetoPizza.Api.Realtime;
 using ProjetoPizza.Application.Admin;
+using ProjetoPizza.Application.Client;
 using ProjetoPizza.Infrastructure;
 using ProjetoPizza.Infrastructure.Persistence;
 
@@ -29,12 +30,26 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
+    options.AddPolicy("DeviceActivation", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("postgresql");
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IAdminQueryService, AdminQueryService>();
 builder.Services.AddScoped<IAdminManagementService, AdminManagementService>();
+builder.Services.AddScoped<ClientService>();
+builder.Services.AddScoped<IClientSessionService>(provider => provider.GetRequiredService<ClientService>());
+builder.Services.AddScoped<IClientQueryService>(provider => provider.GetRequiredService<ClientService>());
+builder.Services.AddScoped<IClientOrderingService>(provider => provider.GetRequiredService<ClientService>());
+builder.Services.AddScoped<IClientAssistanceService>(provider => provider.GetRequiredService<ClientService>());
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -109,6 +124,7 @@ app.MapOpenApi();
 app.MapSystemEndpoints();
 app.MapAuthenticationEndpoints();
 app.MapAdminEndpoints();
+app.MapClientEndpoints();
 app.MapHub<AdminEventsHub>("/hubs/admin");
 
 if (args.Contains("--migrate", StringComparer.OrdinalIgnoreCase) ||

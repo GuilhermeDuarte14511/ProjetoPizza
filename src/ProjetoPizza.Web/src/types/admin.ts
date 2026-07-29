@@ -39,7 +39,27 @@ export interface TableDetail {
   waiter?: string
   orders: DashboardOrder[]
   billId?: string
+  subtotalAmount: number
+  serviceFeePercentage: number
+  serviceFeeAmount: number
+  totalAmount: number
   remainingAmount: number
+  requestedSplitCount?: number
+}
+
+export interface ServiceCall {
+  id: string
+  tableSessionId: string
+  tableId: string
+  tableNumber: number
+  tableName: string
+  typeCode: string
+  typeName: string
+  status: string
+  details?: string
+  assignedEmployee?: string
+  createdAt: string
+  acknowledgedAt?: string
 }
 
 export interface Category {
@@ -61,6 +81,21 @@ export interface Product {
   isActive: boolean
   isAvailable: boolean
   isFeatured: boolean
+  usesCustomExtras: boolean
+  complements: ProductComplement[]
+}
+
+export interface ProductComplement {
+  ingredientId?: string
+  name: string
+  price: number
+  maxQuantity: number
+}
+
+export type SaveProduct = Omit<Product, 'id' | 'usesCustomExtras' | 'complements'> & {
+  id?: string
+  usesCustomExtras?: boolean
+  complements?: ProductComplement[]
 }
 
 export interface PizzaSize {
@@ -85,6 +120,19 @@ export interface PizzaFlavor {
   isActive: boolean
   isAvailable: boolean
   soldOutReason?: string
+  extras: PizzaFlavorExtra[]
+}
+
+export interface PizzaFlavorExtra {
+  ingredientId: string
+  ingredientName: string
+  price: number
+  maxQuantity: number
+}
+
+export type SavePizzaFlavor = Omit<PizzaFlavor, 'id' | 'extras'> & {
+  id?: string
+  extras: Array<Omit<PizzaFlavorExtra, 'ingredientName'>>
 }
 
 export interface PizzaRuleSettings {
@@ -133,6 +181,27 @@ export interface PizzaCrust {
   description?: string
   isActive: boolean
   isAvailable: boolean
+  prices: PizzaCrustPrice[]
+}
+
+export interface PizzaCrustPrice {
+  pizzaSizeId: string
+  pizzaSizeName: string
+  sliceCount: number
+  fullPrice: number
+  halfPrice: number
+}
+
+export interface Ingredient {
+  id: string
+  name: string
+  description?: string
+  isActive: boolean
+  isAllergen: boolean
+  allergenDescription?: string
+  isAvailableAsExtra: boolean
+  extraPrice: number
+  maxExtraQuantity: number
 }
 
 export interface UnitSettings {
@@ -234,6 +303,12 @@ export interface Device {
   lastSeenAt?: string
   linkedTableId?: string
   isLocked: boolean
+}
+
+export interface DeviceProvisioning {
+  device: Device
+  activationToken: string
+  expiresAt: string
 }
 
 export interface AuditLog {

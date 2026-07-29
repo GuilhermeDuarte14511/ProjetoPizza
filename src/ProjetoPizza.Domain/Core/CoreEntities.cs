@@ -130,6 +130,64 @@ public interface IPizzaPricingPolicy
     Money Calculate(IReadOnlyCollection<Money> flavorPrices);
 }
 
+public static class PizzaPricingPolicies
+{
+    private static readonly IReadOnlyDictionary<PizzaPricingPolicy, IPizzaPricingPolicy> Policies =
+        new IPizzaPricingPolicy[]
+        {
+            new HighestFlavorPizzaPricingPolicy(),
+            new AverageFlavorPizzaPricingPolicy(),
+            new ProportionalFlavorPizzaPricingPolicy()
+        }.ToDictionary(policy => policy.Policy);
+
+    public static Money Calculate(PizzaPricingPolicy policy, IReadOnlyCollection<Money> flavorPrices)
+    {
+        if (flavorPrices.Count == 0)
+        {
+            throw new BusinessRuleException(
+                "pizza_pricing.flavors_required",
+                "Pizza pricing requires at least one flavor.");
+        }
+
+        if (!Policies.TryGetValue(policy, out var pricingPolicy))
+        {
+            throw new BusinessRuleException(
+                "pizza_pricing.policy",
+                "Pizza pricing policy is unavailable.");
+        }
+
+        return pricingPolicy.Calculate(flavorPrices);
+    }
+}
+
+public sealed class HighestFlavorPizzaPricingPolicy : IPizzaPricingPolicy
+{
+    public PizzaPricingPolicy Policy => PizzaPricingPolicy.HighestFlavorPrice;
+
+    public Money Calculate(IReadOnlyCollection<Money> flavorPrices) =>
+        new(flavorPrices.Max(price => price.Amount));
+}
+
+public sealed class AverageFlavorPizzaPricingPolicy : IPizzaPricingPolicy
+{
+    public PizzaPricingPolicy Policy => PizzaPricingPolicy.AverageFlavorPrice;
+
+    public Money Calculate(IReadOnlyCollection<Money> flavorPrices) =>
+        new(decimal.Round(flavorPrices.Average(price => price.Amount), 2, MidpointRounding.ToEven));
+}
+
+public sealed class ProportionalFlavorPizzaPricingPolicy : IPizzaPricingPolicy
+{
+    public PizzaPricingPolicy Policy => PizzaPricingPolicy.ProportionalFlavorPrice;
+
+    public Money Calculate(IReadOnlyCollection<Money> flavorPrices)
+    {
+        var portions = flavorPrices.Count;
+        var total = flavorPrices.Sum(price => price.Amount / portions);
+        return new Money(decimal.Round(total, 2, MidpointRounding.ToEven));
+    }
+}
+
 public sealed class PizzaSettings : Entity<RestaurantUnitId>
 {
     private PizzaSettings() : base(default) { }

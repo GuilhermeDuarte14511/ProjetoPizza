@@ -16,6 +16,27 @@ describe('schemas dos formulários administrativos', () => {
     expect(result.success).toBe(false)
   })
 
+  it('aceita pizza com complemento, preço e limite válidos', () => {
+    const result = productSchema.safeParse({
+      name: 'Pizza da Casa',
+      categoryId: crypto.randomUUID(),
+      sku: 'PIZ-CASA',
+      type: 'Pizza',
+      basePrice: 59.9,
+      isActive: true,
+      isAvailable: true,
+      isFeatured: false,
+      usesCustomExtras: true,
+      complements: [{
+        name: 'Bacon extra',
+        price: 8,
+        maxQuantity: 3,
+      }],
+    })
+
+    expect(result.success).toBe(true)
+  })
+
   it('rejeita slug fora do formato usado nas URLs', () => {
     const result = categorySchema.safeParse({
       name: 'Pizzas',

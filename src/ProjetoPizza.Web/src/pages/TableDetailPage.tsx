@@ -83,9 +83,10 @@ export function TableDetailPage() {
         <aside className="detail-sidebar">
           <article className="surface-card summary-card">
             <h2>Resumo</h2>
-            <div className="summary-line"><span>Subtotal</span><strong>{currency.format(detail.table.currentTotal)}</strong></div>
-            <div className="summary-line"><span>Taxa de serviço</span><strong>{currency.format(detail.table.currentTotal * 0.1)}</strong></div>
-            <div className="summary-total"><span>Total</span><strong>{currency.format(detail.table.currentTotal * 1.1)}</strong></div>
+            <div className="summary-line"><span>Subtotal</span><strong>{currency.format(detail.subtotalAmount)}</strong></div>
+            <div className="summary-line"><span>Taxa de serviço ({detail.serviceFeePercentage}%)</span><strong>{currency.format(detail.serviceFeeAmount)}</strong></div>
+            <div className="summary-total"><span>Total</span><strong>{currency.format(detail.totalAmount)}</strong></div>
+            {detail.requestedSplitCount && <div className="payment-request-note">Mesa solicitou divisão entre <strong>{detail.requestedSplitCount} pessoas</strong>.</div>}
             {hasPermission('operations:write') && <button className="primary-button full" disabled={!detail.billId} onClick={() => setPaymentOpen(true)}><CreditCard size={17} /> Registrar pagamento</button>}
           </article>
           <article className="surface-card quick-actions">
@@ -100,7 +101,7 @@ export function TableDetailPage() {
           <div className="modal-footer"><button type="button" className="secondary-button" disabled={busyAction === 'open'} onClick={() => setOpenTableModalOpen(false)}>Cancelar</button><button className="primary-button" disabled={busyAction === 'open'} aria-busy={busyAction === 'open'}><Plus size={16} /> {busyAction === 'open' ? 'Abrindo...' : 'Abrir mesa'}</button></div>
         </form>
       </Modal>}
-      {isPaymentOpen && detail.billId && <PaymentDialog billId={detail.billId} remainingAmount={detail.remainingAmount} methods={methods} onClose={() => setPaymentOpen(false)} onPaid={paymentCompleted} />}
+      {isPaymentOpen && detail.billId && <PaymentDialog billId={detail.billId} remainingAmount={detail.remainingAmount} requestedSplitCount={detail.requestedSplitCount} methods={methods} onClose={() => setPaymentOpen(false)} onPaid={paymentCompleted} />}
     </>
   )
 }

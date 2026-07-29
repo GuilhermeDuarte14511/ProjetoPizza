@@ -51,6 +51,8 @@ public static class AdminEndpoints
             service.ListOrdersAsync(cancellationToken));
         group.MapGet("/pizza-crusts", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.ListPizzaCrustsAsync(cancellationToken));
+        group.MapGet("/ingredients", (IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.ListIngredientsAsync(cancellationToken));
         group.MapGet("/settings/unit", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.GetUnitSettingsAsync(cancellationToken));
         group.MapGet("/settings/operation", (IAdminManagementService service, CancellationToken cancellationToken) =>
@@ -179,6 +181,22 @@ public static class AdminEndpoints
             service.SavePizzaCrustAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
 
+        group.MapPost("/ingredients", (
+            SaveIngredientCommand command,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.SaveIngredientAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPut("/ingredients/{id:guid}", (
+            Guid id,
+            SaveIngredientCommand command,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.SaveIngredientAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+
         group.MapPost("/pizza-flavors", (
             SavePizzaFlavorCommand command,
             ClaimsPrincipal user,
@@ -226,12 +244,19 @@ public static class AdminEndpoints
             CancellationToken cancellationToken) =>
             service.TransitionKitchenTicketAsync(id, transition, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("OperationsWrite");
+        group.MapPost("/service-calls/{id:guid}/acknowledge", (
+            Guid id,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.AcknowledgeServiceCallAsync(id, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("OperationsWrite");
         group.MapPost("/service-calls/{id:guid}/complete", (
             Guid id,
             ClaimsPrincipal user,
             IAdminManagementService service,
             CancellationToken cancellationToken) =>
-            service.ResolveServiceCallAsync(id, GetIdentityUserId(user), cancellationToken))
+            service.CompleteServiceCallAsync(id, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("OperationsWrite");
         group.MapPost("/payments", (
             RecordPaymentCommand command,
@@ -275,6 +300,21 @@ public static class AdminEndpoints
             IAdminManagementService service,
             CancellationToken cancellationToken) =>
             service.UpdateDeviceAsync(id, command, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPost("/devices/tablets", (
+            CreateCustomerTabletCommand command,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.CreateCustomerTabletAsync(command, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPost("/devices/{id:guid}/provision", (
+            Guid id,
+            ProvisionCustomerTabletCommand command,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.ProvisionCustomerTabletAsync(id, command, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
     }
 

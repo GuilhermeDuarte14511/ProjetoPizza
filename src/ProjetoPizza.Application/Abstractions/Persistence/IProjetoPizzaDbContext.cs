@@ -20,9 +20,16 @@ public interface IProjetoPizzaDbContext
     IQueryable<Employee> Employees { get; }
     IQueryable<Category> Categories { get; }
     IQueryable<Product> Products { get; }
+    IQueryable<ProductExtra> ProductExtras { get; }
+    IQueryable<ProductImage> ProductImages { get; }
     IQueryable<PizzaSize> PizzaSizes { get; }
     IQueryable<PizzaFlavor> PizzaFlavors { get; }
+    IQueryable<PizzaFlavorPrice> PizzaFlavorPrices { get; }
     IQueryable<PizzaCrust> PizzaCrusts { get; }
+    IQueryable<PizzaCrustPrice> PizzaCrustPrices { get; }
+    IQueryable<Ingredient> Ingredients { get; }
+    IQueryable<PizzaFlavorIngredient> PizzaFlavorIngredients { get; }
+    IQueryable<PizzaFlavorExtra> PizzaFlavorExtras { get; }
     IQueryable<InventoryItem> InventoryItems { get; }
     IQueryable<StockBalance> StockBalances { get; }
     IQueryable<DiningArea> DiningAreas { get; }
@@ -33,6 +40,9 @@ public interface IProjetoPizzaDbContext
     IQueryable<ServiceCall> ServiceCalls { get; }
     IQueryable<Order> Orders { get; }
     IQueryable<OrderItem> OrderItems { get; }
+    IQueryable<OrderItemPizza> OrderItemPizzas { get; }
+    IQueryable<OrderItemPizzaFlavor> OrderItemPizzaFlavors { get; }
+    IQueryable<OrderItemModifier> OrderItemModifiers { get; }
     IQueryable<ProductionStation> ProductionStations { get; }
     IQueryable<KitchenTicket> KitchenTickets { get; }
     IQueryable<KitchenTicketItem> KitchenTicketItems { get; }
@@ -44,6 +54,8 @@ public interface IProjetoPizzaDbContext
     IQueryable<CashShift> CashShifts { get; }
     IQueryable<CashMovement> CashMovements { get; }
     IQueryable<Device> Devices { get; }
+    IQueryable<DeviceSession> DeviceSessions { get; }
+    IQueryable<DeviceProvisioning> DeviceProvisionings { get; }
     IQueryable<AuditLog> AuditLogs { get; }
 
     void Add<TEntity>(TEntity entity) where TEntity : class;

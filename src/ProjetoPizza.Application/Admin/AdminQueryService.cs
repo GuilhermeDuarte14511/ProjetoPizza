@@ -61,7 +61,7 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
 
         if (link is null)
         {
-            return Task.FromResult<TableDetailDto?>(new TableDetailDto(table, null, null, null, [], null, 0));
+            return Task.FromResult<TableDetailDto?>(new TableDetailDto(table, null, null, null, [], null, 0, 0, 0, 0, 0, null));
         }
 
         var session = context.TableSessions.Single(candidate => candidate.Id == link.TableSessionId);
@@ -75,6 +75,11 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
             .ToArray()
             .OrderByDescending(candidate => candidate.RequestedAt)
             .FirstOrDefault();
+        var subtotal = bill?.Subtotal.Amount ?? table.CurrentTotal;
+        var serviceFeePercentage = bill?.ServiceFeePercentage.Value ?? session.ServiceFeePercentageSnapshot.Value;
+        var serviceFeeAmount = bill?.ServiceFeeAmount.Amount ??
+            decimal.Round(subtotal * session.ServiceFeePercentageSnapshot.AsFactor, 2, MidpointRounding.ToEven);
+        var total = bill?.TotalAmount.Amount ?? subtotal + serviceFeeAmount;
         return Task.FromResult<TableDetailDto?>(new TableDetailDto(
             table,
             session.Id.Value,
@@ -82,7 +87,12 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
             null,
             orders,
             bill?.Id.Value,
-            bill?.RemainingAmount.Amount ?? table.CurrentTotal));
+            subtotal,
+            serviceFeePercentage,
+            serviceFeeAmount,
+            total,
+            bill?.RemainingAmount.Amount ?? total,
+            bill?.RequestedSplitCount));
     }
 
     public Task<IReadOnlyCollection<CategoryDto>> ListCategoriesAsync(CancellationToken cancellationToken)
@@ -98,6 +108,21 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
     public Task<IReadOnlyCollection<ProductDto>> ListProductsAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var ingredients = context.Ingredients.ToDictionary(ingredient => ingredient.Id, ingredient => ingredient.Name);
+        var complements = context.ProductExtras
+            .Where(extra => extra.IsActive)
+            .ToArray()
+            .GroupBy(extra => extra.ProductId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyCollection<ProductExtraDto>)group
+                    .OrderBy(extra => ingredients.GetValueOrDefault(extra.IngredientId))
+                    .Select(extra => new ProductExtraDto(
+                        extra.IngredientId.Value,
+                        ingredients.GetValueOrDefault(extra.IngredientId, "Complemento"),
+                        extra.Price.Amount,
+                        extra.MaxQuantity))
+                    .ToArray());
         var result = context.Products
             .OrderBy(product => product.DisplayOrder)
             .ThenBy(product => product.Name)
@@ -111,7 +136,9 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
                 product.BasePrice.Amount,
                 product.IsActive,
                 product.IsAvailable,
-                product.IsFeatured))
+                product.IsFeatured,
+                product.UsesCustomExtras,
+                complements.GetValueOrDefault(product.Id, [])))
             .ToArray();
         return Task.FromResult<IReadOnlyCollection<ProductDto>>(result);
     }
@@ -130,6 +157,23 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
     public Task<IReadOnlyCollection<PizzaFlavorDto>> ListPizzaFlavorsAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var ingredientNames = context.Ingredients.ToDictionary(
+            ingredient => ingredient.Id,
+            ingredient => ingredient.Name);
+        var extras = context.PizzaFlavorExtras
+            .Where(extra => extra.IsActive)
+            .ToArray()
+            .GroupBy(extra => extra.PizzaFlavorId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyCollection<PizzaFlavorExtraDto>)group
+                    .OrderBy(extra => ingredientNames.GetValueOrDefault(extra.IngredientId))
+                    .Select(extra => new PizzaFlavorExtraDto(
+                        extra.IngredientId.Value,
+                        ingredientNames.GetValueOrDefault(extra.IngredientId, "Ingrediente"),
+                        extra.Price.Amount,
+                        extra.MaxQuantity))
+                    .ToArray());
         var result = context.PizzaFlavors
             .OrderBy(flavor => flavor.DisplayOrder)
             .ToArray()
@@ -143,7 +187,8 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
                 flavor.IsVegetarian,
                 flavor.IsActive,
                 flavor.IsAvailable,
-                flavor.SoldOutReason))
+                flavor.SoldOutReason,
+                extras.GetValueOrDefault(flavor.Id, [])))
             .ToArray();
         return Task.FromResult<IReadOnlyCollection<PizzaFlavorDto>>(result);
     }
@@ -151,11 +196,49 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
     public Task<IReadOnlyCollection<ServiceCallDto>> ListPendingServiceCallsAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var result = context.ServiceCalls
-            .Where(call => call.Status == ServiceCallStatus.Pending)
+        var calls = context.ServiceCalls
+            .Where(call => call.Status == ServiceCallStatus.Pending ||
+                           call.Status == ServiceCallStatus.Acknowledged ||
+                           call.Status == ServiceCallStatus.InProgress)
             .OrderBy(call => call.CreatedAt)
-            .Select(call => new ServiceCallDto(call.Id.Value, call.TableSessionId.Value, call.Status.ToString(), call.Details, call.CreatedAt))
             .ToArray();
+        var links = context.TableSessionTables
+            .Where(link => link.UnlinkedAt == null)
+            .ToArray()
+            .GroupBy(link => link.TableSessionId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.OrderByDescending(link => link.IsPrimary).ThenByDescending(link => link.LinkedAt).First());
+        var tables = context.RestaurantTables.ToDictionary(table => table.Id);
+        var callTypes = context.ServiceCallTypes.ToDictionary(callType => callType.Id);
+        var employees = context.Employees.ToDictionary(employee => employee.Id, employee => employee.DisplayName);
+        var result = calls.Select(call =>
+        {
+            if (!links.TryGetValue(call.TableSessionId, out var link) ||
+                !tables.TryGetValue(link.RestaurantTableId, out var table) ||
+                !callTypes.TryGetValue(call.ServiceCallTypeId, out var callType))
+            {
+                throw new BusinessRuleException(
+                    "service_call.projection",
+                    "Service call references an unavailable table or call type.");
+            }
+
+            return new ServiceCallDto(
+                call.Id.Value,
+                call.TableSessionId.Value,
+                table.Id.Value,
+                table.Number,
+                table.Name,
+                callType.Code,
+                callType.Name,
+                call.Status.ToString(),
+                call.Details,
+                call.AssignedEmployeeId.HasValue
+                    ? employees.GetValueOrDefault(call.AssignedEmployeeId.Value)
+                    : null,
+                call.CreatedAt,
+                call.AcknowledgedAt);
+        }).ToArray();
         return Task.FromResult<IReadOnlyCollection<ServiceCallDto>>(result);
     }
 
@@ -168,7 +251,17 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
             .ToArray();
         var orders = context.Orders.ToDictionary(order => order.Id);
         var stations = context.ProductionStations.ToDictionary(station => station.Id);
-        var itemCounts = context.KitchenTicketItems.GroupBy(item => item.KitchenTicketId).ToDictionary(group => group.Key, group => group.Count());
+        var ticketItems = context.KitchenTicketItems
+            .ToArray()
+            .GroupBy(item => item.KitchenTicketId)
+            .ToDictionary(group => group.Key, group => group.ToArray());
+        var orderItems = context.OrderItems.ToDictionary(item => item.Id);
+        var pizzas = context.OrderItemPizzas.ToDictionary(pizza => pizza.Id);
+        var modifiers = context.OrderItemModifiers
+            .ToArray()
+            .GroupBy(modifier => modifier.OrderItemId)
+            .ToDictionary(group => group.Key, group => group.ToArray());
+        var flavorNames = context.PizzaFlavors.ToDictionary(flavor => flavor.Id, flavor => flavor.Name);
         var result = tickets.Select(ticket => new KitchenTicketDto(
                 ticket.Id.Value,
                 ticket.TicketNumber,
@@ -176,7 +269,35 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
                 stations[ticket.ProductionStationId].Name,
                 ticket.Status.ToString(),
                 ticket.CreatedAt,
-                itemCounts.GetValueOrDefault(ticket.Id)))
+                ticketItems.GetValueOrDefault(ticket.Id, []).Length,
+                string.Join(" · ", ticketItems.GetValueOrDefault(ticket.Id, []).Select(ticketItem =>
+                {
+                    var orderItem = orderItems[ticketItem.OrderItemId];
+                    var itemModifiers = modifiers.GetValueOrDefault(ticketItem.OrderItemId, []);
+                    var instructions = itemModifiers.Select(modifier =>
+                    {
+                        var flavor = modifier.PizzaFlavorId.HasValue
+                            ? $" em {flavorNames.GetValueOrDefault(modifier.PizzaFlavorId.Value, "sabor selecionado")}"
+                            : string.Empty;
+                        return modifier.ModifierType == ModifierType.Remove
+                            ? $"sem {modifier.NameSnapshot}{flavor}"
+                            : $"+{modifier.Quantity:0.##}× {modifier.NameSnapshot}{flavor}";
+                    });
+                    var pizzaInstruction = pizzas.TryGetValue(ticketItem.OrderItemId, out var pizza)
+                        ? pizza.CrustSelectionMode switch
+                        {
+                            CrustSelectionMode.Split =>
+                                $"borda ½ {pizza.CrustNameSnapshot} + ½ {pizza.SecondCrustNameSnapshot}",
+                            CrustSelectionMode.Whole => $"borda {pizza.CrustNameSnapshot}",
+                            _ => null
+                        }
+                        : null;
+                    var instructionText = string.Join(", ", instructions
+                        .Prepend(pizzaInstruction)
+                        .Where(instruction => !string.IsNullOrWhiteSpace(instruction)));
+                    return $"{ticketItem.Quantity}× {orderItem.ProductNameSnapshot}" +
+                           (string.IsNullOrWhiteSpace(instructionText) ? string.Empty : $" ({instructionText})");
+                }))))
             .ToArray();
         return Task.FromResult<IReadOnlyCollection<KitchenTicketDto>>(result);
     }

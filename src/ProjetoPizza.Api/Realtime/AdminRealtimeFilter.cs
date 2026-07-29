@@ -16,10 +16,11 @@ public sealed class AdminRealtimeFilter(IAdminEventPublisher publisher) : IEndpo
             return result;
         }
 
-        var resource = request.Path.Value?
-            .Replace("/api/v1/admin/", string.Empty, StringComparison.OrdinalIgnoreCase)
-            .Split('/', StringSplitOptions.RemoveEmptyEntries)
-            .FirstOrDefault() ?? "admin";
+        var segments = request.Path.Value?
+            .Split('/', StringSplitOptions.RemoveEmptyEntries) ?? [];
+        var resource = segments.Length >= 4
+            ? segments[3]
+            : segments.LastOrDefault() ?? "admin";
 
         await publisher.PublishAsync(
             new AdminResourceChanged(resource, request.Method, DateTimeOffset.UtcNow),

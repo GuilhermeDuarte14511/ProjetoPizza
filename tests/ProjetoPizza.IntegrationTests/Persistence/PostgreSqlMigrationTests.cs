@@ -27,7 +27,7 @@ public sealed class PostgreSqlMigrationTests
         uniqueIndex.IsUnique.Should().BeTrue();
     }
 
-    [Fact(Skip = "Requer um daemon Docker. Execute com Docker disponível removendo temporariamente o Skip.")]
+    [DockerFact]
     public async Task InitialMigration_ShouldCreatePostgreSqlSchema()
     {
         await using var postgreSql = new PostgreSqlBuilder("postgres:17-alpine")
@@ -49,5 +49,20 @@ public sealed class PostgreSqlMigrationTests
         var appliedMigrations = await context.Database.GetAppliedMigrationsAsync();
         appliedMigrations.Should().Contain(migration => migration.EndsWith("InitialCreate"));
         appliedMigrations.Should().Contain(migration => migration.EndsWith("AddCashShiftOpeningGuard"));
+        appliedMigrations.Should().Contain(migration => migration.EndsWith("IntegrateClientOperations"));
+    }
+}
+
+public sealed class DockerFactAttribute : FactAttribute
+{
+    public DockerFactAttribute()
+    {
+        if (!string.Equals(
+                Environment.GetEnvironmentVariable("RUN_DOCKER_TESTS"),
+                "1",
+                StringComparison.Ordinal))
+        {
+            Skip = "Defina RUN_DOCKER_TESTS=1 com o daemon Docker ativo para validar migrations em PostgreSQL real.";
+        }
     }
 }

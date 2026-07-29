@@ -58,18 +58,27 @@ public sealed class Bill : AggregateRoot<BillId>
     public Money PaidAmount { get; private set; }
     public Money RemainingAmount { get; private set; }
     public DateTimeOffset? RequestedAt { get; private set; }
+    public int? RequestedSplitCount { get; private set; }
     public DateTimeOffset? ConfirmedAt { get; private set; }
     public DateTimeOffset? ClosedAt { get; private set; }
 
-    public void Request()
+    public void Request(int? splitCount = null)
     {
-        if (Status != BillStatus.Open)
+        if (splitCount is not null and (< 2 or > 50))
         {
-            throw new BusinessRuleException("bill.not_open", "Only an open bill can be requested.");
+            throw new BusinessRuleException(
+                "bill.split_count",
+                "A split bill must contain between 2 and 50 people.");
+        }
+
+        if (Status is not (BillStatus.Open or BillStatus.Requested))
+        {
+            throw new BusinessRuleException("bill.not_requestable", "Only an open or requested bill can be requested.");
         }
 
         Status = BillStatus.Requested;
-        RequestedAt = DateTimeOffset.UtcNow;
+        RequestedAt ??= DateTimeOffset.UtcNow;
+        RequestedSplitCount = splitCount;
     }
 
     public void RegisterPayment(Money amount)

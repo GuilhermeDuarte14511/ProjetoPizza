@@ -21,6 +21,7 @@ public static class DependencyInjection
                     npgsql.MigrationsAssembly(typeof(ProjetoPizzaDbContext).Assembly.FullName))
                 .UseSnakeCaseNamingConvention());
         services.AddScoped<IProjetoPizzaDbContext>(provider => provider.GetRequiredService<ProjetoPizzaDbContext>());
+        services.AddScoped<IOperationNumberGenerator, PostgresOperationNumberGenerator>();
         services.AddIdentityCore<IdentityUser<Guid>>(options =>
             {
                 options.Password.RequiredLength = 10;

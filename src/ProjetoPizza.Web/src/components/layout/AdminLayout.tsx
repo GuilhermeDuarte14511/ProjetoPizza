@@ -1,5 +1,6 @@
 import {
   Bell,
+  BellRing,
   BarChart3,
   BookOpen,
   ChefHat,
@@ -35,6 +36,7 @@ const navigation = [
       { to: '/admin/tables', label: 'Mesas', icon: TableProperties },
       { to: '/admin/orders', label: 'Pedidos', icon: ClipboardList },
       { to: '/admin/kitchen', label: 'Cozinha', icon: ChefHat },
+      { to: '/admin/service-calls', label: 'Chamados', icon: BellRing },
     ],
   },
   {
@@ -67,11 +69,32 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [globalSearch, setGlobalSearch] = useState('')
   const user = getAuthenticatedUser()
   const mainRef = useRef<HTMLElement>(null)
+  const previousPendingCalls = useRef<number | undefined>(undefined)
   const { data: cashShift, isLoading: isCashShiftLoading } = useQuery({
     queryKey: queryKeys.cashShift,
     queryFn: ({ signal }) => adminService.cashShift(signal),
   })
   const isCashShiftOpen = cashShift?.status === 'Open'
+  const { data: serviceCalls = [] } = useQuery({
+    queryKey: queryKeys.serviceCalls,
+    queryFn: ({ signal }) => adminService.serviceCalls(signal),
+  })
+  const { data: operationSettings } = useQuery({
+    queryKey: queryKeys.operationSettings,
+    queryFn: ({ signal }) => adminService.operationSettings(signal),
+  })
+  const pendingCalls = serviceCalls.filter((call) => call.status === 'Pending').length
+
+  useEffect(() => {
+    if (
+      previousPendingCalls.current !== undefined &&
+      pendingCalls > previousPendingCalls.current &&
+      operationSettings?.tableCallSoundEnabled
+    ) {
+      playNotificationTone()
+    }
+    previousPendingCalls.current = pendingCalls
+  }, [operationSettings?.tableCallSoundEnabled, pendingCalls])
 
   useEffect(() => {
     const currentLabel = navigation
@@ -153,7 +176,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           >
             <span className="status-dot" /> {isCashShiftLoading ? 'Verificando caixa' : isCashShiftOpen ? 'Caixa aberto' : 'Caixa fechado'}
           </button>
-          <button className="icon-button" aria-label="Ver auditoria" onClick={() => runViewTransition(() => navigate('/admin/audit'))}><Bell size={19} /><span className="notification-dot" /></button>
+          <button
+            className="icon-button"
+            aria-label={pendingCalls ? `${pendingCalls} chamado(s) de mesa pendente(s)` : 'Nenhum chamado de mesa pendente'}
+            onClick={() => runViewTransition(() => navigate('/admin/service-calls'))}
+          >
+            <Bell size={19} />
+            {pendingCalls > 0 && <span className="notification-dot" />}
+          </button>
           <button className="user-menu" aria-label="Sair" onClick={signOut}><span className="avatar">{user?.displayName.slice(0, 2).toUpperCase() ?? 'AD'}</span><span>{user?.displayName ?? 'Admin'}</span><LogOut size={14} /></button>
         </header>
         <main id="conteudo-principal" ref={mainRef} className="content-canvas" tabIndex={-1}>
@@ -162,4 +192,31 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </div>
     </div>
   )
+}
+
+function playNotificationTone() {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext
+    const audioContext = new AudioContextClass()
+    const oscillator = audioContext.createOscillator()
+    const gain = audioContext.createGain()
+    oscillator.type = 'sine'
+    oscillator.frequency.setValueAtTime(740, audioContext.currentTime)
+    gain.gain.setValueAtTime(0.0001, audioContext.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.12, audioContext.currentTime + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.28)
+    oscillator.connect(gain)
+    gain.connect(audioContext.destination)
+    oscillator.start()
+    oscillator.stop(audioContext.currentTime + 0.3)
+    oscillator.addEventListener('ended', () => void audioContext.close())
+  } catch {
+    // Browsers may block audio before the first user interaction.
+  }
+}
+
+declare global {
+  interface Window {
+    webkitAudioContext: typeof AudioContext
+  }
 }

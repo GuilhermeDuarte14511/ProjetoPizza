@@ -51,14 +51,23 @@ Uma mesa não armazena o estado visual `Livre`, `Ocupada`, `Chamando`, `Conta so
 - FKs transacionais usam `Restrict`; exclusões em cascata ficam limitadas às tabelas internas do ASP.NET Core Identity.
 - Índices únicos protegem identificadores como unidade/código, unidade/SKU, unidade/número do pedido e tamanho/sabor.
 - Índices compostos cobrem as leituras operacionais por unidade, estado e data.
+- `device_sessions.session_token_hash` possui índice único; a consulta de sessão ativa também é coberta por dispositivo, `ended_at` e `expires_at`. O token em texto puro não é persistido.
+- `catalog.pizza_crust_prices` mantém, por tamanho, o valor da borda inteira (`additional_price`) e de uma meia borda (`half_additional_price`).
+- `ordering.order_item_pizzas` preserva o modo da borda (`None`, `Whole` ou `Split`) e os snapshots das duas metades, garantindo que pedidos antigos não mudem quando o catálogo for alterado.
 - Agregados operacionais usam a coluna de sistema PostgreSQL `xmin` como token de concorrência otimista.
 - A Application impõe regras que dependem de leitura, como impedir associação simultânea de uma mesa a duas sessões abertas; o banco preserva a estrutura e o caso de uso coordena a transação.
 - `cash_shifts.active_slot` é uma coluna calculada: vale `1` apenas para estados `Open` ou `Closing`. O índice único `ix_cash_shifts_single_active` impede duas aberturas simultâneas, inclusive em concorrência entre requisições.
 - O campo `table_session_tables.unlinked_at` mantém o histórico de agrupamento e desagrupamento de mesas.
+- `billing.bills.requested_split_count` preserva a quantidade de pessoas solicitada pelo tablet, com a regra de 2 a 50 no agregado.
+- `catalog.ingredients` define `is_available_as_extra`, `extra_price` e `max_extra_quantity`. O pedido referencia o ingrediente, mas também preserva nome e preço em `ordering.order_item_modifiers`.
+- `catalog.pizza_flavor_extras` vincula os adicionais permitidos a cada sabor, com preço, limite e disponibilidade próprios; sua chave composta impede vínculos duplicados.
+- `catalog.product_extras` mantém a lista específica de complementos de cada produto do tipo pizza. `catalog.products.uses_custom_extras` diferencia uma lista explicitamente vazia da herança dos complementos configurados por sabor.
+- `devices.device_provisionings` guarda somente o hash da credencial temporária, expiração, consumo e revogação. O índice único do hash impede duplicidade e o texto puro só existe na resposta de criação.
+- As sequências `ordering.order_number_sequence`, `production.kitchen_ticket_number_sequence` e `dining.table_session_number_sequence` geram números operacionais sem colisão entre requisições concorrentes.
 
 ## Migrations
 
-As migrations `InitialCreate` e `AddCashShiftOpeningGuard`, com seu snapshot, ficam em `src/ProjetoPizza.Infrastructure/Persistence/Migrations`. Para recriar um banco local:
+As migrations, incluindo `InitialCreate`, `AddCashShiftOpeningGuard`, `IntegrateClientOperations`, `AddPizzaIngredientExtras`, `AddPizzaFlavorExtrasAndDeviceProvisioning` e `AddProductComplements`, com seu snapshot, ficam em `src/ProjetoPizza.Infrastructure/Persistence/Migrations`. Para recriar um banco local:
 
 ```powershell
 dotnet tool restore
@@ -71,4 +80,4 @@ Para aplicar a migration e carregar dados de demonstração idempotentes:
 dotnet run --project src/ProjetoPizza.Api -- --seed
 ```
 
-O seed é exclusivo para desenvolvimento e utiliza identificadores fixos. Ele inclui unidade, configurações, categorias, produtos, pizzas, estoque, 32 mesas, estações, formas de pagamento, dispositivos e amostras operacionais identificadas com `[DEV]`.
+O seed é exclusivo para desenvolvimento e utiliza identificadores fixos. Ele inclui unidade, configurações, categorias, produtos, pizzas, ingredientes adicionais com preço, estoque, 32 mesas, estações, formas de pagamento, dispositivos e amostras operacionais identificadas com `[DEV]`.

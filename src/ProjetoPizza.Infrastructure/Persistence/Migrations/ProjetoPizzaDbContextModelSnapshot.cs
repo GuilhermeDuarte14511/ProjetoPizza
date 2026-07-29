@@ -22,6 +22,12 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.HasSequence("kitchen_ticket_number_sequence", "production");
+
+            modelBuilder.HasSequence("order_number_sequence", "ordering");
+
+            modelBuilder.HasSequence("table_session_number_sequence", "dining");
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("Id")
@@ -351,6 +357,10 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("RequestedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("requested_at");
+
+                    b.Property<int?>("RequestedSplitCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("requested_split_count");
 
                     b.Property<decimal>("ServiceFeeAmount")
                         .HasPrecision(18, 2)
@@ -959,6 +969,11 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("description");
 
+                    b.Property<decimal>("ExtraPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("extra_price");
+
                     b.Property<Guid?>("InventoryItemId")
                         .HasColumnType("uuid")
                         .HasColumnName("inventory_item_id");
@@ -970,6 +985,14 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsAllergen")
                         .HasColumnType("boolean")
                         .HasColumnName("is_allergen");
+
+                    b.Property<bool>("IsAvailableAsExtra")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_available_as_extra");
+
+                    b.Property<int>("MaxExtraQuantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_extra_quantity");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -987,8 +1010,8 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                     b.HasIndex("InventoryItemId")
                         .HasDatabaseName("ix_ingredients_inventory_item_id");
 
-                    b.HasIndex("UnitId")
-                        .HasDatabaseName("ix_ingredients_unit_id");
+                    b.HasIndex("UnitId", "IsActive", "IsAvailableAsExtra")
+                        .HasDatabaseName("ix_ingredients_unit_id_is_active_is_available_as_extra");
 
                     b.ToTable("ingredients", "catalog");
                 });
@@ -1045,6 +1068,11 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("additional_price");
+
+                    b.Property<decimal>("HalfAdditionalPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("half_additional_price");
 
                     b.Property<Guid>("PizzaCrustId")
                         .HasColumnType("uuid")
@@ -1139,6 +1167,41 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_pizza_flavors_unit_id_name");
 
                     b.ToTable("pizza_flavors", "catalog");
+                });
+
+            modelBuilder.Entity("ProjetoPizza.Domain.Catalog.PizzaFlavorExtra", b =>
+                {
+                    b.Property<Guid>("PizzaFlavorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pizza_flavor_id");
+
+                    b.Property<Guid>("IngredientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ingredient_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<int>("MaxQuantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_quantity");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("price");
+
+                    b.HasKey("PizzaFlavorId", "IngredientId")
+                        .HasName("pk_pizza_flavor_extras");
+
+                    b.HasIndex("IngredientId")
+                        .HasDatabaseName("ix_pizza_flavor_extras_ingredient_id");
+
+                    b.HasIndex("PizzaFlavorId", "IsActive")
+                        .HasDatabaseName("ix_pizza_flavor_extras_pizza_flavor_id_is_active");
+
+                    b.ToTable("pizza_flavor_extras", "catalog");
                 });
 
             modelBuilder.Entity("ProjetoPizza.Domain.Catalog.PizzaFlavorIngredient", b =>
@@ -1356,6 +1419,10 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
+                    b.Property<bool>("UsesCustomExtras")
+                        .HasColumnType("boolean")
+                        .HasColumnName("uses_custom_extras");
+
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -1376,6 +1443,41 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_products_unit_id_category_id_is_active");
 
                     b.ToTable("products", "catalog");
+                });
+
+            modelBuilder.Entity("ProjetoPizza.Domain.Catalog.ProductExtra", b =>
+                {
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<Guid>("IngredientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ingredient_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<int>("MaxQuantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_quantity");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("price");
+
+                    b.HasKey("ProductId", "IngredientId")
+                        .HasName("pk_product_extras");
+
+                    b.HasIndex("IngredientId")
+                        .HasDatabaseName("ix_product_extras_ingredient_id");
+
+                    b.HasIndex("ProductId", "IsActive")
+                        .HasDatabaseName("ix_product_extras_product_id_is_active");
+
+                    b.ToTable("product_extras", "catalog");
                 });
 
             modelBuilder.Entity("ProjetoPizza.Domain.Catalog.ProductImage", b =>
@@ -1738,6 +1840,51 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                     b.ToTable("devices", "devices");
                 });
 
+            modelBuilder.Entity("ProjetoPizza.Domain.Devices.DeviceProvisioning", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consumed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DeviceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("device_id");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.HasKey("Id")
+                        .HasName("pk_device_provisionings");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_device_provisionings_token_hash");
+
+                    b.HasIndex("DeviceId", "ExpiresAt")
+                        .HasDatabaseName("ix_device_provisionings_device_id_expires_at");
+
+                    b.ToTable("device_provisionings", "devices");
+                });
+
             modelBuilder.Entity("ProjetoPizza.Domain.Devices.DeviceSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1757,6 +1904,10 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("ended_reason");
 
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
                     b.Property<string>("SessionTokenHash")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -1774,11 +1925,15 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_device_sessions");
 
-                    b.HasIndex("DeviceId")
-                        .HasDatabaseName("ix_device_sessions_device_id");
+                    b.HasIndex("SessionTokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_device_sessions_session_token_hash");
 
                     b.HasIndex("TableSessionId")
                         .HasDatabaseName("ix_device_sessions_table_session_id");
+
+                    b.HasIndex("DeviceId", "EndedAt", "ExpiresAt")
+                        .HasDatabaseName("ix_device_sessions_device_id_ended_at_expires_at");
 
                     b.ToTable("device_sessions", "devices");
                 });
@@ -2817,6 +2972,12 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("crust_price");
 
+                    b.Property<string>("CrustSelectionMode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("crust_selection_mode");
+
                     b.Property<decimal>("ExtrasPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
@@ -2840,6 +3001,15 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("pricing_policy_snapshot");
 
+                    b.Property<string>("SecondCrustNameSnapshot")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("second_crust_name_snapshot");
+
+                    b.Property<Guid?>("SecondPizzaCrustId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("second_pizza_crust_id");
+
                     b.Property<int>("SizeMaxFlavors")
                         .HasColumnType("integer")
                         .HasColumnName("size_max_flavors");
@@ -2862,6 +3032,9 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PizzaSizeId")
                         .HasDatabaseName("ix_order_item_pizzas_pizza_size_id");
+
+                    b.HasIndex("SecondPizzaCrustId")
+                        .HasDatabaseName("ix_order_item_pizzas_second_pizza_crust_id");
 
                     b.ToTable("order_item_pizzas", "ordering");
                 });
@@ -3386,6 +3559,23 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_pizza_flavors_restaurant_units_unit_id");
                 });
 
+            modelBuilder.Entity("ProjetoPizza.Domain.Catalog.PizzaFlavorExtra", b =>
+                {
+                    b.HasOne("ProjetoPizza.Domain.Catalog.Ingredient", null)
+                        .WithMany()
+                        .HasForeignKey("IngredientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pizza_flavor_extras_ingredients_ingredient_id");
+
+                    b.HasOne("ProjetoPizza.Domain.Catalog.PizzaFlavor", null)
+                        .WithMany()
+                        .HasForeignKey("PizzaFlavorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pizza_flavor_extras_pizza_flavors_pizza_flavor_id");
+                });
+
             modelBuilder.Entity("ProjetoPizza.Domain.Catalog.PizzaFlavorIngredient", b =>
                 {
                     b.HasOne("ProjetoPizza.Domain.Catalog.Ingredient", null)
@@ -3447,6 +3637,23 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_products_restaurant_units_unit_id");
                 });
 
+            modelBuilder.Entity("ProjetoPizza.Domain.Catalog.ProductExtra", b =>
+                {
+                    b.HasOne("ProjetoPizza.Domain.Catalog.Ingredient", null)
+                        .WithMany()
+                        .HasForeignKey("IngredientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_product_extras_ingredients_ingredient_id");
+
+                    b.HasOne("ProjetoPizza.Domain.Catalog.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_product_extras_products_product_id");
+                });
+
             modelBuilder.Entity("ProjetoPizza.Domain.Catalog.ProductImage", b =>
                 {
                     b.HasOne("ProjetoPizza.Domain.Catalog.Product", null)
@@ -3501,6 +3708,16 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_devices_restaurant_units_unit_id");
+                });
+
+            modelBuilder.Entity("ProjetoPizza.Domain.Devices.DeviceProvisioning", b =>
+                {
+                    b.HasOne("ProjetoPizza.Domain.Devices.Device", null)
+                        .WithMany()
+                        .HasForeignKey("DeviceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_device_provisionings_devices_device_id");
                 });
 
             modelBuilder.Entity("ProjetoPizza.Domain.Devices.DeviceSession", b =>
@@ -3868,6 +4085,12 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_order_item_pizzas_pizza_sizes_pizza_size_id");
+
+                    b.HasOne("ProjetoPizza.Domain.Catalog.PizzaCrust", null)
+                        .WithMany()
+                        .HasForeignKey("SecondPizzaCrustId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_order_item_pizzas_pizza_crusts_second_pizza_crust_id");
                 });
 
             modelBuilder.Entity("ProjetoPizza.Domain.Ordering.OrderItemPizzaFlavor", b =>

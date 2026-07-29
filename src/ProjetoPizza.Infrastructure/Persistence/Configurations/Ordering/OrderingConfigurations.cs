@@ -80,8 +80,11 @@ internal sealed class OrderItemPizzaConfiguration : IEntityTypeConfiguration<Ord
         builder.Ignore(entity => entity.OrderItemId);
         builder.Property(entity => entity.PizzaSizeId).HasConversion(id => id.Value, value => new PizzaSizeId(value));
         builder.Property(entity => entity.PizzaCrustId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new PizzaCrustId(value.Value) : null);
+        builder.Property(entity => entity.SecondPizzaCrustId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new PizzaCrustId(value.Value) : null);
         builder.Property(entity => entity.SizeNameSnapshot).HasMaxLength(80);
         builder.Property(entity => entity.CrustNameSnapshot).HasMaxLength(100);
+        builder.Property(entity => entity.SecondCrustNameSnapshot).HasMaxLength(100);
+        builder.Property(entity => entity.CrustSelectionMode).HasConversion<string>().HasMaxLength(20);
         builder.Property(entity => entity.PricingPolicySnapshot).HasConversion<string>().HasMaxLength(40);
         builder.Property(entity => entity.BasePrice).HasMoneyConversion();
         builder.Property(entity => entity.CrustPrice).HasMoneyConversion();
@@ -89,6 +92,7 @@ internal sealed class OrderItemPizzaConfiguration : IEntityTypeConfiguration<Ord
         builder.HasOne<OrderItem>().WithOne().HasForeignKey<OrderItemPizza>(entity => entity.Id).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<PizzaSize>().WithMany().HasForeignKey(entity => entity.PizzaSizeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<PizzaCrust>().WithMany().HasForeignKey(entity => entity.PizzaCrustId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<PizzaCrust>().WithMany().HasForeignKey(entity => entity.SecondPizzaCrustId).OnDelete(DeleteBehavior.Restrict);
         builder.Navigation(entity => entity.Flavors).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

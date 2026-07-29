@@ -4,6 +4,7 @@ public interface IAdminManagementService
 {
     Task<IReadOnlyCollection<OrderManagementDto>> ListOrdersAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<PizzaCrustDto>> ListPizzaCrustsAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<IngredientDto>> ListIngredientsAsync(CancellationToken cancellationToken);
     Task<UnitSettingsDto> GetUnitSettingsAsync(CancellationToken cancellationToken);
     Task<OperationSettingsDto> GetOperationSettingsAsync(CancellationToken cancellationToken);
     Task<PizzaRulesDto> GetPizzaRulesAsync(CancellationToken cancellationToken);
@@ -23,16 +24,20 @@ public interface IAdminManagementService
     Task<CommandResultDto> SaveProductAsync(SaveProductCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SavePizzaSizeAsync(SavePizzaSizeCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SavePizzaCrustAsync(SavePizzaCrustCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> SaveIngredientAsync(SaveIngredientCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SavePizzaFlavorAsync(SavePizzaFlavorCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> OpenTableAsync(OpenTableCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RequestBillAsync(Guid tableSessionId, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> TransitionOrderAsync(Guid id, string transition, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> TransitionKitchenTicketAsync(Guid id, string transition, Guid identityUserId, CancellationToken cancellationToken);
-    Task<CommandResultDto> ResolveServiceCallAsync(Guid id, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> AcknowledgeServiceCallAsync(Guid id, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> CompleteServiceCallAsync(Guid id, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RecordPaymentAsync(RecordPaymentCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RecordSplitPaymentAsync(RecordSplitPaymentCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CashShiftDto> OpenCashShiftAsync(OpenCashShiftCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RegisterCashMovementAsync(RegisterCashMovementCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> CloseCashShiftAsync(CloseCashShiftCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> UpdateDeviceAsync(Guid id, UpdateDeviceCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<DeviceProvisioningDto> CreateCustomerTabletAsync(CreateCustomerTabletCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<DeviceProvisioningDto> ProvisionCustomerTabletAsync(Guid id, ProvisionCustomerTabletCommand command, Guid identityUserId, CancellationToken cancellationToken);
 }

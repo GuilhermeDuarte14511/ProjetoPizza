@@ -31,6 +31,8 @@ public sealed class DevelopmentDataSeeder(
         await SeedIdentityAsync(cancellationToken);
         if (await context.RestaurantUnits.AnyAsync(unit => unit.Id == UnitId, cancellationToken))
         {
+            await EnsureDevelopmentPizzaExtrasAsync(cancellationToken);
+            await EnsureDevelopmentTabletLinksAsync(cancellationToken);
             return;
         }
 
@@ -71,6 +73,7 @@ public sealed class DevelopmentDataSeeder(
             new PizzaFlavorIngredient(flavors[0].Id, ingredients[1].Id, 80, "g"),
             new PizzaFlavorIngredient(flavors[1].Id, ingredients[0].Id, 120, "g"),
             new PizzaFlavorIngredient(flavors[1].Id, ingredients[2].Id, 90, "g"));
+        context.PizzaFlavorExtras.AddRange(CreateFlavorExtras(flavors, ingredients));
 
         var area = new DiningArea(AreaId, UnitId, "Salão Principal");
         context.DiningAreas.Add(area);
@@ -99,6 +102,135 @@ public sealed class DevelopmentDataSeeder(
         var devices = CreateDevices();
         context.Devices.AddRange(devices);
         AddOperationalSamples(tables, products, stations, callTypes, devices);
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task EnsureDevelopmentTabletLinksAsync(CancellationToken cancellationToken)
+    {
+        var links = new[]
+        {
+            (
+                DeviceId: new DeviceId(Guid.Parse("72000000-0000-0000-0000-000000000001")),
+                TableId: new RestaurantTableId(Guid.Parse("40000000-0000-0000-0000-000000000002"))),
+            (
+                DeviceId: new DeviceId(Guid.Parse("72000000-0000-0000-0000-000000000002")),
+                TableId: new RestaurantTableId(Guid.Parse("40000000-0000-0000-0000-000000000003")))
+        };
+        var changed = false;
+        foreach (var link in links)
+        {
+            var device = await context.Devices.SingleOrDefaultAsync(
+                candidate => candidate.Id == link.DeviceId,
+                cancellationToken);
+            if (device is not null && !device.LinkedTableId.HasValue)
+            {
+                device.LinkToTable(link.TableId);
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    private async Task EnsureDevelopmentPizzaExtrasAsync(CancellationToken cancellationToken)
+    {
+        var inventoryDefinitions = new[]
+        {
+            (Id: Guid.Parse("67000000-0000-0000-0000-000000000001"), Name: "Mussarela", Sku: "INS-MUSS", MinimumStock: 5000m),
+            (Id: Guid.Parse("67000000-0000-0000-0000-000000000002"), Name: "Tomate", Sku: "INS-TOMA", MinimumStock: 2000m),
+            (Id: Guid.Parse("67000000-0000-0000-0000-000000000003"), Name: "Calabresa", Sku: "INS-CALA", MinimumStock: 3000m),
+            (Id: Guid.Parse("67000000-0000-0000-0000-000000000004"), Name: "Bacon", Sku: "INS-BACO", MinimumStock: 2500m),
+            (Id: Guid.Parse("67000000-0000-0000-0000-000000000005"), Name: "Cebola", Sku: "INS-CEBO", MinimumStock: 1500m),
+            (Id: Guid.Parse("67000000-0000-0000-0000-000000000006"), Name: "Catupiry", Sku: "INS-CATU", MinimumStock: 3000m)
+        };
+        var existingInventoryIds = await context.InventoryItems
+            .Where(item => item.UnitId == UnitId)
+            .Select(item => item.Id)
+            .ToListAsync(cancellationToken);
+        foreach (var definition in inventoryDefinitions.Where(definition =>
+                     !existingInventoryIds.Contains(new InventoryItemId(definition.Id))))
+        {
+            context.InventoryItems.Add(new InventoryItem(
+                new InventoryItemId(definition.Id),
+                UnitId,
+                definition.Name,
+                definition.Sku,
+                "g",
+                definition.MinimumStock));
+        }
+
+        var extraDefinitions = new[]
+        {
+            (Id: Guid.Parse("68000000-0000-0000-0000-000000000001"), InventoryId: inventoryDefinitions[0].Id, Name: "Mussarela", Description: "Porção adicional de mussarela.", Price: 6m, Max: 3),
+            (Id: Guid.Parse("68000000-0000-0000-0000-000000000002"), InventoryId: inventoryDefinitions[1].Id, Name: "Tomate", Description: "Porção adicional de tomate.", Price: 3m, Max: 3),
+            (Id: Guid.Parse("68000000-0000-0000-0000-000000000003"), InventoryId: inventoryDefinitions[2].Id, Name: "Calabresa Fatiada", Description: "Porção adicional de calabresa fatiada.", Price: 7m, Max: 3),
+            (Id: Guid.Parse("68000000-0000-0000-0000-000000000004"), InventoryId: inventoryDefinitions[3].Id, Name: "Bacon", Description: "Bacon crocante em cubos.", Price: 8m, Max: 3),
+            (Id: Guid.Parse("68000000-0000-0000-0000-000000000005"), InventoryId: inventoryDefinitions[4].Id, Name: "Cebola", Description: "Cebola fatiada.", Price: 3m, Max: 3),
+            (Id: Guid.Parse("68000000-0000-0000-0000-000000000006"), InventoryId: inventoryDefinitions[5].Id, Name: "Catupiry", Description: "Porção adicional de Catupiry.", Price: 8m, Max: 3)
+        };
+        var existingIngredients = await context.Ingredients
+            .Where(ingredient => ingredient.UnitId == UnitId)
+            .ToDictionaryAsync(ingredient => ingredient.Id, cancellationToken);
+        foreach (var definition in extraDefinitions)
+        {
+            var ingredientId = new IngredientId(definition.Id);
+            if (!existingIngredients.TryGetValue(ingredientId, out var ingredient))
+            {
+                ingredient = new Ingredient(
+                    ingredientId,
+                    UnitId,
+                    definition.Name,
+                    new InventoryItemId(definition.InventoryId));
+                context.Ingredients.Add(ingredient);
+            }
+
+            ingredient.Update(
+                definition.Name,
+                definition.Description,
+                isActive: true,
+                isAllergen: definition.Name.Contains("Mussarela", StringComparison.Ordinal) ||
+                            definition.Name.Contains("Catupiry", StringComparison.Ordinal),
+                allergenDescription: definition.Name.Contains("Mussarela", StringComparison.Ordinal) ||
+                                      definition.Name.Contains("Catupiry", StringComparison.Ordinal)
+                    ? "Contém leite e derivados."
+                    : null,
+                isAvailableAsExtra: true,
+                new Money(definition.Price),
+                definition.Max);
+        }
+
+        var savoryFlavors = await context.PizzaFlavors
+            .Where(flavor => flavor.UnitId == UnitId && flavor.FlavorType == PizzaFlavorType.Savory)
+            .ToArrayAsync(cancellationToken);
+        var existingFlavorExtras = await context.PizzaFlavorExtras
+            .Where(extra => savoryFlavors.Select(flavor => flavor.Id).Contains(extra.PizzaFlavorId))
+            .ToDictionaryAsync(
+                extra => new { extra.PizzaFlavorId, extra.IngredientId },
+                cancellationToken);
+        foreach (var flavor in savoryFlavors)
+        {
+            foreach (var definition in extraDefinitions)
+            {
+                var ingredientId = new IngredientId(definition.Id);
+                var key = new { PizzaFlavorId = flavor.Id, IngredientId = ingredientId };
+                if (existingFlavorExtras.TryGetValue(key, out var flavorExtra))
+                {
+                    flavorExtra.Update(new Money(definition.Price), definition.Max, isActive: true);
+                }
+                else
+                {
+                    context.PizzaFlavorExtras.Add(new PizzaFlavorExtra(
+                        flavor.Id,
+                        ingredientId,
+                        new Money(definition.Price),
+                        definition.Max));
+                }
+            }
+        }
 
         await context.SaveChangesAsync(cancellationToken);
     }
@@ -187,7 +319,8 @@ public sealed class DevelopmentDataSeeder(
                     new PizzaCrustPriceId(Guid.Parse($"66000000-0000-0000-0000-{index++:D12}")),
                     crust.Id,
                     size.Id,
-                    new Money(price));
+                    new Money(price),
+                    new Money(decimal.Round(price / 2m, 2, MidpointRounding.ToEven)));
             }
         }
     }
@@ -196,15 +329,61 @@ public sealed class DevelopmentDataSeeder(
     [
         new(new InventoryItemId(Guid.Parse("67000000-0000-0000-0000-000000000001")), UnitId, "Mussarela", "INS-MUSS", "g", 5000),
         new(new InventoryItemId(Guid.Parse("67000000-0000-0000-0000-000000000002")), UnitId, "Tomate", "INS-TOMA", "g", 2000),
-        new(new InventoryItemId(Guid.Parse("67000000-0000-0000-0000-000000000003")), UnitId, "Calabresa", "INS-CALA", "g", 3000)
+        new(new InventoryItemId(Guid.Parse("67000000-0000-0000-0000-000000000003")), UnitId, "Calabresa", "INS-CALA", "g", 3000),
+        new(new InventoryItemId(Guid.Parse("67000000-0000-0000-0000-000000000004")), UnitId, "Bacon", "INS-BACO", "g", 2500),
+        new(new InventoryItemId(Guid.Parse("67000000-0000-0000-0000-000000000005")), UnitId, "Cebola", "INS-CEBO", "g", 1500),
+        new(new InventoryItemId(Guid.Parse("67000000-0000-0000-0000-000000000006")), UnitId, "Catupiry", "INS-CATU", "g", 3000)
     ];
 
-    private static Ingredient[] CreateIngredients(IReadOnlyList<InventoryItem> items) =>
-    [
-        new(new IngredientId(Guid.Parse("68000000-0000-0000-0000-000000000001")), UnitId, "Mussarela", items[0].Id),
-        new(new IngredientId(Guid.Parse("68000000-0000-0000-0000-000000000002")), UnitId, "Tomate", items[1].Id),
-        new(new IngredientId(Guid.Parse("68000000-0000-0000-0000-000000000003")), UnitId, "Calabresa Fatiada", items[2].Id)
-    ];
+    private static Ingredient[] CreateIngredients(IReadOnlyList<InventoryItem> items)
+    {
+        var definitions = new[]
+        {
+            (Name: "Mussarela", Description: "Porção adicional de mussarela.", Price: 6m, Max: 3),
+            (Name: "Tomate", Description: "Porção adicional de tomate.", Price: 3m, Max: 3),
+            (Name: "Calabresa Fatiada", Description: "Porção adicional de calabresa fatiada.", Price: 7m, Max: 3),
+            (Name: "Bacon", Description: "Bacon crocante em cubos.", Price: 8m, Max: 3),
+            (Name: "Cebola", Description: "Cebola fatiada.", Price: 3m, Max: 3),
+            (Name: "Catupiry", Description: "Porção adicional de Catupiry.", Price: 8m, Max: 3)
+        };
+        return definitions.Select((definition, index) =>
+        {
+            var ingredient = new Ingredient(
+                new IngredientId(Guid.Parse($"68000000-0000-0000-0000-{index + 1:D12}")),
+                UnitId,
+                definition.Name,
+                items[index].Id);
+            var isDairy = index is 0 or 5;
+            ingredient.Update(
+                definition.Name,
+                definition.Description,
+                isActive: true,
+                isAllergen: isDairy,
+                allergenDescription: isDairy ? "Contém leite e derivados." : null,
+                isAvailableAsExtra: true,
+                new Money(definition.Price),
+                definition.Max);
+            return ingredient;
+        }).ToArray();
+    }
+
+    private static IEnumerable<PizzaFlavorExtra> CreateFlavorExtras(
+        IReadOnlyList<PizzaFlavor> flavors,
+        IReadOnlyList<Ingredient> ingredients)
+    {
+        var prices = new[] { 6m, 3m, 7m, 8m, 3m, 8m };
+        foreach (var flavor in flavors.Where(flavor => flavor.FlavorType == PizzaFlavorType.Savory))
+        {
+            for (var index = 0; index < ingredients.Count; index++)
+            {
+                yield return new PizzaFlavorExtra(
+                    flavor.Id,
+                    ingredients[index].Id,
+                    new Money(prices[index]),
+                    maxQuantity: 3);
+            }
+        }
+    }
 
     private static ProductionStation[] CreateProductionStations() =>
     [
@@ -365,6 +544,8 @@ public sealed class DevelopmentDataSeeder(
             [tables[11]]);
         session12.RequestBill();
         context.TableSessions.AddRange(session2, session3, session12);
+        devices[0].LinkToTable(tables[1].Id);
+        devices[1].LinkToTable(tables[2].Id);
 
         var order = new Order(
             new OrderId(Guid.Parse("74000000-0000-0000-0000-000000001024")),

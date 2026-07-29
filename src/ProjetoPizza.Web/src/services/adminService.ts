@@ -8,6 +8,7 @@ import {
   mockPizzaFlavors,
   mockPizzaSizes,
   mockProducts,
+  mockServiceCalls,
   mockTables,
 } from '../mocks/adminData'
 import {
@@ -36,8 +37,10 @@ import type {
   Category,
   Dashboard,
   Device,
+  DeviceProvisioning,
   FinancialReport,
   KitchenTicket,
+  Ingredient,
   ManagedOrder,
   OperationSettings,
   Payment,
@@ -48,6 +51,9 @@ import type {
   PizzaSize,
   Product,
   RestaurantTable,
+  SavePizzaFlavor,
+  SaveProduct,
+  ServiceCall,
   SystemSnapshot,
   TableDetail,
   UnitSettings,
@@ -84,10 +90,12 @@ export const adminService = {
   products: (signal?: AbortSignal) => fromApiOrMock(() => getJson<Product[]>('/api/v1/admin/products', signal), mockProducts),
   pizzaSizes: (signal?: AbortSignal) => fromApiOrMock(() => getJson<PizzaSize[]>('/api/v1/admin/pizza-sizes', signal), mockPizzaSizes),
   pizzaFlavors: (signal?: AbortSignal) => fromApiOrMock(() => getJson<PizzaFlavor[]>('/api/v1/admin/pizza-flavors', signal), mockPizzaFlavors),
+  serviceCalls: (signal?: AbortSignal) => fromApiOrMock(() => getJson<ServiceCall[]>('/api/v1/admin/service-calls', signal), mockServiceCalls),
   pizzaRules: (signal?: AbortSignal) => fromApiOrMock(() => getJson<PizzaRuleSettings>('/api/v1/admin/settings/pizza-rules', signal), mockPizzaRules),
   kitchenTickets: (signal?: AbortSignal) => fromApiOrMock(() => getJson<KitchenTicket[]>('/api/v1/admin/kitchen/tickets', signal), mockKitchenTickets),
   orders: (signal?: AbortSignal) => fromApiOrMock(() => getJson<ManagedOrder[]>('/api/v1/admin/orders', signal), mockOrders),
   crusts: (signal?: AbortSignal) => fromApiOrMock(() => getJson<PizzaCrust[]>('/api/v1/admin/pizza-crusts', signal), mockCrusts),
+  ingredients: (signal?: AbortSignal) => fromApiOrMock(() => getJson<Ingredient[]>('/api/v1/admin/ingredients', signal), []),
   unitSettings: (signal?: AbortSignal) => fromApiOrMock(() => getJson<UnitSettings>('/api/v1/admin/settings/unit', signal), mockUnitSettings),
   operationSettings: (signal?: AbortSignal) => fromApiOrMock(() => getJson<OperationSettings>('/api/v1/admin/settings/operation', signal), mockOperationSettings),
   cashRegisters: (signal?: AbortSignal) =>
@@ -120,7 +128,7 @@ export const adminService = {
         ? putJson(`/api/v1/admin/categories/${command.id}`, command)
         : postJson('/api/v1/admin/categories', command)
       : Promise.resolve(demoResult),
-  saveProduct: (command: Partial<Product> & Pick<Product, 'categoryId' | 'sku' | 'name' | 'type' | 'basePrice' | 'isActive' | 'isAvailable' | 'isFeatured'>) =>
+  saveProduct: (command: SaveProduct) =>
     isApiConfigured
       ? command.id
         ? putJson(`/api/v1/admin/products/${command.id}`, { ...command, preparationTimeMinutes: 15 })
@@ -134,7 +142,11 @@ export const adminService = {
     isApiConfigured && 'id' in command
       ? putJson(`/api/v1/admin/pizza-crusts/${command.id}`, command)
       : isApiConfigured ? postJson('/api/v1/admin/pizza-crusts', command) : Promise.resolve(demoResult),
-  savePizzaFlavor: (command: PizzaFlavor | Omit<PizzaFlavor, 'id'>) =>
+  saveIngredient: (command: Ingredient | Omit<Ingredient, 'id'>) =>
+    isApiConfigured && 'id' in command
+      ? putJson(`/api/v1/admin/ingredients/${command.id}`, command)
+      : isApiConfigured ? postJson('/api/v1/admin/ingredients', command) : Promise.resolve(demoResult),
+  savePizzaFlavor: (command: SavePizzaFlavor) =>
     isApiConfigured && 'id' in command
       ? putJson(`/api/v1/admin/pizza-flavors/${command.id}`, command)
       : isApiConfigured ? postJson('/api/v1/admin/pizza-flavors', command) : Promise.resolve(demoResult),
@@ -146,6 +158,10 @@ export const adminService = {
     isApiConfigured ? postJson(`/api/v1/admin/orders/${id}/transitions/${transition}`, {}) : Promise.resolve({ ...demoResult, status: transition }),
   transitionKitchenTicket: (id: string, transition: string) =>
     isApiConfigured ? postJson(`/api/v1/admin/kitchen/tickets/${id}/transitions/${transition}`, {}) : Promise.resolve({ ...demoResult, status: transition }),
+  acknowledgeServiceCall: (id: string) =>
+    isApiConfigured ? postJson(`/api/v1/admin/service-calls/${id}/acknowledge`, {}) : Promise.resolve({ ...demoResult, id, status: 'Acknowledged' }),
+  completeServiceCall: (id: string) =>
+    isApiConfigured ? postJson(`/api/v1/admin/service-calls/${id}/complete`, {}) : Promise.resolve({ ...demoResult, id, status: 'Completed' }),
   recordPayment: (command: { billId: string; paymentMethodId: string; amount: number; receivedAmount: number; externalReference?: string }) =>
     isApiConfigured ? postJson('/api/v1/admin/payments', command) : Promise.resolve({ ...demoResult, status: 'Paid' }),
   recordSplitPayment: (command: { billId: string; payments: Array<{ payer: string; paymentMethodId: string; amount: number; receivedAmount: number; externalReference?: string }> }) =>
@@ -169,6 +185,32 @@ export const adminService = {
     isApiConfigured ? postJson('/api/v1/admin/cashier/close', { countedCashAmount, notes }) : Promise.resolve({ ...demoResult, status: 'Closed' }),
   updateDevice: (device: Device) =>
     isApiConfigured ? putJson(`/api/v1/admin/devices/${device.id}`, device) : Promise.resolve({ ...demoResult, status: device.status }),
+  createCustomerTablet: (command: { name: string; platform: string; linkedTableId: string }): Promise<DeviceProvisioning> =>
+    isApiConfigured
+      ? postJson('/api/v1/admin/devices/tablets', command)
+      : Promise.resolve({
+          device: {
+            id: crypto.randomUUID(),
+            name: command.name,
+            serialNumber: `TAB-${crypto.randomUUID().slice(0, 12).toUpperCase()}`,
+            type: 'CustomerTablet',
+            platform: command.platform,
+            status: 'Offline',
+            isCharging: false,
+            linkedTableId: command.linkedTableId,
+            isLocked: false,
+          },
+          activationToken: crypto.randomUUID().replaceAll('-', ''),
+          expiresAt: new Date(Date.now() + 30 * 60_000).toISOString(),
+        }),
+  provisionCustomerTablet: (id: string, linkedTableId: string): Promise<DeviceProvisioning> =>
+    isApiConfigured
+      ? postJson(`/api/v1/admin/devices/${id}/provision`, { linkedTableId })
+      : Promise.resolve({
+          device: { ...mockDevices.find((device) => device.id === id)!, linkedTableId },
+          activationToken: crypto.randomUUID().replaceAll('-', ''),
+          expiresAt: new Date(Date.now() + 30 * 60_000).toISOString(),
+        }),
   saveUser: (command: Partial<AdminUser> & { password?: string; phone?: string }): Promise<string> =>
     isApiConfigured
       ? command.id ? putJson<string, typeof command>(`/api/v1/admin/users/${command.id}`, command) : postJson<string, typeof command>('/api/v1/admin/users', command)

@@ -36,11 +36,20 @@ export const mockOrders: ManagedOrder[] = mockDashboard.recentOrders.map((order,
 }))
 
 export const mockCrusts: PizzaCrust[] = [
-  { id: '65000000-0000-0000-0000-000000000001', name: 'Sem borda', description: 'Massa tradicional', isActive: true, isAvailable: true },
-  { id: '65000000-0000-0000-0000-000000000002', name: 'Catupiry', description: 'Borda recheada', isActive: true, isAvailable: true },
-  { id: '65000000-0000-0000-0000-000000000003', name: 'Cheddar', description: 'Borda recheada', isActive: true, isAvailable: true },
-  { id: '65000000-0000-0000-0000-000000000004', name: 'Cream Cheese', description: 'Borda recheada premium', isActive: true, isAvailable: false },
+  { id: '65000000-0000-0000-0000-000000000001', name: 'Sem borda', description: 'Massa tradicional', isActive: true, isAvailable: true, prices: crustPrices(0, 0) },
+  { id: '65000000-0000-0000-0000-000000000002', name: 'Catupiry', description: 'Borda recheada', isActive: true, isAvailable: true, prices: crustPrices(12, 6) },
+  { id: '65000000-0000-0000-0000-000000000003', name: 'Cheddar', description: 'Borda recheada', isActive: true, isAvailable: true, prices: crustPrices(12, 6) },
+  { id: '65000000-0000-0000-0000-000000000004', name: 'Cream Cheese', description: 'Borda recheada premium', isActive: true, isAvailable: false, prices: crustPrices(14, 7) },
 ]
+
+function crustPrices(fullPrice: number, halfPrice: number) {
+  return [
+    { pizzaSizeId: 'size-1', pizzaSizeName: 'Broto', sliceCount: 4, fullPrice, halfPrice },
+    { pizzaSizeId: 'size-2', pizzaSizeName: 'Média', sliceCount: 6, fullPrice, halfPrice },
+    { pizzaSizeId: 'size-3', pizzaSizeName: 'Grande', sliceCount: 8, fullPrice, halfPrice },
+    { pizzaSizeId: 'size-4', pizzaSizeName: 'Família', sliceCount: 12, fullPrice, halfPrice },
+  ]
+}
 
 export const mockUnitSettings: UnitSettings = {
   id: '10000000-0000-0000-0000-000000000001',

@@ -26,21 +26,24 @@ interface SplitPaymentDraft {
 export function PaymentDialog({
   billId,
   remainingAmount,
+  requestedSplitCount,
   methods,
   onClose,
   onPaid,
 }: {
   billId: string
   remainingAmount: number
+  requestedSplitCount?: number
   methods: PaymentMethod[]
   onClose: () => void
   onPaid: (amount: number) => void
 }) {
   const activeMethods = useMemo(() => methods.filter((item) => item.isActive), [methods])
   const defaultMethodId = activeMethods[0]?.id ?? ''
-  const [mode, setMode] = useState<PaymentMode>('single')
-  const [people, setPeople] = useState(2)
-  const [splitPayments, setSplitPayments] = useState<SplitPaymentDraft[]>(() => createSplitPayments(remainingAmount, 2, defaultMethodId))
+  const initialPeople = Math.min(50, Math.max(2, requestedSplitCount ?? 2))
+  const [mode, setMode] = useState<PaymentMode>(requestedSplitCount ? 'split' : 'single')
+  const [people, setPeople] = useState(initialPeople)
+  const [splitPayments, setSplitPayments] = useState<SplitPaymentDraft[]>(() => createSplitPayments(remainingAmount, initialPeople, defaultMethodId))
   const [splitError, setSplitError] = useState('')
   const [saving, setSaving] = useState(false)
   const toast = useToast()
@@ -128,6 +131,7 @@ export function PaymentDialog({
 
   return (
     <Modal open title="Registrar pagamento" description={`Saldo da conta: ${currency.format(remainingAmount)}`} size="large" isBusy={saving} onClose={onClose}>
+      {requestedSplitCount && <div className="payment-request-note" role="status">A mesa solicitou divisão entre <strong>{requestedSplitCount} pessoas</strong>.</div>}
       <div className="payment-mode-tabs" role="tablist" aria-label="Modo de pagamento">
         <button type="button" role="tab" aria-selected={mode === 'single'} className={mode === 'single' ? 'active' : ''} onClick={() => setMode('single')}><UserRound size={17} /> Pagamento único</button>
         <button type="button" role="tab" aria-selected={mode === 'split'} className={mode === 'split' ? 'active' : ''} onClick={() => setMode('split')}><UsersRound size={17} /> Dividir por pessoas</button>

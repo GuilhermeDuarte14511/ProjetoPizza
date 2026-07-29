@@ -11,6 +11,8 @@ const enumLabels: Record<string, string> = {
   Complete: 'Conclusão',
   Cancelled: 'Cancelado',
   Pending: 'Pendente',
+  Acknowledged: 'Assumido',
+  InProgress: 'Em atendimento',
   Authorized: 'Autorizado',
   Paid: 'Pago',
   Failed: 'Falhou',

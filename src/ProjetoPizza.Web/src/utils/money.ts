@@ -3,6 +3,10 @@ export const currency = new Intl.NumberFormat('pt-BR', {
   currency: 'BRL',
 })
 
+export function formatCurrency(value: number) {
+  return currency.format(value)
+}
+
 export function splitMoneyEqually(total: number, people: number): number[] {
   const safePeople = Math.max(1, Math.trunc(people))
   const totalCents = Math.round(total * 100)

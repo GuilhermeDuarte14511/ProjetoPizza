@@ -6,12 +6,13 @@ Fundação full stack de uma plataforma de gestão para pizzaria, construída co
 
 - Clean Architecture: Domain, Application, Infrastructure e Api.
 - Módulos Core, Identity, Catalog, Inventory, Dining, Ordering, Production, Billing, Cashier, Devices, Notifications e Audit.
-- Um `DbContext` PostgreSQL com schema por módulo, migration `InitialCreate`, índices, FKs e seed idempotente.
+- Um `DbContext` PostgreSQL com schemas por módulo, migrations versionadas, índices, FKs e seed idempotente.
 - Agregados e invariantes para mesas, sessões, pedidos, pizzas, contas, pagamentos e caixa.
 - Endpoints administrativos de leitura e escrita, autenticação Identity/JWT, autorização por claims, rate limit, OpenAPI, health check, Problem Details e CORS.
-- Painel React responsivo com todas as telas administrativas inventariadas, sem páginas placeholder.
+- Painel React responsivo com todas as telas administrativas inventariadas e jornada do tablet da mesa em `/mesa`.
 - Cadastros administrativos em modais acessíveis, feedback por toast, erros HTTP tratados, enums localizados em português e transições com suporte a movimento reduzido.
 - Fluxos operacionais para mesas, pedidos, cozinha, catálogo, pagamentos, caixa, dispositivos, usuários, perfis e configurações.
+- Jornada do cliente com ativação segura do tablet, cardápio real, montagem de pizza com adicionais por sabor, carrinho, acompanhamento, chamado e solicitação de conta.
 - Testes unitários de Domain/Application e teste de integração PostgreSQL preparado com Testcontainers.
 - Inventário completo das referências visuais e documentação das decisões.
 

@@ -64,6 +64,23 @@ internal sealed class ProductVariantConfiguration : IEntityTypeConfiguration<Pro
     }
 }
 
+internal sealed class ProductExtraConfiguration : IEntityTypeConfiguration<ProductExtra>
+{
+    public void Configure(EntityTypeBuilder<ProductExtra> builder)
+    {
+        builder.ToTable("product_extras", "catalog");
+        builder.HasKey(entity => new { entity.ProductId, entity.IngredientId });
+        builder.Property(entity => entity.ProductId).HasConversion(id => id.Value, value => new ProductId(value));
+        builder.Property(entity => entity.IngredientId).HasConversion(id => id.Value, value => new IngredientId(value));
+        builder.Property(entity => entity.Price).HasMoneyConversion();
+        builder.Property(entity => entity.MaxQuantity);
+        builder.Property(entity => entity.IsActive);
+        builder.HasIndex(entity => new { entity.ProductId, entity.IsActive });
+        builder.HasOne<Product>().WithMany().HasForeignKey(entity => entity.ProductId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Ingredient>().WithMany().HasForeignKey(entity => entity.IngredientId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
 internal sealed class ProductImageConfiguration : IEntityTypeConfiguration<ProductImage>
 {
     public void Configure(EntityTypeBuilder<ProductImage> builder)
@@ -156,6 +173,7 @@ internal sealed class PizzaCrustPriceConfiguration : IEntityTypeConfiguration<Pi
         builder.Property(entity => entity.PizzaCrustId).HasConversion(id => id.Value, value => new PizzaCrustId(value));
         builder.Property(entity => entity.PizzaSizeId).HasConversion(id => id.Value, value => new PizzaSizeId(value));
         builder.Property(entity => entity.AdditionalPrice).HasMoneyConversion();
+        builder.Property(entity => entity.HalfAdditionalPrice).HasMoneyConversion();
         builder.HasIndex(entity => new { entity.PizzaCrustId, entity.PizzaSizeId }).IsUnique();
         builder.HasOne<PizzaCrust>().WithMany().HasForeignKey(entity => entity.PizzaCrustId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<PizzaSize>().WithMany().HasForeignKey(entity => entity.PizzaSizeId).OnDelete(DeleteBehavior.Restrict);
@@ -174,6 +192,8 @@ internal sealed class IngredientConfiguration : IEntityTypeConfiguration<Ingredi
         builder.Property(entity => entity.Name).HasMaxLength(120);
         builder.Property(entity => entity.Description).HasMaxLength(500);
         builder.Property(entity => entity.AllergenDescription).HasMaxLength(300);
+        builder.Property(entity => entity.ExtraPrice).HasMoneyConversion();
+        builder.HasIndex(entity => new { entity.UnitId, entity.IsActive, entity.IsAvailableAsExtra });
         builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<InventoryItem>().WithMany().HasForeignKey(entity => entity.InventoryItemId).OnDelete(DeleteBehavior.Restrict);
     }
@@ -191,5 +211,28 @@ internal sealed class PizzaFlavorIngredientConfiguration : IEntityTypeConfigurat
         builder.Property(entity => entity.UnitOfMeasure).HasMaxLength(20);
         builder.HasOne<PizzaFlavor>().WithMany().HasForeignKey(entity => entity.PizzaFlavorId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Ingredient>().WithMany().HasForeignKey(entity => entity.IngredientId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class PizzaFlavorExtraConfiguration : IEntityTypeConfiguration<PizzaFlavorExtra>
+{
+    public void Configure(EntityTypeBuilder<PizzaFlavorExtra> builder)
+    {
+        builder.ToTable("pizza_flavor_extras", "catalog");
+        builder.HasKey(entity => new { entity.PizzaFlavorId, entity.IngredientId });
+        builder.Property(entity => entity.PizzaFlavorId)
+            .HasConversion(id => id.Value, value => new PizzaFlavorId(value));
+        builder.Property(entity => entity.IngredientId)
+            .HasConversion(id => id.Value, value => new IngredientId(value));
+        builder.Property(entity => entity.Price).HasMoneyConversion();
+        builder.HasIndex(entity => new { entity.PizzaFlavorId, entity.IsActive });
+        builder.HasOne<PizzaFlavor>()
+            .WithMany()
+            .HasForeignKey(entity => entity.PizzaFlavorId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Ingredient>()
+            .WithMany()
+            .HasForeignKey(entity => entity.IngredientId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

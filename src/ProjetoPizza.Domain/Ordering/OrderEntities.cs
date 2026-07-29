@@ -56,6 +56,13 @@ public enum ModifierType
     Extra
 }
 
+public enum CrustSelectionMode
+{
+    None,
+    Whole,
+    Split
+}
+
 public sealed class Order : AggregateRoot<OrderId>
 {
     private readonly List<OrderItem> _items = [];
@@ -115,10 +122,20 @@ public sealed class Order : AggregateRoot<OrderId>
         int quantity,
         Money unitPrice,
         ProductVariantId? productVariantId = null,
-        string? variantNameSnapshot = null)
+        string? variantNameSnapshot = null,
+        string? notes = null)
     {
         EnsureMutable();
-        var item = new OrderItem(id, Id, productId, productNameSnapshot, quantity, unitPrice, productVariantId, variantNameSnapshot);
+        var item = new OrderItem(
+            id,
+            Id,
+            productId,
+            productNameSnapshot,
+            quantity,
+            unitPrice,
+            productVariantId,
+            variantNameSnapshot,
+            notes);
         _items.Add(item);
         RecalculateTotals();
         return item;
@@ -230,7 +247,8 @@ public sealed class OrderItem : AggregateRoot<OrderItemId>
         int quantity,
         Money unitPrice,
         ProductVariantId? productVariantId,
-        string? variantNameSnapshot) : base(id)
+        string? variantNameSnapshot,
+        string? notes) : base(id)
     {
         OrderId = orderId;
         ProductId = productId;
@@ -240,6 +258,7 @@ public sealed class OrderItem : AggregateRoot<OrderItemId>
         Quantity = Guard.Positive(quantity, nameof(quantity));
         UnitPrice = unitPrice;
         TotalPrice = unitPrice * quantity;
+        Notes = string.IsNullOrWhiteSpace(notes) ? null : Guard.Required(notes, nameof(notes), 1000);
         Status = OrderItemStatus.Pending;
     }
 
@@ -278,6 +297,8 @@ public sealed class OrderItemPizza : AggregateRoot<OrderItemId>
         Money basePrice,
         PizzaCrustId? pizzaCrustId = null,
         string? crustNameSnapshot = null,
+        PizzaCrustId? secondPizzaCrustId = null,
+        string? secondCrustNameSnapshot = null,
         Money? crustPrice = null,
         Money? extrasPrice = null) : base(orderItemId)
     {
@@ -292,8 +313,29 @@ public sealed class OrderItemPizza : AggregateRoot<OrderItemId>
         SizeMaxFlavors = sizeMaxFlavors;
         PricingPolicySnapshot = pricingPolicySnapshot;
         BasePrice = basePrice;
+        if (secondPizzaCrustId.HasValue && !pizzaCrustId.HasValue)
+        {
+            throw new BusinessRuleException("pizza.crust_first_half", "The first crust half is required.");
+        }
+
+        if (secondPizzaCrustId.HasValue && secondPizzaCrustId == pizzaCrustId)
+        {
+            throw new BusinessRuleException("pizza.crust_duplicate_half", "Split crust halves must be different.");
+        }
+
         PizzaCrustId = pizzaCrustId;
-        CrustNameSnapshot = crustNameSnapshot;
+        CrustNameSnapshot = pizzaCrustId.HasValue
+            ? Guard.Required(crustNameSnapshot, nameof(crustNameSnapshot), 100)
+            : null;
+        SecondPizzaCrustId = secondPizzaCrustId;
+        SecondCrustNameSnapshot = secondPizzaCrustId.HasValue
+            ? Guard.Required(secondCrustNameSnapshot, nameof(secondCrustNameSnapshot), 100)
+            : null;
+        CrustSelectionMode = secondPizzaCrustId.HasValue
+            ? CrustSelectionMode.Split
+            : pizzaCrustId.HasValue
+                ? CrustSelectionMode.Whole
+                : CrustSelectionMode.None;
         CrustPrice = crustPrice ?? Money.Zero();
         ExtrasPrice = extrasPrice ?? Money.Zero();
     }
@@ -305,6 +347,9 @@ public sealed class OrderItemPizza : AggregateRoot<OrderItemId>
     public int SizeMaxFlavors { get; private set; }
     public PizzaCrustId? PizzaCrustId { get; private set; }
     public string? CrustNameSnapshot { get; private set; }
+    public PizzaCrustId? SecondPizzaCrustId { get; private set; }
+    public string? SecondCrustNameSnapshot { get; private set; }
+    public CrustSelectionMode CrustSelectionMode { get; private set; }
     public int FlavorCount { get; private set; }
     public PizzaPricingPolicy PricingPolicySnapshot { get; private set; }
     public Money BasePrice { get; private set; }

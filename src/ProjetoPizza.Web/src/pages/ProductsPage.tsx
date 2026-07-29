@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { MoreHorizontal, Plus, Save, Search } from 'lucide-react'
+import { MoreHorizontal, PackagePlus, Plus, Save, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { CurrencyInput } from '../components/ui/CurrencyInput'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { FieldError } from '../components/ui/FieldError'
@@ -23,10 +23,14 @@ const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: '
 export function ProductsPage() {
   const { data: products, setData: setProducts } = useAdminQuery(queryKeys.products, adminService.products)
   const { data: categories } = useAdminQuery(queryKeys.categories, adminService.categories)
+  const { data: ingredients } = useAdminQuery(queryKeys.ingredients, adminService.ingredients)
   const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get('search') ?? '')
   const [editingId, setEditingId] = useState<string>()
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [activeModalTab, setActiveModalTab] = useState<'details' | 'complements'>('details')
+  const [complementsTouched, setComplementsTouched] = useState(false)
+  const [newComplement, setNewComplement] = useState({ name: '', price: 0, maxQuantity: 3 })
   const toast = useToast()
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -39,8 +43,12 @@ export function ProductsPage() {
       isActive: true,
       isAvailable: true,
       isFeatured: false,
+      usesCustomExtras: false,
+      complements: [],
     },
   })
+  const complements = useFieldArray({ control: form.control, name: 'complements' })
+  const productType = useWatch({ control: form.control, name: 'type' })
 
   const visibleProducts = useMemo(() => products.filter((product) => product.name.toLowerCase().includes(search.toLowerCase())), [products, search])
   const categoryName = (id: string) => categories.find((category) => category.id === id)?.name ?? 'Sem categoria'
@@ -55,8 +63,13 @@ export function ProductsPage() {
       isActive: true,
       isAvailable: true,
       isFeatured: false,
+      usesCustomExtras: false,
+      complements: [],
     }
     form.reset(draft)
+    setActiveModalTab('details')
+    setComplementsTouched(false)
+    setNewComplement({ name: '', price: 0, maxQuantity: 3 })
     setEditingId(product?.id ?? 'new')
   }
 
@@ -71,8 +84,20 @@ export function ProductsPage() {
   async function save(draft: ProductFormData) {
     setSaving(true)
     try {
-      const result = await adminService.saveProduct(draft) as { id: string }
-      const saved = { ...draft, id: draft.id ?? result.id } as Product
+      const savesCustomComplements = draft.type === 'Pizza' &&
+        (!draft.id || draft.usesCustomExtras || complementsTouched)
+      const command = {
+        ...draft,
+        usesCustomExtras: savesCustomComplements,
+        complements: savesCustomComplements ? draft.complements : undefined,
+      }
+      const result = await adminService.saveProduct(command) as { id: string }
+      const saved = {
+        ...draft,
+        id: draft.id ?? result.id,
+        usesCustomExtras: savesCustomComplements,
+        complements: savesCustomComplements ? draft.complements : [],
+      } as Product
       setProducts((current) => draft.id ? current.map((item) => item.id === draft.id ? saved : item) : [...current, saved])
       form.reset(draft)
       setEditingId(undefined)
@@ -84,20 +109,111 @@ export function ProductsPage() {
     }
   }
 
+  function markComplementsChanged() {
+    setComplementsTouched(true)
+    form.setValue('usesCustomExtras', true, { shouldDirty: true })
+  }
+
+  function addExistingComplement(ingredientId: string) {
+    const ingredient = ingredients.find((item) => item.id === ingredientId)
+    if (!ingredient) return
+    complements.append({
+      ingredientId: ingredient.id,
+      name: ingredient.name,
+      price: ingredient.extraPrice,
+      maxQuantity: ingredient.maxExtraQuantity,
+    })
+    markComplementsChanged()
+  }
+
+  function addNewComplement() {
+    const name = newComplement.name.trim()
+    if (!name) {
+      toast.error('Informe o complemento', 'Digite um nome antes de adicionar.')
+      return
+    }
+    if (form.getValues('complements').some((item) => item.name.toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR'))) {
+      toast.error('Complemento duplicado', `${name} já foi incluído nesta pizza.`)
+      return
+    }
+    complements.append({ ...newComplement, name })
+    setNewComplement({ name: '', price: 0, maxQuantity: 3 })
+    markComplementsChanged()
+  }
+
+  const selectedIngredientIds = new Set(complements.fields.map((item) => item.ingredientId).filter(Boolean))
+  const availableComplements = ingredients.filter((ingredient) =>
+    ingredient.isActive &&
+    ingredient.isAvailableAsExtra &&
+    !selectedIngredientIds.has(ingredient.id))
+
   return (
     <>
       <PageHeader title="Produtos" description="Gerencie itens, preços e disponibilidade do cardápio." actions={hasPermission('admin:write') && <button className="primary-button" onClick={() => edit()}><Plus size={16} /> Adicionar produto</button>} />
-      <nav className="catalog-tabs" aria-label="Seções do cardápio" role="tablist"><ViewTransitionLink role="tab" aria-selected className="active" href="/admin/catalog/products">Produtos</ViewTransitionLink><ViewTransitionLink role="tab" aria-selected={false} href="/admin/catalog/categories">Categorias</ViewTransitionLink><ViewTransitionLink role="tab" aria-selected={false} href="/admin/catalog/pizza-flavors">Sabores</ViewTransitionLink><ViewTransitionLink role="tab" aria-selected={false} href="/admin/catalog/crusts">Bordas</ViewTransitionLink></nav>
-      {editingId && <Modal open title={form.getValues('id') ? 'Editar produto' : 'Novo produto'} description="Informe os dados comerciais e a disponibilidade no cardápio." size="large" isBusy={saving} onClose={requestClose}>
+      <nav className="catalog-tabs" aria-label="Seções do cardápio" role="tablist"><ViewTransitionLink role="tab" aria-selected className="active" href="/admin/catalog/products">Produtos</ViewTransitionLink><ViewTransitionLink role="tab" aria-selected={false} href="/admin/catalog/categories">Categorias</ViewTransitionLink><ViewTransitionLink role="tab" aria-selected={false} href="/admin/catalog/pizza-flavors">Sabores</ViewTransitionLink><ViewTransitionLink role="tab" aria-selected={false} href="/admin/catalog/crusts">Bordas</ViewTransitionLink><ViewTransitionLink role="tab" aria-selected={false} href="/admin/catalog/ingredients">Ingredientes</ViewTransitionLink></nav>
+      {editingId && <Modal open title={form.getValues('id') ? 'Editar produto' : 'Novo produto'} description="Configure os dados comerciais e os complementos disponíveis no cardápio." size="large" isBusy={saving} onClose={requestClose}>
         <form onSubmit={form.handleSubmit(save)} noValidate>
-          <div className="modal-body"><div className="form-grid three-columns">
-            <label className="field-label">Nome<input autoFocus aria-invalid={Boolean(form.formState.errors.name)} {...form.register('name')} /><FieldError message={form.formState.errors.name?.message} /></label>
-            <label className="field-label">SKU<input disabled={Boolean(form.getValues('id'))} aria-invalid={Boolean(form.formState.errors.sku)} {...form.register('sku')} /><FieldError message={form.formState.errors.sku?.message} /></label>
-            <label className="field-label">Categoria<select aria-invalid={Boolean(form.formState.errors.categoryId)} {...form.register('categoryId')}><option value="">Selecione</option>{categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select><FieldError message={form.formState.errors.categoryId?.message} /></label>
-            <label className="field-label">Tipo<select {...form.register('type')}><option value="Pizza">Pizza</option><option value="Beverage">Bebida</option><option value="Portion">Porção</option><option value="Dessert">Sobremesa</option><option value="Standard">Padrão</option></select></label>
-            <label className="field-label">Preço base<Controller control={form.control} name="basePrice" render={({ field }) => <CurrencyInput name={field.name} value={field.value} onBlur={field.onBlur} getInputRef={field.ref} aria-invalid={Boolean(form.formState.errors.basePrice)} onCurrencyValueChange={field.onChange} />} /><FieldError message={form.formState.errors.basePrice?.message} /></label>
-            <div className="check-stack"><label className="check-label"><input type="checkbox" {...form.register('isAvailable')} /> Disponível</label><label className="check-label"><input type="checkbox" {...form.register('isFeatured')} /> Destaque</label></div>
-          </div></div>
+          <div className="product-modal-tabs" role="tablist" aria-label="Configuração do produto">
+            <button type="button" role="tab" aria-selected={activeModalTab === 'details'} className={activeModalTab === 'details' ? 'active' : ''} onClick={() => setActiveModalTab('details')}>Dados do produto</button>
+            <button type="button" role="tab" aria-selected={activeModalTab === 'complements'} className={activeModalTab === 'complements' ? 'active' : ''} onClick={() => setActiveModalTab('complements')}>Complementos <span>{complements.fields.length}</span></button>
+          </div>
+          <div className="modal-body">
+            {activeModalTab === 'details' ? (
+              <div className="form-grid three-columns" role="tabpanel">
+                <label className="field-label">Nome<input autoFocus aria-invalid={Boolean(form.formState.errors.name)} {...form.register('name')} /><FieldError message={form.formState.errors.name?.message} /></label>
+                <label className="field-label">SKU<input disabled={Boolean(form.getValues('id'))} aria-invalid={Boolean(form.formState.errors.sku)} {...form.register('sku')} /><FieldError message={form.formState.errors.sku?.message} /></label>
+                <label className="field-label">Categoria<select aria-invalid={Boolean(form.formState.errors.categoryId)} {...form.register('categoryId')}><option value="">Selecione</option>{categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select><FieldError message={form.formState.errors.categoryId?.message} /></label>
+                <label className="field-label">Tipo<select {...form.register('type')}><option value="Pizza">Pizza</option><option value="Beverage">Bebida</option><option value="Portion">Porção</option><option value="Dessert">Sobremesa</option><option value="Standard">Padrão</option></select></label>
+                <label className="field-label">Preço base<Controller control={form.control} name="basePrice" render={({ field }) => <CurrencyInput name={field.name} value={field.value} onBlur={field.onBlur} getInputRef={field.ref} aria-invalid={Boolean(form.formState.errors.basePrice)} onCurrencyValueChange={field.onChange} />} /><FieldError message={form.formState.errors.basePrice?.message} /></label>
+                <div className="check-stack"><label className="check-label"><input type="checkbox" {...form.register('isAvailable')} /> Disponível</label><label className="check-label"><input type="checkbox" {...form.register('isFeatured')} /> Destaque</label></div>
+              </div>
+            ) : productType !== 'Pizza' ? (
+              <div className="product-complements-empty" role="tabpanel">
+                <PackagePlus size={32} />
+                <h3>Complementos são configurados em pizzas</h3>
+                <p>Altere o tipo do produto para Pizza para adicionar ingredientes opcionais e seus valores.</p>
+              </div>
+            ) : (
+              <div className="product-complements-panel" role="tabpanel">
+                <section className="new-complement-card" aria-labelledby="new-complement-title">
+                  <div><span className="eyebrow">Cadastro rápido</span><h3 id="new-complement-title">Adicionar novo complemento</h3><p>O complemento também ficará disponível no catálogo de ingredientes.</p></div>
+                  <div className="new-complement-fields">
+                    <label className="field-label">Nome<input value={newComplement.name} maxLength={120} onChange={(event) => setNewComplement((current) => ({ ...current, name: event.target.value }))} placeholder="Ex.: Bacon extra" /></label>
+                    <label className="field-label">Valor<CurrencyInput value={newComplement.price} onCurrencyValueChange={(price) => setNewComplement((current) => ({ ...current, price }))} /></label>
+                    <label className="field-label">Limite por parte<input type="number" min={1} max={10} value={newComplement.maxQuantity} onChange={(event) => setNewComplement((current) => ({ ...current, maxQuantity: Number(event.target.value) }))} /></label>
+                    <button type="button" className="secondary-button" onClick={addNewComplement}><Plus size={16} /> Adicionar</button>
+                  </div>
+                </section>
+
+                {availableComplements.length > 0 && (
+                  <section className="available-complements">
+                    <header><div><h3>Complementos já cadastrados</h3><p>Adicione rapidamente e ajuste o valor somente para esta pizza.</p></div></header>
+                    <div className="available-complements-list">
+                      {availableComplements.map((ingredient) => (
+                        <button type="button" key={ingredient.id} onClick={() => addExistingComplement(ingredient.id)}>
+                          <Plus size={15} /><span><strong>{ingredient.name}</strong><small>{currency.format(ingredient.extraPrice)} · até {ingredient.maxExtraQuantity}</small></span>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                <section className="selected-complements">
+                  <header><div><h3>Disponíveis nesta pizza</h3><p>Remova ou personalize preço e limite de cada complemento.</p></div><span>{complements.fields.length} selecionado(s)</span></header>
+                  {complements.fields.length === 0 ? (
+                    <div className="product-complements-empty compact"><PackagePlus size={28} /><p>Nenhum complemento ficará disponível para esta pizza.</p></div>
+                  ) : complements.fields.map((complement, index) => (
+                    <article className="selected-complement-row" key={complement.id}>
+                      <div><strong>{complement.name}</strong><small>Aplicável a cada sabor selecionado</small></div>
+                      <label className="field-label">Valor<Controller control={form.control} name={`complements.${index}.price`} render={({ field }) => <CurrencyInput name={field.name} value={field.value} onBlur={field.onBlur} getInputRef={field.ref} onCurrencyValueChange={(value) => { field.onChange(value); markComplementsChanged() }} />} /></label>
+                      <label className="field-label">Limite<input type="number" min={1} max={10} {...form.register(`complements.${index}.maxQuantity`, { valueAsNumber: true, onChange: markComplementsChanged })} /></label>
+                      <button type="button" className="icon-button danger" aria-label={`Remover ${complement.name}`} onClick={() => { complements.remove(index); markComplementsChanged() }}><Trash2 size={17} /></button>
+                    </article>
+                  ))}
+                </section>
+              </div>
+            )}
+          </div>
           <div className="modal-footer"><button type="button" className="secondary-button" disabled={saving} onClick={requestClose}>Cancelar</button><button className="primary-button" disabled={saving} aria-busy={saving}><Save size={16} /> {saving ? 'Salvando...' : 'Salvar produto'}</button></div>
         </form>
       </Modal>}

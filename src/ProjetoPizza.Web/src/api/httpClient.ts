@@ -1,5 +1,6 @@
 export const apiBaseUrl = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
 const tokenKey = 'projeto-pizza.access-token'
+export const unauthorizedEventName = 'projeto-pizza:unauthorized'
 
 export const isApiConfigured = apiBaseUrl.length > 0
 
@@ -51,6 +52,7 @@ export async function requestJson<T>(
   }
   if (response.status === 401) {
     clearAccessToken()
+    window.dispatchEvent(new Event(unauthorizedEventName))
   }
 
   if (!response.ok) {

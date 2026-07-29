@@ -93,18 +93,97 @@ public sealed class DeviceSession : AggregateRoot<DeviceSessionId>
 {
     private DeviceSession() : base(default) { }
 
-    public DeviceSession(DeviceSessionId id, DeviceId deviceId, TableSessionId tableSessionId, string sessionTokenHash) : base(id)
+    public DeviceSession(
+        DeviceSessionId id,
+        DeviceId deviceId,
+        TableSessionId tableSessionId,
+        string sessionTokenHash,
+        DateTimeOffset expiresAt) : base(id)
     {
+        if (expiresAt <= DateTimeOffset.UtcNow)
+        {
+            throw new BusinessRuleException(
+                "device_session.expiration",
+                "A device session expiration must be in the future.");
+        }
+
         DeviceId = deviceId;
         TableSessionId = tableSessionId;
         SessionTokenHash = Guard.Required(sessionTokenHash, nameof(sessionTokenHash), 256);
         StartedAt = DateTimeOffset.UtcNow;
+        ExpiresAt = expiresAt;
     }
 
     public DeviceId DeviceId { get; private set; }
     public TableSessionId TableSessionId { get; private set; }
     public DateTimeOffset StartedAt { get; private set; }
+    public DateTimeOffset ExpiresAt { get; private set; }
     public DateTimeOffset? EndedAt { get; private set; }
     public string SessionTokenHash { get; private set; } = string.Empty;
     public string? EndedReason { get; private set; }
+
+    public void End(string reason)
+    {
+        if (EndedAt.HasValue)
+        {
+            return;
+        }
+
+        EndedReason = Guard.Required(reason, nameof(reason), 200);
+        EndedAt = DateTimeOffset.UtcNow;
+    }
+}
+
+public sealed class DeviceProvisioning : AggregateRoot<DeviceProvisioningId>
+{
+    private DeviceProvisioning() : base(default) { }
+
+    public DeviceProvisioning(
+        DeviceProvisioningId id,
+        DeviceId deviceId,
+        string tokenHash,
+        DateTimeOffset expiresAt) : base(id)
+    {
+        if (expiresAt <= DateTimeOffset.UtcNow)
+        {
+            throw new BusinessRuleException(
+                "device_provisioning.expiration",
+                "A device provisioning expiration must be in the future.");
+        }
+
+        DeviceId = deviceId;
+        TokenHash = Guard.Required(tokenHash, nameof(tokenHash), 64);
+        CreatedAt = DateTimeOffset.UtcNow;
+        ExpiresAt = expiresAt;
+    }
+
+    public DeviceId DeviceId { get; private set; }
+    public string TokenHash { get; private set; } = string.Empty;
+    public DateTimeOffset CreatedAt { get; private set; }
+    public DateTimeOffset ExpiresAt { get; private set; }
+    public DateTimeOffset? ConsumedAt { get; private set; }
+    public DateTimeOffset? RevokedAt { get; private set; }
+
+    public bool IsAvailableAt(DateTimeOffset now) =>
+        ConsumedAt is null && RevokedAt is null && ExpiresAt > now;
+
+    public void Consume()
+    {
+        if (!IsAvailableAt(DateTimeOffset.UtcNow))
+        {
+            throw new BusinessRuleException(
+                "device_provisioning.unavailable",
+                "The device provisioning credential is no longer available.");
+        }
+
+        ConsumedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Revoke()
+    {
+        if (ConsumedAt is null && RevokedAt is null)
+        {
+            RevokedAt = DateTimeOffset.UtcNow;
+        }
+    }
 }

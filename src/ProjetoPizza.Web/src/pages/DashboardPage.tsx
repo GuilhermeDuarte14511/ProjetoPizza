@@ -11,6 +11,7 @@ const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: '
 
 export function DashboardPage() {
   const { data: dashboard, refresh, isRefreshing } = useAdminQuery(queryKeys.dashboard, adminService.dashboard)
+  const { data: serviceCalls } = useAdminQuery(queryKeys.serviceCalls, adminService.serviceCalls)
 
   return (
     <>
@@ -24,11 +25,11 @@ export function DashboardPage() {
         }
       />
       <section className="metrics-grid">
-        <MetricCard label="Vendas do dia" value={currency.format(dashboard.salesToday)} detail="+12% em relação a ontem" icon={CircleDollarSign} />
+        <MetricCard label="Vendas do dia" value={currency.format(dashboard.salesToday)} detail="Pedidos concluídos no dia" icon={CircleDollarSign} />
         <MetricCard label="Pedidos" value={dashboard.ordersToday.toString()} detail="Salão, delivery e retirada" icon={ShoppingCart} />
-        <MetricCard label="Ticket médio" value={currency.format(dashboard.averageTicket)} detail="+ R$ 2,10 no período" icon={Clock3} />
+        <MetricCard label="Ticket médio" value={currency.format(dashboard.averageTicket)} detail="Média dos pedidos concluídos" icon={Clock3} />
         <MetricCard label="Mesas ocupadas" value={`${dashboard.occupiedTables} / ${dashboard.totalTables}`} detail="Ocupação atual do salão" icon={TableProperties} />
-        <MetricCard label="Em preparo" value={dashboard.ordersInProduction.toString()} detail="Tempo médio de 18 min" icon={Clock3} tone="warning" />
+        <MetricCard label="Em preparo" value={dashboard.ordersInProduction.toString()} detail="Pedidos em produção agora" icon={Clock3} tone="warning" />
         <MetricCard label="Chamados pendentes" value={dashboard.pendingServiceCalls.toString()} detail="Ação imediata necessária" icon={BellRing} tone="danger" />
       </section>
       <section className="dashboard-grid">
@@ -42,12 +43,21 @@ export function DashboardPage() {
           </div>
         </article>
         <article className="surface-card operational-alerts">
-          <div className="card-heading"><div><h2>Alertas operacionais</h2><p>Itens que pedem atenção.</p></div></div>
-          <div className="alert-item danger"><BellRing size={18} /><span><strong>Mesa 03 solicita atendimento</strong><small>Há 2 minutos</small></span></div>
-          <div className="alert-item warning"><Clock3 size={18} /><span><strong>Pedido #1019 acima do tempo</strong><small>Pizzaria · 28 minutos</small></span></div>
-          <div className="alert-item"><ShoppingCart size={18} /><span><strong>Estoque baixo de mussarela</strong><small>1,8 kg disponíveis</small></span></div>
+          <div className="card-heading"><div><h2>Chamados das mesas</h2><p>Solicitações reais enviadas pelos tablets.</p></div><a href="/admin/service-calls">Ver fila</a></div>
+          {serviceCalls.slice(0, 3).map((call) => (
+            <a className={`alert-item ${call.status === 'Pending' ? 'danger' : 'warning'}`} href="/admin/service-calls" key={call.id}>
+              <BellRing size={18} />
+              <span><strong>{call.tableName} · {call.typeName}</strong><small>{formatCallTime(call.createdAt)} · {translateEnum(call.status)}</small></span>
+            </a>
+          ))}
+          {!serviceCalls.length && <div className="empty-inline">Nenhum chamado ativo no momento.</div>}
         </article>
       </section>
     </>
   )
+}
+
+function formatCallTime(value: string) {
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60_000))
+  return minutes < 1 ? 'Agora' : `Há ${minutes} min`
 }

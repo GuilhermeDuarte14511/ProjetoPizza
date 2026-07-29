@@ -27,6 +27,7 @@ internal sealed class BillConfiguration : IEntityTypeConfiguration<Bill>
         builder.Property(entity => entity.TotalAmount).HasMoneyConversion();
         builder.Property(entity => entity.PaidAmount).HasMoneyConversion();
         builder.Property(entity => entity.RemainingAmount).HasMoneyConversion();
+        builder.Property(entity => entity.RequestedSplitCount);
         builder.HasIndex(entity => new { entity.TableSessionId, entity.Status });
         builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<TableSession>().WithMany().HasForeignKey(entity => entity.TableSessionId).OnDelete(DeleteBehavior.Restrict);

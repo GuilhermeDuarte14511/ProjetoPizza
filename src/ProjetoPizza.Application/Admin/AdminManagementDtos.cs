@@ -12,7 +12,30 @@ public sealed record OrderManagementDto(
     IReadOnlyCollection<OrderLineDto> Items);
 
 public sealed record OrderLineDto(Guid Id, string Name, int Quantity, decimal UnitPrice, decimal TotalPrice, string Status);
-public sealed record PizzaCrustDto(Guid Id, string Name, string? Description, bool IsActive, bool IsAvailable);
+public sealed record PizzaCrustDto(
+    Guid Id,
+    string Name,
+    string? Description,
+    bool IsActive,
+    bool IsAvailable,
+    IReadOnlyList<PizzaCrustPriceDto> Prices);
+
+public sealed record PizzaCrustPriceDto(
+    Guid PizzaSizeId,
+    string PizzaSizeName,
+    int SliceCount,
+    decimal FullPrice,
+    decimal HalfPrice);
+public sealed record IngredientDto(
+    Guid Id,
+    string Name,
+    string? Description,
+    bool IsActive,
+    bool IsAllergen,
+    string? AllergenDescription,
+    bool IsAvailableAsExtra,
+    decimal ExtraPrice,
+    int MaxExtraQuantity);
 
 public sealed record UnitSettingsDto(
     Guid Id,
@@ -116,6 +139,11 @@ public sealed record DeviceDto(
     Guid? LinkedTableId,
     bool IsLocked);
 
+public sealed record DeviceProvisioningDto(
+    DeviceDto Device,
+    string ActivationToken,
+    DateTimeOffset ExpiresAt);
+
 public sealed record AuditLogDto(
     Guid Id,
     string Module,
@@ -180,7 +208,14 @@ public sealed record SaveProductCommand(
     int PreparationTimeMinutes,
     bool IsActive,
     bool IsAvailable,
-    bool IsFeatured);
+    bool IsFeatured,
+    IReadOnlyCollection<SaveProductExtraCommand>? Complements = null);
+
+public sealed record SaveProductExtraCommand(
+    Guid? IngredientId,
+    string Name,
+    decimal Price,
+    int MaxQuantity);
 
 public sealed record SavePizzaSizeCommand(
     Guid? Id,
@@ -197,7 +232,24 @@ public sealed record SavePizzaCrustCommand(
     string Name,
     string? Description,
     bool IsActive,
-    bool IsAvailable);
+    bool IsAvailable,
+    IReadOnlyList<SavePizzaCrustPriceCommand>? Prices = null);
+
+public sealed record SavePizzaCrustPriceCommand(
+    Guid PizzaSizeId,
+    decimal FullPrice,
+    decimal HalfPrice);
+
+public sealed record SaveIngredientCommand(
+    Guid? Id,
+    string Name,
+    string? Description,
+    bool IsActive,
+    bool IsAllergen,
+    string? AllergenDescription,
+    bool IsAvailableAsExtra,
+    decimal ExtraPrice,
+    int MaxExtraQuantity);
 
 public sealed record SavePizzaFlavorCommand(
     Guid? Id,
@@ -209,7 +261,13 @@ public sealed record SavePizzaFlavorCommand(
     bool IsVegetarian,
     bool IsActive,
     bool IsAvailable,
-    string? SoldOutReason);
+    string? SoldOutReason,
+    IReadOnlyCollection<SavePizzaFlavorExtraCommand>? Extras = null);
+
+public sealed record SavePizzaFlavorExtraCommand(
+    Guid IngredientId,
+    decimal Price,
+    int MaxQuantity);
 
 public sealed record OpenTableCommand(Guid TableId, int GuestCount);
 public sealed record RecordPaymentCommand(Guid BillId, Guid PaymentMethodId, decimal Amount, decimal ReceivedAmount, string? ExternalReference);
@@ -232,5 +290,12 @@ public sealed record UpdateDeviceCommand(
     string? AppVersion,
     Guid? LinkedTableId,
     bool IsLocked);
+
+public sealed record CreateCustomerTabletCommand(
+    string Name,
+    string Platform,
+    Guid LinkedTableId);
+
+public sealed record ProvisionCustomerTabletCommand(Guid LinkedTableId);
 
 public sealed record CommandResultDto(Guid Id, string Status);

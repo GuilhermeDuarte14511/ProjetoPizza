@@ -43,7 +43,24 @@ internal sealed class DeviceSessionConfiguration : IEntityTypeConfiguration<Devi
         builder.Property(entity => entity.TableSessionId).HasConversion(id => id.Value, value => new TableSessionId(value));
         builder.Property(entity => entity.SessionTokenHash).HasMaxLength(256);
         builder.Property(entity => entity.EndedReason).HasMaxLength(200);
+        builder.HasIndex(entity => entity.SessionTokenHash).IsUnique();
+        builder.HasIndex(entity => new { entity.DeviceId, entity.EndedAt, entity.ExpiresAt });
         builder.HasOne<Device>().WithMany().HasForeignKey(entity => entity.DeviceId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<TableSession>().WithMany().HasForeignKey(entity => entity.TableSessionId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class DeviceProvisioningConfiguration : IEntityTypeConfiguration<DeviceProvisioning>
+{
+    public void Configure(EntityTypeBuilder<DeviceProvisioning> builder)
+    {
+        builder.ToTable("device_provisionings", "devices");
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.Id).HasConversion(id => id.Value, value => new DeviceProvisioningId(value));
+        builder.Property(entity => entity.DeviceId).HasConversion(id => id.Value, value => new DeviceId(value));
+        builder.Property(entity => entity.TokenHash).HasMaxLength(64);
+        builder.HasIndex(entity => entity.TokenHash).IsUnique();
+        builder.HasIndex(entity => new { entity.DeviceId, entity.ExpiresAt });
+        builder.HasOne<Device>().WithMany().HasForeignKey(entity => entity.DeviceId).OnDelete(DeleteBehavior.Cascade);
     }
 }

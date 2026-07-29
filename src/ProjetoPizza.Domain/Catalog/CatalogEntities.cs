@@ -87,6 +87,7 @@ public sealed class Product : AggregateRoot<ProductId>
     public bool IsAvailable { get; private set; }
     public bool IsFeatured { get; private set; }
     public bool IsPopular { get; private set; }
+    public bool UsesCustomExtras { get; private set; }
     public int PreparationTimeMinutes { get; private set; }
     public int DisplayOrder { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
@@ -100,6 +101,18 @@ public sealed class Product : AggregateRoot<ProductId>
     public void RemoveFromFeatured() => SetFeatured(false);
     public void SetActive(bool value) => ChangeActive(value);
     public void SetAvailable(bool value) => ChangeAvailability(value);
+    public void ConfigureCustomExtras(bool value)
+    {
+        if (value && ProductType != ProductType.Pizza)
+        {
+            throw new BusinessRuleException(
+                "product.extras_type",
+                "Only pizza products can configure pizza extras.");
+        }
+
+        UsesCustomExtras = value;
+        Touch();
+    }
 
     public void ChangePrice(Money price)
     {
@@ -366,20 +379,35 @@ public sealed class PizzaCrustPrice : Entity<PizzaCrustPriceId>
 {
     private PizzaCrustPrice() : base(default) { }
 
-    public PizzaCrustPrice(PizzaCrustPriceId id, PizzaCrustId pizzaCrustId, PizzaSizeId pizzaSizeId, Money additionalPrice) : base(id)
+    public PizzaCrustPrice(
+        PizzaCrustPriceId id,
+        PizzaCrustId pizzaCrustId,
+        PizzaSizeId pizzaSizeId,
+        Money additionalPrice,
+        Money halfAdditionalPrice) : base(id)
     {
         PizzaCrustId = pizzaCrustId;
         PizzaSizeId = pizzaSizeId;
         AdditionalPrice = additionalPrice;
+        HalfAdditionalPrice = halfAdditionalPrice;
     }
 
     public PizzaCrustId PizzaCrustId { get; private set; }
     public PizzaSizeId PizzaSizeId { get; private set; }
     public Money AdditionalPrice { get; private set; }
+    public Money HalfAdditionalPrice { get; private set; }
+
+    public void Update(Money additionalPrice, Money halfAdditionalPrice)
+    {
+        AdditionalPrice = additionalPrice;
+        HalfAdditionalPrice = halfAdditionalPrice;
+    }
 }
 
 public sealed class Ingredient : AggregateRoot<IngredientId>
 {
+    public const int MaximumExtraQuantity = 10;
+
     private Ingredient() : base(default) { }
 
     public Ingredient(IngredientId id, RestaurantUnitId unitId, string name, InventoryItemId? inventoryItemId = null) : base(id)
@@ -387,6 +415,8 @@ public sealed class Ingredient : AggregateRoot<IngredientId>
         UnitId = unitId;
         Name = Guard.Required(name, nameof(name), 120);
         InventoryItemId = inventoryItemId;
+        ExtraPrice = Money.Zero();
+        MaxExtraQuantity = 1;
         IsActive = true;
     }
 
@@ -397,6 +427,40 @@ public sealed class Ingredient : AggregateRoot<IngredientId>
     public bool IsActive { get; private set; }
     public bool IsAllergen { get; private set; }
     public string? AllergenDescription { get; private set; }
+    public bool IsAvailableAsExtra { get; private set; }
+    public Money ExtraPrice { get; private set; }
+    public int MaxExtraQuantity { get; private set; }
+
+    public void Update(
+        string name,
+        string? description,
+        bool isActive,
+        bool isAllergen,
+        string? allergenDescription,
+        bool isAvailableAsExtra,
+        Money extraPrice,
+        int maxExtraQuantity)
+    {
+        if (maxExtraQuantity is < 1 or > MaximumExtraQuantity)
+        {
+            throw new BusinessRuleException(
+                "ingredient.max_extra_quantity",
+                $"Extra ingredient quantity must be between one and {MaximumExtraQuantity}.");
+        }
+
+        Name = Guard.Required(name, nameof(name), 120);
+        Description = string.IsNullOrWhiteSpace(description)
+            ? null
+            : Guard.Required(description, nameof(description), 500);
+        IsActive = isActive;
+        IsAllergen = isAllergen;
+        AllergenDescription = isAllergen && !string.IsNullOrWhiteSpace(allergenDescription)
+            ? Guard.Required(allergenDescription, nameof(allergenDescription), 300)
+            : null;
+        IsAvailableAsExtra = isAvailableAsExtra;
+        ExtraPrice = extraPrice;
+        MaxExtraQuantity = maxExtraQuantity;
+    }
 }
 
 public sealed class PizzaFlavorIngredient
@@ -425,4 +489,76 @@ public sealed class PizzaFlavorIngredient
     public bool IsRemovable { get; private set; }
     public bool IsDefault { get; private set; }
     public int DisplayOrder { get; private set; }
+}
+
+public sealed class PizzaFlavorExtra
+{
+    private PizzaFlavorExtra() { }
+
+    public PizzaFlavorExtra(
+        PizzaFlavorId pizzaFlavorId,
+        IngredientId ingredientId,
+        Money price,
+        int maxQuantity)
+    {
+        PizzaFlavorId = pizzaFlavorId;
+        IngredientId = ingredientId;
+        Update(price, maxQuantity, isActive: true);
+    }
+
+    public PizzaFlavorId PizzaFlavorId { get; private set; }
+    public IngredientId IngredientId { get; private set; }
+    public Money Price { get; private set; }
+    public int MaxQuantity { get; private set; }
+    public bool IsActive { get; private set; }
+
+    public void Update(Money price, int maxQuantity, bool isActive)
+    {
+        if (maxQuantity is < 1 or > Ingredient.MaximumExtraQuantity)
+        {
+            throw new BusinessRuleException(
+                "pizza_flavor_extra.max_quantity",
+                $"Flavor extra quantity must be between one and {Ingredient.MaximumExtraQuantity}.");
+        }
+
+        Price = price;
+        MaxQuantity = maxQuantity;
+        IsActive = isActive;
+    }
+}
+
+public sealed class ProductExtra
+{
+    private ProductExtra() { }
+
+    public ProductExtra(
+        ProductId productId,
+        IngredientId ingredientId,
+        Money price,
+        int maxQuantity)
+    {
+        ProductId = productId;
+        IngredientId = ingredientId;
+        Update(price, maxQuantity, isActive: true);
+    }
+
+    public ProductId ProductId { get; private set; }
+    public IngredientId IngredientId { get; private set; }
+    public Money Price { get; private set; }
+    public int MaxQuantity { get; private set; }
+    public bool IsActive { get; private set; }
+
+    public void Update(Money price, int maxQuantity, bool isActive)
+    {
+        if (maxQuantity is < 1 or > Ingredient.MaximumExtraQuantity)
+        {
+            throw new BusinessRuleException(
+                "product_extra.max_quantity",
+                $"Product extra quantity must be between one and {Ingredient.MaximumExtraQuantity}.");
+        }
+
+        Price = price;
+        MaxQuantity = maxQuantity;
+        IsActive = isActive;
+    }
 }

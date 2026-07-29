@@ -13,6 +13,13 @@ export const productSchema = z.object({
   isActive: z.boolean(),
   isAvailable: z.boolean(),
   isFeatured: z.boolean(),
+  usesCustomExtras: z.boolean(),
+  complements: z.array(z.object({
+    ingredientId: z.string().optional(),
+    name: requiredText('O nome do complemento').max(120, 'O nome deve ter no máximo 120 caracteres.'),
+    price: nonNegativeMoney,
+    maxQuantity: z.number({ error: 'Informe o limite.' }).int().min(1, 'O mínimo é uma porção.').max(10, 'O máximo é dez porções.'),
+  })),
 })
 
 export const categorySchema = z.object({
@@ -28,9 +35,28 @@ export const categorySchema = z.object({
 export const crustSchema = z.object({
   id: z.string().optional(),
   name: requiredText('O nome').max(100, 'O nome deve ter no máximo 100 caracteres.'),
-  description: z.string().trim().max(300, 'A descrição deve ter no máximo 300 caracteres.').optional(),
+  description: z.string().trim().max(500, 'A descrição deve ter no máximo 500 caracteres.').optional(),
   isActive: z.boolean(),
   isAvailable: z.boolean(),
+  prices: z.array(z.object({
+    pizzaSizeId: requiredText('O tamanho'),
+    pizzaSizeName: requiredText('O nome do tamanho'),
+    sliceCount: z.number().int().positive(),
+    fullPrice: nonNegativeMoney,
+    halfPrice: nonNegativeMoney,
+  })).min(1, 'Cadastre o preço para ao menos um tamanho.'),
+})
+
+export const ingredientSchema = z.object({
+  id: z.string().optional(),
+  name: requiredText('O nome').max(120, 'O nome deve ter no máximo 120 caracteres.'),
+  description: z.string().trim().max(500, 'A descrição deve ter no máximo 500 caracteres.').optional(),
+  isActive: z.boolean(),
+  isAllergen: z.boolean(),
+  allergenDescription: z.string().trim().max(300, 'O aviso deve ter no máximo 300 caracteres.').optional(),
+  isAvailableAsExtra: z.boolean(),
+  extraPrice: nonNegativeMoney,
+  maxExtraQuantity: z.number({ error: 'Informe o limite.' }).int().min(1, 'O mínimo é uma porção.').max(10, 'O máximo é dez porções.'),
 })
 
 export const pizzaFlavorSchema = z.object({
@@ -44,6 +70,11 @@ export const pizzaFlavorSchema = z.object({
   isActive: z.boolean(),
   isAvailable: z.boolean(),
   soldOutReason: z.string().trim().max(200, 'O motivo deve ter no máximo 200 caracteres.').optional(),
+  extras: z.array(z.object({
+    ingredientId: requiredText('O ingrediente'),
+    price: nonNegativeMoney,
+    maxQuantity: z.number({ error: 'Informe o limite.' }).int().min(1, 'O mínimo é uma porção.').max(10, 'O máximo é dez porções.'),
+  })),
 })
 
 export const pizzaSizeSchema = z.object({
@@ -106,6 +137,7 @@ export const roleSchema = z.object({
 export type ProductFormData = z.infer<typeof productSchema>
 export type CategoryFormData = z.infer<typeof categorySchema>
 export type CrustFormData = z.infer<typeof crustSchema>
+export type IngredientFormData = z.infer<typeof ingredientSchema>
 export type PizzaFlavorFormData = z.infer<typeof pizzaFlavorSchema>
 export type PizzaSizeFormData = z.infer<typeof pizzaSizeSchema>
 export type OpenTableFormData = z.infer<typeof openTableSchema>

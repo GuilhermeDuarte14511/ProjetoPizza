@@ -7,6 +7,7 @@ import type {
   PizzaSize,
   Product,
   RestaurantTable,
+  ServiceCall,
   TableDetail,
   TableVisualStatus,
 } from '../types/admin'
@@ -45,6 +46,21 @@ export const mockDashboard: Dashboard = {
   ],
 }
 
+export const mockServiceCalls: ServiceCall[] = [
+  {
+    id: '78000000-0000-0000-0000-000000000003',
+    tableSessionId: '73000000-0000-0000-0000-000000000003',
+    tableId: mockTables[2].id,
+    tableNumber: 3,
+    tableName: 'Mesa 03',
+    typeCode: 'WAITER',
+    typeName: 'Chamar garçom',
+    status: 'Pending',
+    details: 'Precisamos de mais guardanapos.',
+    createdAt: new Date(Date.now() - 2 * 60_000).toISOString(),
+  },
+]
+
 export const mockCategories: Category[] = [
   { id: 'cat-1', name: 'Pizzas Tradicionais', slug: 'pizzas-tradicionais', isActive: true, isVisibleOnTablet: true },
   { id: 'cat-2', name: 'Pizzas Especiais', slug: 'pizzas-especiais', isActive: true, isVisibleOnTablet: true },
@@ -54,10 +70,10 @@ export const mockCategories: Category[] = [
 ]
 
 export const mockProducts: Product[] = [
-  { id: 'prod-1', categoryId: 'cat-1', sku: 'PIZ-MARG', name: 'Margherita Tradicional', type: 'Pizza', basePrice: 49.9, isActive: true, isAvailable: true, isFeatured: true },
-  { id: 'prod-2', categoryId: 'cat-1', sku: 'PIZ-CALA', name: 'Pizza Calabresa', type: 'Pizza', basePrice: 54.9, isActive: true, isAvailable: true, isFeatured: false },
-  { id: 'prod-3', categoryId: 'cat-5', sku: 'BEB-COCA2', name: 'Coca-Cola 2L', type: 'Beverage', basePrice: 14, isActive: true, isAvailable: false, isFeatured: false },
-  { id: 'prod-4', categoryId: 'cat-4', sku: 'POR-FRIT', name: 'Batata Frita Especial', type: 'Portion', basePrice: 32, isActive: true, isAvailable: true, isFeatured: false },
+  { id: 'prod-1', categoryId: 'cat-1', sku: 'PIZ-MARG', name: 'Margherita Tradicional', type: 'Pizza', basePrice: 49.9, isActive: true, isAvailable: true, isFeatured: true, usesCustomExtras: false, complements: [] },
+  { id: 'prod-2', categoryId: 'cat-1', sku: 'PIZ-CALA', name: 'Pizza Calabresa', type: 'Pizza', basePrice: 54.9, isActive: true, isAvailable: true, isFeatured: false, usesCustomExtras: false, complements: [] },
+  { id: 'prod-3', categoryId: 'cat-5', sku: 'BEB-COCA2', name: 'Coca-Cola 2L', type: 'Beverage', basePrice: 14, isActive: true, isAvailable: false, isFeatured: false, usesCustomExtras: false, complements: [] },
+  { id: 'prod-4', categoryId: 'cat-4', sku: 'POR-FRIT', name: 'Batata Frita Especial', type: 'Portion', basePrice: 32, isActive: true, isAvailable: true, isFeatured: false, usesCustomExtras: false, complements: [] },
 ]
 
 export const mockPizzaSizes: PizzaSize[] = [
@@ -68,9 +84,9 @@ export const mockPizzaSizes: PizzaSize[] = [
 ]
 
 export const mockPizzaFlavors: PizzaFlavor[] = [
-  { id: 'flavor-1', categoryId: 'cat-1', name: 'Calabresa', description: 'Calabresa, cebola e azeitonas', type: 'Savory', isPremium: false, isVegetarian: false, isActive: true, isAvailable: true },
-  { id: 'flavor-2', categoryId: 'cat-2', name: 'Margherita', description: 'Tomate, mussarela e manjericão', type: 'Savory', isPremium: false, isVegetarian: true, isActive: true, isAvailable: true },
-  { id: 'flavor-3', categoryId: 'cat-3', name: 'Chocolate', description: 'Chocolate ao leite', type: 'Sweet', isPremium: true, isVegetarian: true, isActive: true, isAvailable: true },
+  { id: 'flavor-1', categoryId: 'cat-1', name: 'Calabresa', description: 'Calabresa, cebola e azeitonas', type: 'Savory', isPremium: false, isVegetarian: false, isActive: true, isAvailable: true, extras: [] },
+  { id: 'flavor-2', categoryId: 'cat-2', name: 'Margherita', description: 'Tomate, mussarela e manjericão', type: 'Savory', isPremium: false, isVegetarian: true, isActive: true, isAvailable: true, extras: [] },
+  { id: 'flavor-3', categoryId: 'cat-3', name: 'Chocolate', description: 'Chocolate ao leite', type: 'Sweet', isPremium: true, isVegetarian: true, isActive: true, isAvailable: true, extras: [] },
 ]
 
 export const mockPizzaRules: PizzaRuleSettings = {
@@ -99,6 +115,11 @@ export function getMockTableDetail(id: string): TableDetail | undefined {
     billId: table.status === 'Conta solicitada' || table.status === 'Pagamento pendente'
       ? `79000000-0000-0000-0000-${table.number.toString().padStart(12, '0')}`
       : undefined,
-    remainingAmount: table.currentTotal,
+    subtotalAmount: table.currentTotal,
+    serviceFeePercentage: 10,
+    serviceFeeAmount: table.currentTotal * 0.1,
+    totalAmount: table.currentTotal * 1.1,
+    remainingAmount: table.currentTotal * 1.1,
+    requestedSplitCount: table.status === 'Conta solicitada' ? 3 : undefined,
   }
 }

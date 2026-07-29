@@ -14,5 +14,6 @@ coverage/
 *.suo
 *.log
 .postgres-data/
+.postgres-preview/
 .postgres-bootstrap-password
 .playwright-mcp/

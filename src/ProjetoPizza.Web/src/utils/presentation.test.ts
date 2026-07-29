@@ -4,6 +4,8 @@ import { translateEnum } from './presentation'
 describe('translateEnum', () => {
   it.each([
     ['Completed', 'Concluído'],
+    ['Acknowledged', 'Assumido'],
+    ['InProgress', 'Em atendimento'],
     ['InProduction', 'Em preparo'],
     ['HighestFlavorPrice', 'Maior valor entre os sabores'],
     ['Withdrawal', 'Sangria'],

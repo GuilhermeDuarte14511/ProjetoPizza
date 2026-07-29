@@ -36,8 +36,8 @@ Fonte analisada: `C:\teste\designs`. Foram lidos 40 arquivos HTML, 39 arquivos `
 
 | Tela | Arquivo | Finalidade | Componentes e ações | Entidades relacionadas | Observações |
 |---|---|---|---|---|---|
-| Boas-vindas da mesa | `designs/boas_vindas_mesa_12_forno_27/code.html` | Iniciar jornada | foto, identificação da mesa, ver cardápio, ajuda | DeviceSession, TableSession, RestaurantTable | Interface do cliente não foi implementada nesta entrega. |
-| Início do cardápio | `designs/card_pio_in_cio_forno_27/code.html` | Explorar catálogo | categorias, busca, carrinho, destaques, montar pizza | Category, Product, Order | Base para futura aplicação do tablet. |
+| Boas-vindas da mesa | `designs/boas_vindas_mesa_12_forno_27/code.html` | Iniciar jornada | foto, identificação da mesa, ver cardápio, ajuda | DeviceSession, TableSession, RestaurantTable | Implementada em `/mesa`, após ativação do dispositivo vinculado. |
+| Início do cardápio | `designs/card_pio_in_cio_forno_27/code.html` | Explorar catálogo | categorias, busca, carrinho, destaques, montar pizza | Category, Product, Order | Implementada com catálogo e disponibilidade fornecidos pela API. |
 | Lista de pizzas | `designs/listagem_de_pizzas_forno_27/code.html` | Escolher produto | filtros, ordenação, cards, indisponível, escolher opções | Product, PizzaFlavor, PizzaFlavorPrice | Preços “a partir de” são apenas referência visual. |
 | Quantidade de sabores | `designs/montar_pizza_quantidade_de_sabores_forno_27/code.html` | Definir composição | progresso, opções 1/2/3, voltar/continuar | PizzaSize, OrderItemPizza | Duplicada; variante atualizada tem cabeçalho e progresso mais consistentes. |
 | Quantidade de sabores atualizada | `designs/montar_pizza_quantidade_de_sabores_forno_27_atualizada/code.html` | Versão preferencial da etapa | cabeçalho compacto, cards de seleção, progresso | PizzaSize, OrderItemPizza | Referência principal para essa etapa. |
@@ -56,7 +56,7 @@ Fonte analisada: `C:\teste\designs`. Foram lidos 40 arquivos HTML, 39 arquivos `
 | Meus pedidos | `designs/meus_pedidos_forno_27/code.html` | Acompanhar produção | cards por pedido, timeline, total consumido | Order, OrderItem, KitchenTicket | Status do cliente é projeção do fluxo produtivo. |
 | Chamar garçom | `designs/chamar_gar_om_forno_27/code.html` | Solicitar atendimento | grade de motivos, detalhes, enviar | ServiceCallType, ServiceCall | Motivos orientaram o seed. |
 | Solicitar conta atualizada | `designs/solicitar_a_conta_forno_27_atualizada/code.html` | Encerrar consumo | itens, subtotal, taxa, pagar junto/dividir, solicitar | Bill, BillItem, BillSplit, TableSession | “Requested” aparece como estado de Bill; sessão usa `BillRequested`. |
-| Agradecimento | `designs/agradecimento_forno_27/code.html` | Finalizar jornada | mensagem, nota fiscal, QR code, avaliação | Bill, Payment, DeviceSession | Pós-pagamento fora do administrativo inicial. |
+| Agradecimento | `designs/agradecimento_forno_27/code.html` | Finalizar jornada | mensagem, nota fiscal, QR code, avaliação | Bill, Payment, DeviceSession | Implementada após a confirmação integral do pagamento; integrações reais de avaliação e nota fiscal dependem de provedores externos. |
 
 ## Arquivo agregado
 

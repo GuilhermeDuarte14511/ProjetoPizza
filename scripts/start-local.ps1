@@ -20,7 +20,7 @@ function Test-LocalPort {
 
     $client = [System.Net.Sockets.TcpClient]::new()
     try {
-        $connection = $client.ConnectAsync("localhost", $Port)
+        $connection = $client.ConnectAsync("127.0.0.1", $Port)
         return $connection.Wait(500) -and $client.Connected
     }
     catch {
@@ -67,17 +67,32 @@ if ([string]::IsNullOrWhiteSpace($connectionString)) {
 }
 
 $connectionString = [regex]::Replace($connectionString, "Port=\d+", "Port=$DatabasePort")
+$defaultRoute = Get-NetRoute -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue |
+    Sort-Object RouteMetric |
+    Select-Object -First 1
+$localNetworkAddress = if ($defaultRoute) {
+    Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $defaultRoute.InterfaceIndex -ErrorAction SilentlyContinue |
+        Where-Object { $_.IPAddress -notlike "169.254.*" } |
+        Select-Object -ExpandProperty IPAddress -First 1
+}
 $apiUrl = "http://localhost:$ApiPort"
+$apiLoopbackUrl = "http://127.0.0.1:$ApiPort"
 $webUrl = "http://localhost:$WebPort"
+$networkApiUrl = if ($localNetworkAddress) { "http://${localNetworkAddress}:$ApiPort" } else { $apiUrl }
+$networkWebUrl = if ($localNetworkAddress) { "http://${localNetworkAddress}:$WebPort" } else { $webUrl }
 
 if (-not (Test-LocalPort -Port $ApiPort)) {
     $env:ASPNETCORE_ENVIRONMENT = "Development"
     $env:ConnectionStrings__PostgreSql = $connectionString
     $env:Authentication__SigningKey = $localEnvironment["Authentication__SigningKey"]
+    $env:AllowedHosts = "*"
+    $env:Cors__AllowedOrigins__0 = $webUrl
+    $env:Cors__AllowedOrigins__1 = "http://127.0.0.1:4175"
+    $env:Cors__AllowedOrigins__2 = $networkWebUrl
 
     $apiProcess = Start-Process `
         -FilePath "dotnet.exe" `
-        -ArgumentList "run", "--no-build", "--project", "src/ProjetoPizza.Api", "--urls", $apiUrl `
+        -ArgumentList "run", "--no-build", "--project", "src/ProjetoPizza.Api", "--urls", "http://0.0.0.0:$ApiPort" `
         -WorkingDirectory $workspaceRoot `
         -RedirectStandardOutput $apiOutputPath `
         -RedirectStandardError $apiErrorPath `
@@ -85,30 +100,32 @@ if (-not (Test-LocalPort -Port $ApiPort)) {
         -PassThru
 
     $apiReady = $false
+    $lastHealthError = $null
     for ($attempt = 0; $attempt -lt 30; $attempt++) {
         try {
-            $response = Invoke-WebRequest -Uri "$apiUrl/api/v1/health" -UseBasicParsing -TimeoutSec 1
+            $response = Invoke-WebRequest -Uri "$apiLoopbackUrl/api/v1/health" -UseBasicParsing -NoProxy -TimeoutSec 2
             if ($response.StatusCode -eq 200) {
                 $apiReady = $true
                 break
             }
         }
         catch {
+            $lastHealthError = $_.Exception.Message
             Start-Sleep -Milliseconds 500
         }
     }
 
     if (-not $apiReady) {
         Stop-Process -Id $apiProcess.Id -ErrorAction SilentlyContinue
-        throw "A API não ficou saudável. Consulte api-local.stderr.log."
+        throw "A API não ficou saudável ($lastHealthError). Consulte api-local.stderr.log."
     }
 }
 
 if (-not (Test-LocalPort -Port $WebPort)) {
-    $env:VITE_API_URL = $apiUrl
+    $env:VITE_API_URL = $networkApiUrl
     $webProcess = Start-Process `
         -FilePath "npm.cmd" `
-        -ArgumentList "run", "dev", "--", "--host", "localhost", "--port", $WebPort `
+        -ArgumentList "run", "dev", "--", "--host", "0.0.0.0", "--port", $WebPort `
         -WorkingDirectory $webPath `
         -RedirectStandardOutput $webOutputPath `
         -RedirectStandardError $webErrorPath `
@@ -132,3 +149,6 @@ if (-not (Test-LocalPort -Port $WebPort)) {
 
 Write-Output "API disponível em $apiUrl"
 Write-Output "Frontend disponível em $webUrl"
+if ($localNetworkAddress) {
+    Write-Output "Tablet na rede local: $networkWebUrl"
+}
