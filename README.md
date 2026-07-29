@@ -73,7 +73,44 @@ dotnet run --project src/ProjetoPizza.Api -- --seed
 
 ## Instalação automatizada na máquina do cliente
 
-O modo recomendado usa o instalador interativo `scripts/install-client.ps1`. Ele prepara PostgreSQL, API e frontend em containers, aplica o banco, valida a saúde do sistema e configura a inicialização automática. Na máquina do cliente não é necessário instalar manualmente Node.js, npm ou o SDK .NET.
+O modo recomendado usa o instalador interativo `scripts/install-client.ps1`. Ele foi pensado para a pessoa responsável pela implantação executar uma vez na máquina que será o servidor da pizzaria. O script prepara PostgreSQL, API e frontend em containers, aplica o banco, valida a saúde do sistema e configura a inicialização automática.
+
+O fluxo completo é:
+
+```text
+Baixar o instalador
+        |
+        v
+Validar Windows, WSL 2, virtualização e Docker
+        |
+        v
+Perguntar configurações e credenciais
+        |
+        v
+Salvar configuração local protegida
+        |
+        v
+Construir e iniciar PostgreSQL + API + Web
+        |
+        v
+Aplicar migrations/seed e executar health check
+        |
+        v
+Exibir URLs e criar atalhos
+```
+
+Na máquina do cliente não é necessário instalar manualmente Node.js, npm ou o SDK .NET. Eles já existem nas imagens usadas para construir a aplicação. A instalação local dessas ferramentas é opcional e serve somente para manutenção ou desenvolvimento.
+
+### O que será executado
+
+| Componente | Função | Acesso |
+|---|---|---|
+| PostgreSQL 17 | Armazena dados, usuários, pedidos e configurações | Somente no servidor, via `127.0.0.1` |
+| API .NET 10 | Executa regras de negócio, autenticação, migrations e integrações internas | Somente pela rede privada dos containers |
+| Nginx + React | Entrega o painel e a interface dos tablets e encaminha `/backend` para a API | Porta escolhida para a rede local, padrão `8080` |
+| Docker Desktop | Mantém os três containers e seus reinícios | Executado na máquina servidor |
+
+Os dados do PostgreSQL ficam no volume persistente `projeto-pizza-postgres-data`. Reconstruir ou atualizar os containers não apaga esse volume.
 
 ### O que a máquina precisa ter
 
@@ -86,11 +123,22 @@ O modo recomendado usa o instalador interativo `scripts/install-client.ps1`. Ele
 - rede configurada como **Privada** no Windows;
 - IP fixo ou reserva de IP no roteador para a máquina servidor.
 
-O instalador baixa somente componentes oficiais pelo `winget`:
+Antes de começar:
+
+1. confirme que o Windows está atualizado;
+2. configure a rede como **Privada**;
+3. reserve o IP do servidor no roteador;
+4. tenha em mãos o login e a senha que serão usados no banco;
+5. defina uma senha forte para o administrador inicial;
+6. feche programas que estejam usando as portas `8080` ou `5432`, quando possível.
+
+O instalador usa o `winget` para baixar:
 
 - Git, caso o projeto ainda não esteja na máquina;
 - Docker Desktop;
-- imagens oficiais PostgreSQL 17, .NET 10, Node.js 22 e Nginx.
+- opcionalmente, .NET SDK 10 e Node.js 22+ para manutenção local.
+
+Depois, o Docker baixa as imagens oficiais PostgreSQL 17, .NET 10, Node.js 22 e Nginx utilizadas na construção e execução dos containers.
 
 Node.js e o SDK .NET são utilizados apenas dentro dos containers de build. As senhas nunca são enviadas ao GitHub.
 
@@ -114,15 +162,15 @@ O próprio script baixa o repositório em `C:\ProjetoPizza`. Se os componentes W
 
 ### Perguntas apresentadas pelo instalador
 
-O assistente solicita:
+No primeiro uso, o assistente pergunta nesta ordem:
 
-1. IP fixo ou nome da máquina servidor;
-2. porta pública do sistema, padrão `8080`;
-3. nome do banco, padrão `projeto_pizza`;
-4. login do banco;
-5. senha do banco e confirmação;
-6. senha inicial de `admin@projetopizza.local` e confirmação;
-7. instalação opcional do .NET SDK 10 e Node.js 22+ no Windows;
+1. se também deve instalar .NET SDK 10 e Node.js 22+ no Windows;
+2. IP fixo ou nome da máquina servidor;
+3. porta pública do sistema, padrão `8080`;
+4. nome do banco, padrão `projeto_pizza`;
+5. login do banco;
+6. senha do banco e confirmação;
+7. senha inicial de `admin@projetopizza.local` e confirmação;
 8. autorização para executar a carga inicial;
 9. autorização para iniciar o sistema automaticamente no logon.
 
@@ -130,7 +178,27 @@ A porta local do PostgreSQL não é perguntada normalmente. O instalador tenta u
 
 A senha do banco aceita entre 12 e 128 caracteres usando letras, números e os símbolos informados pelo assistente. A senha administrativa deve possuir maiúscula, minúscula, número e símbolo.
 
-Antes de alterar a máquina, o instalador mostra um resumo e solicita confirmação.
+As perguntas com `[S/n]` assumem **Sim** ao pressionar Enter. Perguntas com `[s/N]` assumem **Não**. As senhas são digitadas de forma oculta e precisam ser confirmadas.
+
+Exemplo de uma primeira instalação:
+
+```text
+Instalar também .NET SDK 10 e Node.js 22+ no Windows? [s/N]: N
+IP fixo ou nome do servidor na rede [192.168.1.20]:
+Porta do sistema [8080]:
+Porta local do PostgreSQL: 5432 (disponível)
+Nome do banco [projeto_pizza]:
+Login do banco PostgreSQL [projeto_pizza]:
+Senha do banco: ************
+Confirme a senha: ************
+Senha inicial de admin@projetopizza.local: ************
+Confirme a senha: ************
+Aplicar a carga inicial idempotente? [S/n]: S
+Iniciar o ProjetoPizza automaticamente no logon? [S/n]: S
+Confirmar e iniciar a instalação? [S/n]: S
+```
+
+Pressionar Enter nos campos que possuem valor entre colchetes aceita o valor sugerido. Antes de criar a configuração ou iniciar containers, o instalador mostra um resumo final e solicita confirmação.
 
 ### O que o instalador executa
 
@@ -152,6 +220,36 @@ Na ordem:
 14. chama o health check e só conclui se o sistema estiver saudável.
 
 O PostgreSQL é publicado somente em `127.0.0.1`; tablets não conseguem acessar o banco diretamente. O Nginx recebe as conexões da rede e encaminha `/backend` para a API dentro da rede privada dos containers.
+
+### Reinício solicitado durante a instalação
+
+Na primeira execução, o Windows pode precisar ativar WSL 2 e `VirtualMachinePlatform`. Nesse caso:
+
+1. o instalador para antes de perguntar ou salvar senhas;
+2. uma mensagem solicita a reinicialização;
+3. reinicie o Windows;
+4. abra novamente o PowerShell como administrador;
+5. execute outra vez o mesmo comando de instalação.
+
+O script verifica novamente os componentes já instalados e continua do ponto operacional necessário. Não é preciso remover Docker, WSL ou a pasta do projeto.
+
+Se o Docker Desktop abrir uma tela de termos ou configuração inicial, conclua essa etapa. O instalador espera o mecanismo por até três minutos e exige que ele esteja usando containers Linux.
+
+### O que acontece quando o instalador é executado novamente
+
+O script é idempotente para manutenção e atualização:
+
+- reutiliza o repositório existente;
+- detecta o arquivo de instalação anterior;
+- pergunta se deve reutilizar as credenciais protegidas;
+- preserva o nome, usuário, senha e volume do banco;
+- preserva a porta anterior quando ela continua utilizável;
+- reaplica migrations incrementalmente;
+- reconstrói API e frontend;
+- executa o seed idempotente somente quando autorizado;
+- atualiza atalhos, firewall e tarefa de inicialização.
+
+O instalador não troca automaticamente a senha de um banco existente. Se o volume existir e as credenciais locais tiverem sido perdidas, ele interrompe para evitar tornar o banco inacessível.
 
 ### Onde ficam os dados e as senhas
 
@@ -195,6 +293,18 @@ Health check:  http://192.168.1.20:8080/backend/api/v1/health
 ```
 
 Nos tablets, nunca use `localhost`, pois ele aponta para o próprio tablet.
+
+Ao concluir corretamente, o PowerShell mostra:
+
+```text
+INSTALAÇÃO CONCLUÍDA COM SUCESSO
+Administração: http://192.168.1.20:8080
+Tablet:        http://192.168.1.20:8080/mesa
+Login inicial: admin@projetopizza.local
+Dados locais:  C:\ProgramData\ProjetoPizza
+```
+
+O sucesso só é exibido depois que `GET /backend/api/v1/health` responde HTTP 200. Depois do primeiro login, troque a senha inicial do administrador.
 
 ### Instalação a partir de uma cópia já clonada
 
@@ -267,9 +377,35 @@ Se o volume do banco existir e o arquivo de credenciais tiver sido perdido, o in
 
 A carga atual é idempotente e cria o administrador, unidade, catálogo e dados necessários para testar os fluxos. Ela ainda inclui massas demonstrativas. Antes de uma operação comercial definitiva, revise e remova pedidos ou dispositivos demonstrativos que não representem a unidade.
 
+### Problemas comuns
+
+| Mensagem ou situação | Causa provável | Como resolver |
+|---|---|---|
+| Virtualização parece desativada | Intel VT-x ou AMD-V está desabilitado | Ative a virtualização na BIOS/UEFI e execute novamente |
+| Windows precisa ser reiniciado | WSL 2 ou `VirtualMachinePlatform` foi ativado | Reinicie e execute o mesmo instalador novamente |
+| `winget` não está disponível | App Installer ausente ou desatualizado | Instale **App Installer** pela Microsoft Store |
+| Docker não iniciou em três minutos | Primeiro aceite pendente, reinício necessário ou engine incorreta | Abra Docker Desktop, conclua o assistente e selecione containers Linux |
+| Porta `5432` em uso | Outro PostgreSQL ou processo já usa a porta | Informe a porta alternativa sugerida pelo instalador |
+| Porta web `8080` em uso | Outro programa está publicado nessa porta | Execute novamente e informe, por exemplo, `8081` |
+| Health check falhou | API, banco ou proxy não iniciou corretamente | Consulte `docker compose ... ps` e `docker compose ... logs` conforme os comandos abaixo |
+| Credenciais não puderam ser descriptografadas | Outro usuário do Windows executou a reinstalação | Entre com o mesmo usuário que realizou a instalação original |
+| Volume existe, mas as credenciais foram perdidas | Arquivo protegido foi removido | Não apague o volume; restaure as credenciais ou faça backup antes de qualquer reinstalação |
+| Tablet não abre o sistema | Tablet fora da rede ou endereço `localhost` utilizado | Conecte-o à mesma rede e use o IP fixo do servidor |
+
+Para conferir rapidamente o estado:
+
+```powershell
+C:\ProjetoPizza\scripts\install-client.ps1 -CheckOnly
+C:\ProjetoPizza\scripts\start-client.ps1
+```
+
+Se precisar encaminhar informações ao suporte, envie as mensagens de erro e os logs, mas nunca envie `runtime.env`, `installation-secrets.clixml` ou senhas.
+
 ## Instalação manual para desenvolvimento ou contingência
 
 > Esta alternativa exige .NET, Node.js e configuração manual. Para uma máquina Windows 11 da pizzaria, prefira o instalador automatizado acima. O fluxo com IIS permanece documentado para ambientes administrados que não permitem Docker Desktop.
+
+Não execute a instalação manual e a automatizada ao mesmo tempo usando as mesmas portas.
 
 ### Topologia recomendada
 
