@@ -118,14 +118,15 @@ O assistente solicita:
 
 1. IP fixo ou nome da máquina servidor;
 2. porta pública do sistema, padrão `8080`;
-3. porta local do PostgreSQL, padrão `5432`;
-4. nome do banco, padrão `projeto_pizza`;
-5. login do banco;
-6. senha do banco e confirmação;
-7. senha inicial de `admin@projetopizza.local` e confirmação;
-8. instalação opcional do .NET SDK 10 e Node.js 22+ no Windows;
-9. autorização para executar a carga inicial;
-10. autorização para iniciar o sistema automaticamente no logon.
+3. nome do banco, padrão `projeto_pizza`;
+4. login do banco;
+5. senha do banco e confirmação;
+6. senha inicial de `admin@projetopizza.local` e confirmação;
+7. instalação opcional do .NET SDK 10 e Node.js 22+ no Windows;
+8. autorização para executar a carga inicial;
+9. autorização para iniciar o sistema automaticamente no logon.
+
+A porta local do PostgreSQL não é perguntada normalmente. O instalador tenta usar `5432`; somente quando ela já estiver ocupada solicita uma porta alternativa, sugerindo `55432`. Em uma atualização, a porta já registrada é preservada automaticamente.
 
 A senha do banco aceita entre 12 e 128 caracteres usando letras, números e os símbolos informados pelo assistente. A senha administrativa deve possuir maiúscula, minúscula, número e símbolo.
 

@@ -309,6 +309,22 @@ function Get-DefaultServerAddress {
     return "localhost"
 }
 
+function Test-LocalTcpPortAvailable {
+    param([Parameter(Mandatory)][int]$Port)
+
+    $listener = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, $Port)
+    try {
+        $listener.Start()
+        return $true
+    }
+    catch {
+        return $false
+    }
+    finally {
+        $listener.Stop()
+    }
+}
+
 function Read-TextValue {
     param(
         [Parameter(Mandatory)]
@@ -742,7 +758,6 @@ if ($existingSecrets) {
 
 $defaultAddress = if ($existingMetadata) { [string]$existingMetadata.serverAddress } else { Get-DefaultServerAddress }
 $defaultWebPort = if ($existingMetadata) { [string]$existingMetadata.webPort } else { "8080" }
-$defaultDatabasePort = if ($existingMetadata) { [string]$existingMetadata.databasePort } else { "5432" }
 $serverAddress = Read-TextValue `
     -Prompt "IP fixo ou nome do servidor na rede" `
     -DefaultValue $defaultAddress `
@@ -753,11 +768,33 @@ $webPortText = Read-TextValue `
     -DefaultValue $defaultWebPort `
     -Validator { param($value) ($value -as [int]) -and [int]$value -ge 80 -and [int]$value -le 65535 } `
     -ValidationMessage "Informe uma porta entre 80 e 65535."
-$databasePortText = Read-TextValue `
-    -Prompt "Porta local do PostgreSQL" `
-    -DefaultValue $defaultDatabasePort `
-    -Validator { param($value) ($value -as [int]) -and [int]$value -ge 1024 -and [int]$value -le 65535 } `
-    -ValidationMessage "Informe uma porta entre 1024 e 65535."
+
+$databasePort = if ($existingMetadata) { [int]$existingMetadata.databasePort } else { 5432 }
+$postgresContainerRunning = (& $dockerPath inspect --format "{{.State.Running}}" "projeto-pizza-postgres" 2>$null) -eq "true"
+$databasePortAvailable = Test-LocalTcpPortAvailable -Port $databasePort
+
+if ($postgresContainerRunning) {
+    Write-Host "Porta local do PostgreSQL preservada: $databasePort"
+}
+elseif ($databasePortAvailable) {
+    Write-Host "Porta local do PostgreSQL: $databasePort (disponível)"
+}
+else {
+    Write-Warning "A porta $databasePort do PostgreSQL já está em uso por outro processo."
+    $databasePortText = Read-TextValue `
+        -Prompt "Informe outra porta local para o PostgreSQL" `
+        -DefaultValue "55432" `
+        -Validator {
+            param($value)
+            ($value -as [int]) -and
+            [int]$value -ge 1024 -and
+            [int]$value -le 65535 -and
+            (Test-LocalTcpPortAvailable -Port ([int]$value))
+        } `
+        -ValidationMessage "Informe uma porta livre entre 1024 e 65535."
+    $databasePort = [int]$databasePortText
+}
+
 if ($reuseSecrets) {
     if (-not $existingMetadata -or [string]::IsNullOrWhiteSpace([string]$existingMetadata.databaseName)) {
         throw "A instalação anterior não contém metadados suficientes para uma reinstalação segura."
@@ -806,7 +843,6 @@ $registerStartup = Read-YesNo `
     -DefaultYes $true
 
 $webPort = [int]$webPortText
-$databasePort = [int]$databasePortText
 $applicationUrl = if ($webPort -eq 80) { "http://${serverAddress}" } else { "http://${serverAddress}:$webPort" }
 $localhostApplicationUrl = if ($webPort -eq 80) { "http://localhost" } else { "http://localhost:$webPort" }
 $loopbackApplicationUrl = if ($webPort -eq 80) { "http://127.0.0.1" } else { "http://127.0.0.1:$webPort" }
