@@ -63,17 +63,17 @@ A tela de caixa apresenta a abertura quando não existe turno corrente. O modal 
 
 ## Tablet do cliente
 
-A rota `/mesa` é carregada separadamente do painel e não inicia a conexão SignalR administrativa. A jornada segue as variantes `*_atualizada` do Stitch: ativação, boas-vindas, cardápio, seis etapas de montagem da pizza, carrinho, confirmação, acompanhamento, chamado e solicitação de conta.
+A rota `/mesa` é carregada separadamente do painel e não inicia a conexão SignalR administrativa. A jornada segue as variantes `*_atualizada` do Stitch: ativação única, espera animada, abertura da comanda com quantidade de pessoas, boas-vindas, cardápio, seis etapas de montagem da pizza, carrinho, confirmação, acompanhamento, chamado, solicitação de conta e agradecimento.
 
 O layout preserva os tokens creme e terracota, alvos de toque de pelo menos 52 px, transições com fallback para movimento reduzido, foco contido no montador e mensagens em português. Toasts confirmam mutações; erros de negócio são traduzidos e estados que bloqueiam o pedido, como conta solicitada, aparecem antes da tentativa.
 
 Em tablets com largura de até 900 px, as categorias usam uma barra lateral compacta de ícones. O botão `Categorias` expande a navegação sobre o conteúdo sem alterar a grade, e ela volta ao estado compacto ao selecionar uma categoria, tocar fora ou pressionar `Esc`. Em celulares, a mesma navegação funciona como gaveta lateral, preservando toda a largura do cardápio.
 
-O carrinho fica na sessão do navegador, separado pelo `tableSessionId`, e não atravessa atendimentos. Ao confirmar, a API recalcula preço e disponibilidade. O acompanhamento consulta somente o estado dinâmico a cada ciclo, pausa em aba oculta e trata expiração da sessão; ao concluir o pagamento, limpa o carrinho conforme a configuração e apresenta a tela de agradecimento sem perder abruptamente a leitura final.
+O carrinho fica no navegador, separado pelo `tableSessionId`, e não atravessa atendimentos. Ao confirmar, a API recalcula preço e disponibilidade. O acompanhamento consulta somente o estado dinâmico a cada ciclo, inclusive na espera para detectar abertura administrativa. A espera segue `designs/telaIdle`: fotografia do forno em tela cheia, identificação da mesa e conexão, chamada central e sugestão do chef; o toque abre a escolha de pessoas. Ao concluir o pagamento, limpa o carrinho, apresenta confetes/check animados, QR Code de avaliação, Instagram e contador de 20 segundos antes de voltar à espera sem apagar a credencial do aparelho. Todas as animações respeitam `prefers-reduced-motion`.
 
 Chamados enviados pelo tablet possuem uma fila administrativa dedicada. O cabeçalho monitora novos chamados, respeita a configuração de som e direciona para a tela de aceite/conclusão. A tolerância operacional configurada controla o destaque de atraso.
 
-Uma resposta HTTP 401 dispara o encerramento centralizado da autenticação administrativa, limpa o cache protegido e redireciona imediatamente para o login. O tablet também volta à ativação com mensagem tratada quando seu token expira.
+Uma resposta HTTP 401 dispara o encerramento centralizado da autenticação administrativa, limpa o cache protegido e redireciona imediatamente para o login. O tablet volta à ativação com mensagem tratada quando sua credencial é revogada ou encerrada.
 
 ## Tempo real
 

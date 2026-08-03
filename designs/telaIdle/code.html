@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Forno 27 - Tela de Espera</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f1f3fc",
+                        "surface-dim": "#d7dae2",
+                        "on-tertiary-container": "#f6fff4",
+                        "on-primary-container": "#fffbff",
+                        "outline": "#8d7168",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#e5e8f0",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#7ed99e",
+                        "tertiary-fixed": "#9af6b8",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#cdbdff",
+                        "on-primary-fixed-variant": "#832600",
+                        "tertiary": "#006a3b",
+                        "surface": "#f8f9ff",
+                        "on-secondary-fixed-variant": "#4e2aab",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed-variant": "#00522d",
+                        "on-secondary-container": "#32008a",
+                        "inverse-primary": "#ffb59d",
+                        "surface-bright": "#f8f9ff",
+                        "on-surface-variant": "#59413a",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#eef1f9",
+                        "on-tertiary-fixed": "#00210f",
+                        "secondary-fixed": "#e8deff",
+                        "primary": "#a83300",
+                        "inverse-surface": "#2d3137",
+                        "surface-variant": "#dfe2eb",
+                        "on-secondary-fixed": "#20005f",
+                        "on-background": "#181c22",
+                        "primary-fixed-dim": "#ffb59d",
+                        "on-surface": "#181c22",
+                        "secondary": "#6646c4",
+                        "on-primary-fixed": "#390c00",
+                        "surface-tint": "#ac3500",
+                        "surface-container": "#ebeef6",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#dfe2eb",
+                        "primary-container": "#cc4916",
+                        "primary-fixed": "#ffdbd0",
+                        "outline-variant": "#e1bfb5",
+                        "on-error-container": "#93000a",
+                        "secondary-container": "#9c7efe",
+                        "tertiary-container": "#268451",
+                        "background": "#f8f9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "touch-target-min": "52px",
+                        "stack-gap": "16px",
+                        "grid-margin": "32px",
+                        "container-padding": "24px",
+                        "gutter": "20px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "section-title": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "product-title": ["Inter"],
+                        "price-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "400" }],
+                        "label-caps": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "display-md": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "section-title": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg": ["34px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "product-title": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "price-lg": ["26px", { "lineHeight": "32px", "fontWeight": "700" }]
+                    },
+                    "animation": {
+                        "fade-in-up": "fadeInUp 0.8s ease-out forwards",
+                        "float": "float 3s ease-in-out infinite",
+                        "shimmer": "shimmer 2.5s infinite linear"
+                    },
+                    "keyframes": {
+                        "fadeInUp": {
+                            "0%": { opacity: 0, transform: "translateY(20px)" },
+                            "100%": { opacity: 1, transform: "translateY(0)" }
+                        },
+                        "float": {
+                            "0%, 100%": { transform: "translateY(0)" },
+                            "50%": { transform: "translateY(-5px)" }
+                        },
+                        "shimmer": {
+                            "0%": { backgroundPosition: "-200% 0" },
+                            "100%": { backgroundPosition: "200% 0" }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .pulse-animation {
+            animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(168, 51, 0, 0.7); }
+            50% { opacity: .9; transform: scale(1.02); box-shadow: 0 0 0 10px rgba(168, 51, 0, 0); }
+        }
+        .scrim {
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.6) 100%);
+        }
+        
+        .delay-100 { animation-delay: 100ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-500 { animation-delay: 500ms; }
+        
+        .opacity-0 { opacity: 0; }
+
+        .shimmer-effect {
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+            background-size: 200% 100%;
+        }
+    </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body class="bg-surface-container-lowest text-on-background h-screen w-screen overflow-hidden flex flex-col font-sans select-none" style="cursor: pointer;">
+<!-- Background Image with Scrim and Shader -->
+<div class="absolute inset-0 z-0">
+<div class="bg-cover bg-center w-full h-full absolute inset-0" data-alt="A stunning, high-resolution close-up of an authentic artisanal pizza being pulled from a roaring wood-fired oven. The pizza features a perfectly blistered and charred crust, bubbling golden mozzarella cheese, fresh vibrant green basil leaves, and a rich red tomato sauce. Warm, dramatic lighting highlights the textures and steam rising from the hot pie. The overall mood is appetizing, rustic, and extremely inviting, perfectly matching the warm terracotta and cream color palette of the UI." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDQ5RmEnxTig9dylF_zupPdKB1xIpdZfZJkdKaANjjqjny2ZPaTObEN2tEz7LfxCAP7LcsXck1CHw2VMpoPqiQ_1mOp4xO1ahN1vJxHVjAngpTmMG6dwGTWHelRWVsJU5ix9bPhJ8jIrItyYpnUvLatpkY82kM715aT8-IMANT_sjKUqON4qAY0Gzd8jz3XLz_5e3tabBFMdlh2oyeTdfc2G9b_z-QxDmWK25BV1mbOUXDsbyqf2j1L')"></div>
+<div class="absolute inset-0 z-0" id="shader-container" style="mix-blend-mode: screen; opacity: 0.6;"></div>
+<div class="absolute inset-0 scrim z-10 pointer-events-none"></div>
+</div>
+<!-- Top Bar Info -->
+<div class="relative z-20 flex justify-between items-center px-grid-margin py-stack-gap">
+<div class="animate-float flex items-center gap-2 bg-surface/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm border border-outline-variant">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+<span class="font-label-caps text-label-caps text-primary">Mesa 12</span>
+</div>
+<div class="animate-float flex items-center gap-2 bg-surface/90 backdrop-blur-md px-4 py-2 rounded-full shadow-sm border border-outline-variant" style="animation-delay: 1.5s;">
+<span class="material-symbols-outlined text-tertiary-container" style="font-variation-settings: 'FILL' 1;">wifi</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Wi-Fi: Forno27_Mesa12</span>
+</div>
+</div>
+<!-- Main Content Centered -->
+<div class="relative z-20 flex-grow flex flex-col items-center justify-center px-grid-margin text-center">
+<!-- Logo Area -->
+<div class="mb-stack-gap opacity-0 animate-fade-in-up delay-100">
+<h1 class="font-display-lg text-[64px] leading-tight font-bold text-on-primary drop-shadow-lg tracking-tighter">FORNO <span class="text-primary-fixed">27</span></h1>
+<p class="font-label-caps text-label-caps text-primary-fixed uppercase tracking-widest mt-2 drop-shadow-md">Pizzeria Artigianale</p>
+</div>
+<!-- Welcome Message -->
+<h2 class="font-display-md text-display-md text-on-primary max-w-2xl drop-shadow-md mb-12 opacity-0 animate-fade-in-up delay-300">
+            A verdadeira pizza artesanal espera por você
+        </h2>
+<!-- Call to Action Button -->
+<div class="opacity-0 animate-fade-in-up delay-500">
+<button class="pulse-animation group relative inline-flex items-center justify-center px-8 py-6 min-h-[80px] min-w-[320px] bg-primary text-on-primary rounded-xl shadow-lg hover:bg-primary-container transition-all duration-300 active:scale-95 border-2 border-primary-container overflow-hidden">
+<span class="absolute inset-0 w-full h-full bg-white/10 group-hover:bg-white/20 transition-colors"></span>
+<div class="flex items-center gap-3 relative z-10">
+<span class="font-product-title text-product-title">Toque para iniciar seu pedido</span>
+<span class="material-symbols-outlined text-[32px]">touch_app</span>
+</div>
+</button>
+</div>
+</div>
+<!-- Bottom Promotions Carousel -->
+<div class="relative z-20 w-full pb-grid-margin px-grid-margin opacity-0 animate-fade-in-up delay-500" style="animation-delay: 700ms;">
+<div class="bg-surface/80 backdrop-blur-md rounded-xl p-4 border border-outline-variant shadow-lg flex items-center justify-between max-w-4xl mx-auto relative overflow-hidden group">
+<div class="absolute inset-0 shimmer-effect opacity-50 animate-shimmer pointer-events-none"></div>
+<div class="flex items-center gap-4 relative z-10">
+<div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A small, appetizing square photo of a classic Margherita pizza with fresh basil and melted mozzarella on a rustic wooden board, shot from above with warm lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgtKiL5SY32SKgEVkCBj38j2t1v-_qYMPTt1HdELy7E2s_acAH4jlZYLzfgy9Roz3gQEi-zsxMGd2cBVIAAUsnk0y3BZ3ocIIeDOEu7_hPfvvPxYFPN7YZDuXLdQfccYXYgm_eoBoj66XeA4H4UKLP5SqMiO9xmeitGsMRx32pnfpqut1njvFnQuSLAWrn1Ig_lKSvFbc5U6PSB2XRvKPZOOmfhgXqfzznwnOdgiHljN8952dwyH0q"/>
+</div>
+<div>
+<span class="inline-block px-2 py-1 bg-tertiary-container text-on-tertiary-container font-label-caps text-[10px] rounded mb-1 uppercase">Sugestão do Chef</span>
+<h3 class="font-section-title text-body-lg text-on-surface">Margherita Especial</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-1">Molho pelati, mozzarella di bufala e manjericão fresco.</p>
+</div>
+</div>
+<div class="shrink-0 flex gap-2 relative z-10">
+<!-- Pagination dots for carousel -->
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-surface-variant"></div>
+<div class="w-2 h-2 rounded-full bg-surface-variant"></div>
+</div>
+</div>
+</div>
+<script>
+        // Shader initialization
+        const vertexShader = `
+            varying vec2 v_texCoord;
+            void main() {
+                v_texCoord = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+        
+        const fragmentShader = `
+            precision highp float;
+            varying vec2 v_texCoord;
+            uniform float u_time;
+            uniform vec2 u_resolution;
+
+            float noise(vec2 p) {
+                return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+            }
+
+            float snoise(vec2 p) {
+                vec2 i = floor(p);
+                vec2 f = fract(p);
+                f = f * f * (3.0 - 2.0 * f);
+                float a = noise(i);
+                float b = noise(i + vec2(1.0, 0.0));
+                float c = noise(i + vec2(0.0, 1.0));
+                float d = noise(i + vec2(1.0, 1.0));
+                return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+            }
+
+            void main() {
+                vec2 uv = v_texCoord;
+                
+                // Warm fire colors based on the Forno 27 palette (#e85d2a and darker tones)
+                vec3 color1 = vec3(0.91, 0.36, 0.16); // #e85d2a
+                vec3 color2 = vec3(0.4, 0.1, 0.0);   // Darker red/brown
+                vec3 color3 = vec3(1.0, 0.7, 0.2);   // Golden highlight
+                
+                // Create animated heat distortion/ember flow
+                float n = snoise(uv * 3.0 + vec2(0.0, -u_time * 0.4));
+                n += 0.5 * snoise(uv * 6.0 + vec2(u_time * 0.1, -u_time * 0.6));
+                
+                // Vignette and bottom glow
+                float glow = smoothstep(1.0, 0.0, uv.y) * 0.5;
+                float dist = distance(uv, vec2(0.5, 0.0));
+                float heat = smoothstep(0.8, 0.0, dist) * n;
+                
+                vec3 finalColor = mix(color2, color1, heat);
+                finalColor = mix(finalColor, color3, heat * heat);
+                
+                // Apply a soft dark overlay to keep UI text readable
+                float overlay = 0.6 + 0.4 * smoothstep(0.0, 1.0, uv.y);
+                
+                gl_FragColor = vec4(finalColor * glow * overlay, heat * 0.4);
+            }
+        `;
+
+        function initShader() {
+            const container = document.getElementById('shader-container');
+            const renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+            const geometry = new THREE.PlaneGeometry(2, 2);
+            const uniforms = {
+                u_time: { value: 1.0 },
+                u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+            };
+
+            const material = new THREE.ShaderMaterial({
+                uniforms: uniforms,
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                transparent: true
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+
+            function animate(time) {
+                requestAnimationFrame(animate);
+                uniforms.u_time.value = time * 0.001;
+                renderer.render(scene, camera);
+            }
+
+            requestAnimationFrame(animate);
+
+            window.addEventListener('resize', () => {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                uniforms.u_resolution.value.set(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        window.addEventListener('load', initShader);
+    </script>
+<!-- Interaction Script -->
+<script>
+        // Any click on the body should transition to the main menu
+        document.body.addEventListener('click', function(e) {
+            // Add a visual flash effect before transition (simulated)
+            const flash = document.createElement('div');
+            flash.className = 'fixed inset-0 bg-surface z-50 transition-opacity duration-300 opacity-0';
+            document.body.appendChild(flash);
+            
+            // Trigger animation
+            setTimeout(() => {
+                flash.classList.remove('opacity-0');
+                flash.classList.add('opacity-100');
+            }, 10);
+
+            // Simulate navigation after flash
+            setTimeout(() => {
+                console.log('Navigating to main menu...');
+                // In a real app, this would be: window.location.href = '/menu';
+                flash.classList.remove('opacity-100');
+                flash.classList.add('opacity-0');
+                setTimeout(() => flash.remove(), 300);
+            }, 500);
+        });
+    </script>
+</body></html>

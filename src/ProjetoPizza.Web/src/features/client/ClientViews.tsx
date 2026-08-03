@@ -8,7 +8,9 @@ import {
   CircleDollarSign,
   Clock3,
   CreditCard,
+  MousePointerClick,
   HelpCircle,
+  LogOut,
   Minus,
   PackageCheck,
   Pizza,
@@ -18,13 +20,14 @@ import {
   Send,
   Share2,
   ShoppingBag,
-  ThumbsUp,
   Trash2,
   UsersRound,
   UtensilsCrossed,
   WalletCards,
+  Wifi,
 } from 'lucide-react'
-import { type FormEvent, useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
+import { type CSSProperties, type FormEvent, useEffect, useRef, useState } from 'react'
 import type {
   ClientBill,
   ClientCartItem,
@@ -32,7 +35,7 @@ import type {
   ClientSession,
 } from '../../types/client'
 import { formatCurrency } from '../../utils/money'
-import { clientHeroImage } from './clientPresentation'
+import { clientHeroImage, clientIdleImage } from './clientPresentation'
 
 export function ActivationView({
   isSubmitting,
@@ -57,7 +60,7 @@ export function ActivationView({
         <div>
           <span className="client-eyebrow">Ativação segura</span>
           <h1>Prepare o tablet da mesa</h1>
-          <p>Informe o código cadastrado no painel. O dispositivo precisa estar vinculado a uma mesa com atendimento aberto.</p>
+          <p>Informe o código cadastrado no painel. Depois da ativação, este tablet permanecerá vinculado à mesa até ser desconectado.</p>
         </div>
         <form onSubmit={submit}>
           <label>
@@ -86,6 +89,84 @@ export function ActivationView({
       <aside style={{ backgroundImage: `linear-gradient(180deg, rgba(0,0,0,.05), rgba(45,15,3,.38)), url("${clientHeroImage}")` }}>
         <span><ChefHat aria-hidden="true" /> Experiência à mesa</span>
       </aside>
+    </main>
+  )
+}
+
+export function StandbyView({
+  session,
+  isSubmitting,
+  error,
+  onStart,
+  onLogout,
+}: {
+  session: ClientSession
+  isSubmitting: boolean
+  error?: string
+  onStart: (guestCount: number) => void
+  onLogout: () => void
+}) {
+  const [isChoosingGuests, setChoosingGuests] = useState(false)
+  const [guestCount, setGuestCount] = useState(2)
+
+  return (
+    <main
+      className="client-standby-page client-idle-reference"
+      style={{ backgroundImage: `url("${clientIdleImage}")` }}
+    >
+      <div className="client-standby-ambient" aria-hidden="true">
+        {Array.from({ length: 16 }, (_, index) => <i key={index} style={{ '--spark': index } as CSSProperties} />)}
+      </div>
+      <header>
+        <span className="client-idle-badge"><UtensilsCrossed aria-hidden="true" /> {session.tableName}</span>
+        <div className="client-idle-connectivity">
+          <span className="client-idle-badge"><Wifi aria-hidden="true" /> Conexão ativa</span>
+          <button type="button" onClick={onLogout} title="Desvincular este tablet" aria-label="Desvincular este tablet"><LogOut aria-hidden="true" /></button>
+        </div>
+      </header>
+
+      <section className={isChoosingGuests ? 'is-choosing' : ''}>
+        {!isChoosingGuests ? (
+          <div className="client-idle-center">
+            <h1>FORNO <span>27</span></h1>
+            <small>Pizzeria Artigianale</small>
+            <p>A verdadeira pizza artesanal espera por você</p>
+            <button type="button" className="client-primary-action client-standby-start" onClick={() => setChoosingGuests(true)}>
+              Toque para iniciar seu pedido <MousePointerClick aria-hidden="true" />
+            </button>
+          </div>
+        ) : (
+          <div className="client-guest-picker">
+            <span className="client-eyebrow">Nova comanda</span>
+            <h1>Quantas pessoas estão na mesa?</h1>
+            <p>Essa informação ajuda nossa equipe a preparar um atendimento melhor.</p>
+            <div role="group" aria-label="Quantidade de pessoas">
+              <button type="button" aria-label="Diminuir quantidade de pessoas" disabled={guestCount <= 1 || isSubmitting} onClick={() => setGuestCount((value) => Math.max(1, value - 1))}><Minus aria-hidden="true" /></button>
+              <output aria-live="polite"><strong>{guestCount}</strong><span>{guestCount === 1 ? 'pessoa' : 'pessoas'}</span></output>
+              <button type="button" aria-label="Aumentar quantidade de pessoas" disabled={guestCount >= 50 || isSubmitting} onClick={() => setGuestCount((value) => Math.min(50, value + 1))}><Plus aria-hidden="true" /></button>
+            </div>
+            {error && <p className="client-standby-error" role="alert">{error}</p>}
+            <footer>
+              <button type="button" className="client-secondary-action" disabled={isSubmitting} onClick={() => setChoosingGuests(false)}>Voltar</button>
+              <button type="button" className="client-primary-action" disabled={isSubmitting} aria-busy={isSubmitting} onClick={() => onStart(guestCount)}>
+                {isSubmitting ? 'Abrindo comanda...' : 'Confirmar e ver cardápio'}
+              </button>
+            </footer>
+          </div>
+        )}
+      </section>
+
+      {!isChoosingGuests && (
+        <aside className="client-idle-promo" aria-label="Sugestão do chef">
+          <img src={clientIdleImage} alt="Pizza artesanal saindo do forno a lenha" />
+          <div>
+            <span>Sugestão do chef</span>
+            <strong>Margherita Especial</strong>
+            <p>Molho pelati, mozzarella di bufala e manjericão fresco.</p>
+          </div>
+          <span className="client-idle-promo-dots" aria-hidden="true"><i className="active" /><i /><i /></span>
+        </aside>
+      )}
     </main>
   )
 }
@@ -462,8 +543,41 @@ export function OrderSentView({ orderNumber, onOrders, onMenu }: { orderNumber: 
   )
 }
 
-export function ThankYouView({ onFinish }: { onFinish: () => void }) {
-  const feedbackUrl = import.meta.env.VITE_FEEDBACK_URL || 'mailto:atendimento@forno27.local?subject=Avaliação%20da%20experiência'
+export function ThankYouView({ onFinish, isFinishing = false }: { onFinish: () => void; isFinishing?: boolean }) {
+  const [secondsLeft, setSecondsLeft] = useState(20)
+  const finishRef = useRef(onFinish)
+  const finishTriggeredRef = useRef(false)
+  const googleReviewUrl = import.meta.env.VITE_GOOGLE_REVIEW_URL || import.meta.env.VITE_FEEDBACK_URL || ''
+  const instagramUrl = import.meta.env.VITE_INSTAGRAM_URL || import.meta.env.VITE_SOCIAL_URL || ''
+  const hasGoogleReviewUrl = /^https?:\/\//i.test(googleReviewUrl)
+  const hasInstagramUrl = /^https?:\/\//i.test(instagramUrl)
+
+  useEffect(() => {
+    finishRef.current = onFinish
+  }, [onFinish])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setSecondsLeft((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer)
+          if (!finishTriggeredRef.current) {
+            finishTriggeredRef.current = true
+            finishRef.current()
+          }
+          return 0
+        }
+        return current - 1
+      })
+    }, 1_000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  function finishNow() {
+    if (finishTriggeredRef.current) return
+    finishTriggeredRef.current = true
+    onFinish()
+  }
 
   async function shareRestaurant() {
     const shareData = {
@@ -483,29 +597,46 @@ export function ThankYouView({ onFinish }: { onFinish: () => void }) {
       className="client-thank-you-page"
       style={{ backgroundImage: `linear-gradient(rgba(45, 49, 55, .48), rgba(45, 49, 55, .48)), url("${clientHeroImage}")` }}
     >
+      <div className="client-celebration" aria-hidden="true">
+        {Array.from({ length: 24 }, (_, index) => <i key={index} style={{ '--confetti': index } as CSSProperties} />)}
+      </div>
       <section>
         <span className="client-thank-you-icon"><CircleCheckBig aria-hidden="true" /></span>
-        <h1>Obrigado pela preferência!</h1>
-        <p className="client-thank-you-lead">Esperamos que sua experiência na Forno 27 tenha sido deliciosa.</p>
+        <h1>Obrigado pela visita!</h1>
+        <p className="client-thank-you-lead">Foi muito bom ter você à mesa. Volte sempre!</p>
         <div className="client-thank-you-info">
           <BellRing aria-hidden="true" />
-          <p>Pagamento confirmado. Em breve nossa equipe virá até a mesa para os procedimentos finais.</p>
+          <p>Pagamento confirmado. Até a próxima!</p>
         </div>
         <div className="client-thank-you-social">
           <div>
-            <small>Avalie-nos</small>
-            <a href={feedbackUrl} target="_blank" rel="noreferrer" aria-label="Avaliar experiência na Forno 27"><Star aria-hidden="true" /></a>
+            <small>Avalie-nos no Google</small>
+            {hasGoogleReviewUrl ? (
+              <a href={googleReviewUrl} target="_blank" rel="noreferrer" aria-label="Avaliar experiência no Google">
+                <QRCodeSVG value={googleReviewUrl} size={82} level="M" marginSize={1} title="QR Code para avaliação no Google" />
+              </a>
+            ) : <span className="client-review-unavailable"><Star aria-hidden="true" /><small>Em breve</small></span>}
           </div>
           <i aria-hidden="true" />
           <div>
-            <small>Siga-nos nas redes</small>
+            <small>Siga-nos no Instagram</small>
             <nav aria-label="Redes sociais">
-              <a href={import.meta.env.VITE_SOCIAL_URL || feedbackUrl} target="_blank" rel="noreferrer" aria-label="Acessar perfil da Forno 27"><ThumbsUp aria-hidden="true" /></a>
+              {hasInstagramUrl && <a href={instagramUrl} target="_blank" rel="noreferrer" aria-label="Acessar Instagram da Forno 27"><strong aria-hidden="true">@</strong></a>}
               <button type="button" aria-label="Compartilhar a Forno 27" onClick={() => void shareRestaurant()}><Share2 aria-hidden="true" /></button>
             </nav>
           </div>
         </div>
-        <button type="button" className="client-secondary-action client-finish-session" onClick={onFinish}>Finalizar atendimento neste tablet</button>
+        <div className="client-thank-you-countdown" aria-live="polite">
+          <svg viewBox="0 0 44 44" aria-hidden="true">
+            <circle cx="22" cy="22" r="19" />
+            <circle cx="22" cy="22" r="19" style={{ strokeDashoffset: 119.4 * (1 - secondsLeft / 20) }} />
+          </svg>
+          <span><strong>{secondsLeft}</strong><small>seg</small></span>
+          <p>{isFinishing ? 'Preparando a mesa...' : 'A tela inicial voltará automaticamente'}</p>
+        </div>
+        <button type="button" className="client-secondary-action client-finish-session" disabled={isFinishing} onClick={finishNow}>
+          Preparar para o próximo atendimento
+        </button>
       </section>
     </main>
   )

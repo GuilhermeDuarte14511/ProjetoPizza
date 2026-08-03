@@ -40,7 +40,7 @@ internal sealed class DeviceSessionConfiguration : IEntityTypeConfiguration<Devi
         builder.HasKey(entity => entity.Id);
         builder.Property(entity => entity.Id).HasConversion(id => id.Value, value => new DeviceSessionId(value));
         builder.Property(entity => entity.DeviceId).HasConversion(id => id.Value, value => new DeviceId(value));
-        builder.Property(entity => entity.TableSessionId).HasConversion(id => id.Value, value => new TableSessionId(value));
+        builder.Property(entity => entity.TableSessionId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new TableSessionId(value.Value) : null);
         builder.Property(entity => entity.SessionTokenHash).HasMaxLength(256);
         builder.Property(entity => entity.EndedReason).HasMaxLength(200);
         builder.HasIndex(entity => entity.SessionTokenHash).IsUnique();

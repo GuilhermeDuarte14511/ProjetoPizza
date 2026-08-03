@@ -27,7 +27,11 @@
 
 ### Mesas
 
-Uma mesa inativa não inicia atendimento. `TableSession.Open` exige pelo menos uma mesa e clientes maiores que zero. Junções usam `TableSessionTable`. Uma sessão fechada ou cancelada não recebe novos pedidos. A exclusividade de mesa ativa é também verificada na Application/persistência ao criar novos casos de uso de abertura.
+Uma mesa inativa não inicia atendimento. `TableSession.Open` e `TableSession.OpenFromDevice` exigem pelo menos uma mesa e clientes maiores que zero. Cada abertura registra exatamente um ator: funcionário na operação administrativa ou dispositivo no autoatendimento. Junções usam `TableSessionTable` e preservam a mesma origem. Uma sessão fechada ou cancelada não recebe novos pedidos. A exclusividade de mesa ativa é também verificada na Application/persistência ao criar novos casos de uso de abertura.
+
+### Dispositivos
+
+`DeviceSession` representa a credencial persistente do aparelho, não a sessão do cliente na mesa. Ela pode ficar sem `TableSessionId` enquanto o tablet está em espera e ser vinculada a uma nova comanda quando o cliente informa a quantidade de pessoas. O acesso termina somente por logout, bloqueio, desvínculo, troca de mesa ou reprovisionamento; concluir uma comanda limpa apenas seu vínculo com a `TableSession`.
 
 ```mermaid
 stateDiagram-v2

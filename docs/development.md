@@ -72,9 +72,9 @@ A interface usa `VITE_API_URL` quando definido. Nesse modo, falhas de autentica�
 
 O seed cria o usuário `admin@projetopizza.local`. A senha é obrigatoriamente lida de `DevelopmentSeed__AdminPassword`; nenhuma senha padrão fica no código.
 
-O tablet do cliente fica em `http://localhost:5173/mesa`. No seed de desenvolvimento, `DEV-TABLET-002` vincula a Mesa 2 e `DEV-TABLET-003` vincula a Mesa 3. A mesa precisa ter atendimento aberto e, por padrão, pedidos exigem um turno de caixa aberto. Esses códigos são massa local e não devem ser reutilizados em produção.
+O tablet do cliente fica em `http://localhost:5173/mesa`. No seed de desenvolvimento, `DEV-TABLET-002` vincula a Mesa 2 e `DEV-TABLET-003` vincula a Mesa 3. Sem atendimento ativo, o aparelho permanece na espera animada e pode abrir uma nova comanda informando a quantidade de pessoas. Por padrão, o envio de pedidos exige um turno de caixa aberto. Esses códigos são massa local e não devem ser reutilizados em produção.
 
-O fluxo preferencial está em `/admin/devices`: use **Adicionar novo tablet** ou **Vincular**, selecione a mesa e abra no aparelho o QR Code ou a URL exibida. O link expira em 30 minutos, funciona uma única vez e exige que a mesa esteja aberta. Para testar em outro aparelho da rede, abra o painel pelo IP da máquina (por exemplo, `http://192.168.x.x:5173`) antes de gerar o link; `localhost` aponta para o próprio tablet.
+O fluxo preferencial está em `/admin/devices`: use **Adicionar novo tablet** ou **Vincular**, selecione a mesa e abra no aparelho o QR Code ou a URL exibida. O link de provisionamento expira em 30 minutos e funciona uma única vez; a credencial criada no aparelho permanece até logout, bloqueio, desvínculo, troca de mesa ou reprovisionamento. Para testar em outro aparelho da rede, abra o painel pelo IP da máquina (por exemplo, `http://192.168.x.x:5173`) antes de gerar o link; `localhost` aponta para o próprio tablet.
 
 ## Rotas úteis
 
@@ -93,6 +93,9 @@ O fluxo preferencial está em `/admin/devices`: use **Adicionar novo tablet** ou
 - `POST /api/v1/auth/login`
 - `GET|POST|PUT /api/v1/admin/...` para os casos de uso descritos em `docs/admin-screen-coverage.md`, incluindo catálogo de sabores
 - `POST /api/v1/client/sessions` para ativar um tablet provisionado
+- `POST /api/v1/client/table-sessions` para abrir uma nova comanda pelo tablet
+- `POST /api/v1/client/table-sessions/complete` para confirmar a apresentação final e voltar à espera
+- `POST /api/v1/client/logout` para revogar a credencial persistente do aparelho
 - `POST /api/v1/admin/devices/tablets` para cadastrar e provisionar um tablet
 - `POST /api/v1/admin/devices/{id}/provision` para vincular novamente e renovar o link
 - `GET /api/v1/client/bootstrap`
@@ -101,7 +104,16 @@ O fluxo preferencial está em `/admin/devices`: use **Adicionar novo tablet** ou
 - `POST /api/v1/client/bill-requests`
 
 Os endpoints administrativos exigem bearer token. `AdminAccess`/`AdminWrite` e `OperationsAccess`/`OperationsWrite` verificam claims específicas; o login possui limite de tentativas por IP.
-Após a ativação, os endpoints do cliente exigem o token opaco no cabeçalho `X-Device-Session`. A ativação também possui limite de tentativas por IP.
+Após a ativação, os endpoints do cliente exigem o token opaco no cabeçalho `X-Device-Session`. O navegador o mantém no armazenamento persistente do tablet, enquanto a API persiste somente seu hash e continua sendo a autoridade de revogação. A ativação também possui limite de tentativas por IP.
+
+Para habilitar os destinos sociais da tela final, configure no build do Web:
+
+```powershell
+$env:VITE_GOOGLE_REVIEW_URL='https://g.page/r/SEU-ID/review'
+$env:VITE_INSTAGRAM_URL='https://www.instagram.com/SEU-PERFIL/'
+```
+
+Use somente os endereços oficiais do estabelecimento; os valores acima são exemplos e não devem ser copiados literalmente.
 
 ## Validação
 

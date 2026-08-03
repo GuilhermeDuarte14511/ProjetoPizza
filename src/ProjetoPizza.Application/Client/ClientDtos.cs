@@ -11,14 +11,14 @@ public sealed record ClientActivationDto(
 public sealed record ClientSessionContext(
     Guid DeviceSessionId,
     Guid DeviceId,
-    Guid TableSessionId,
+    Guid? TableSessionId,
     Guid RestaurantUnitId,
     Guid TableId,
     int TableNumber);
 
 public sealed record ClientSessionDto(
     Guid DeviceId,
-    Guid TableSessionId,
+    Guid? TableSessionId,
     string RestaurantName,
     int TableNumber,
     string TableName,
@@ -26,6 +26,8 @@ public sealed record ClientSessionDto(
     string Status,
     string? WaiterName,
     bool ClearTabletAfterTableClose);
+
+public sealed record StartClientTableSessionCommand(int GuestCount);
 
 public sealed record ClientBootstrapDto(
     ClientSessionDto Session,

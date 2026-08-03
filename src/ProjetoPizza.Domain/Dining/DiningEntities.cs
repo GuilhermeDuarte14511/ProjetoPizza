@@ -102,13 +102,22 @@ public sealed class TableSession : AggregateRoot<TableSessionId>
         RestaurantUnitId unitId,
         long sessionNumber,
         int guestCount,
-        EmployeeId openedByEmployeeId,
+        EmployeeId? openedByEmployeeId,
+        DeviceId? openedByDeviceId,
         Percentage serviceFeePercentageSnapshot) : base(id)
     {
+        if (openedByEmployeeId.HasValue == openedByDeviceId.HasValue)
+        {
+            throw new BusinessRuleException(
+                "table_session.opening_actor",
+                "A table session must be opened by exactly one employee or device.");
+        }
+
         UnitId = unitId;
         SessionNumber = sessionNumber;
         GuestCount = Guard.Positive(guestCount, nameof(guestCount));
         OpenedByEmployeeId = openedByEmployeeId;
+        OpenedByDeviceId = openedByDeviceId;
         ServiceFeePercentageSnapshot = serviceFeePercentageSnapshot;
         Status = TableSessionStatus.Open;
         OpenedAt = DateTimeOffset.UtcNow;
@@ -121,7 +130,8 @@ public sealed class TableSession : AggregateRoot<TableSessionId>
     public EmployeeId? PrimaryWaiterId { get; private set; }
     public Percentage ServiceFeePercentageSnapshot { get; private set; }
     public DateTimeOffset OpenedAt { get; private set; }
-    public EmployeeId OpenedByEmployeeId { get; private set; }
+    public EmployeeId? OpenedByEmployeeId { get; private set; }
+    public DeviceId? OpenedByDeviceId { get; private set; }
     public DateTimeOffset? BillRequestedAt { get; private set; }
     public DateTimeOffset? ClosedAt { get; private set; }
     public EmployeeId? ClosedByEmployeeId { get; private set; }
@@ -147,10 +157,36 @@ public sealed class TableSession : AggregateRoot<TableSessionId>
             table.EnsureCanOpenSession();
         }
 
-        var session = new TableSession(id, unitId, sessionNumber, guestCount, openedByEmployeeId, serviceFeePercentageSnapshot);
+        var session = new TableSession(id, unitId, sessionNumber, guestCount, openedByEmployeeId, null, serviceFeePercentageSnapshot);
         var linkedAt = DateTimeOffset.UtcNow;
         session._tables.AddRange(tables.Select((table, index) =>
-            new TableSessionTable(id, table.Id, index == 0, linkedAt, openedByEmployeeId)));
+            new TableSessionTable(id, table.Id, index == 0, linkedAt, openedByEmployeeId, null)));
+        return session;
+    }
+
+    public static TableSession OpenFromDevice(
+        TableSessionId id,
+        RestaurantUnitId unitId,
+        long sessionNumber,
+        int guestCount,
+        DeviceId openedByDeviceId,
+        Percentage serviceFeePercentageSnapshot,
+        IReadOnlyCollection<RestaurantTable> tables)
+    {
+        if (tables.Count == 0)
+        {
+            throw new BusinessRuleException("table_session.tables_required", "A table session needs at least one table.");
+        }
+
+        foreach (var table in tables)
+        {
+            table.EnsureCanOpenSession();
+        }
+
+        var session = new TableSession(id, unitId, sessionNumber, guestCount, null, openedByDeviceId, serviceFeePercentageSnapshot);
+        var linkedAt = DateTimeOffset.UtcNow;
+        session._tables.AddRange(tables.Select((table, index) =>
+            new TableSessionTable(id, table.Id, index == 0, linkedAt, null, openedByDeviceId)));
         return session;
     }
 
@@ -216,13 +252,27 @@ public sealed class TableSessionTable
 {
     private TableSessionTable() { }
 
-    internal TableSessionTable(TableSessionId tableSessionId, RestaurantTableId restaurantTableId, bool isPrimary, DateTimeOffset linkedAt, EmployeeId linkedByEmployeeId)
+    internal TableSessionTable(
+        TableSessionId tableSessionId,
+        RestaurantTableId restaurantTableId,
+        bool isPrimary,
+        DateTimeOffset linkedAt,
+        EmployeeId? linkedByEmployeeId,
+        DeviceId? linkedByDeviceId)
     {
+        if (linkedByEmployeeId.HasValue == linkedByDeviceId.HasValue)
+        {
+            throw new BusinessRuleException(
+                "table_session_table.linking_actor",
+                "A table must be linked by exactly one employee or device.");
+        }
+
         TableSessionId = tableSessionId;
         RestaurantTableId = restaurantTableId;
         IsPrimary = isPrimary;
         LinkedAt = linkedAt;
         LinkedByEmployeeId = linkedByEmployeeId;
+        LinkedByDeviceId = linkedByDeviceId;
     }
 
     public TableSessionId TableSessionId { get; private set; }
@@ -230,7 +280,8 @@ public sealed class TableSessionTable
     public bool IsPrimary { get; private set; }
     public DateTimeOffset LinkedAt { get; private set; }
     public DateTimeOffset? UnlinkedAt { get; private set; }
-    public EmployeeId LinkedByEmployeeId { get; private set; }
+    public EmployeeId? LinkedByEmployeeId { get; private set; }
+    public DeviceId? LinkedByDeviceId { get; private set; }
 }
 
 public sealed class WaiterAssignment : Entity<WaiterAssignmentId>

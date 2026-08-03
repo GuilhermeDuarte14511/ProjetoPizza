@@ -8,6 +8,7 @@ import {
   OrderSentView,
   OrdersView,
   ServiceCallView,
+  StandbyView,
   ThankYouView,
   WelcomeView,
 } from '../features/client/ClientViews'
@@ -19,11 +20,14 @@ import {
   activateClientSession,
   activateClientProvisioning,
   clearClientSessionToken,
+  completeClientTableSession,
   createClientServiceCall,
   getClientBootstrap,
   getClientState,
   getClientSessionToken,
+  logoutClientTablet,
   requestClientBill,
+  startClientTableSession,
   submitClientOrder,
 } from '../services/clientService'
 import { ApiError } from '../api/httpClient'
@@ -45,6 +49,7 @@ export function ClientTabletPage() {
   const [bootstrap, setBootstrap] = useState<ClientBootstrap>()
   const [isLoading, setIsLoading] = useState(Boolean(getClientSessionToken() || provisioningToken))
   const [activationError, setActivationError] = useState<string>()
+  const [startError, setStartError] = useState<string>()
   const [screen, setScreen] = useState<ClientScreen>('welcome')
   const [activeCategoryId, setActiveCategoryId] = useState('featured')
   const [search, setSearch] = useState('')
@@ -70,7 +75,7 @@ export function ClientTabletPage() {
       .then((data) => {
         setBootstrap(data)
         setCart([])
-        clearClientCart(data.session.tableSessionId)
+        if (data.session.tableSessionId) clearClientCart(data.session.tableSessionId)
         setScreen('welcome')
         const cleanUrl = new URL(window.location.href)
         cleanUrl.hash = ''
@@ -91,7 +96,7 @@ export function ClientTabletPage() {
     getClientBootstrap(controller.signal)
       .then((data) => {
         setBootstrap(data)
-        setCart(loadClientCart(data.session.tableSessionId))
+        setCart(data.session.tableSessionId ? loadClientCart(data.session.tableSessionId) : [])
       })
       .catch((error) => {
         clearClientSessionToken()
@@ -102,13 +107,14 @@ export function ClientTabletPage() {
   }, [])
 
   const activeTableSessionId = bootstrap?.session.tableSessionId
+  const activeDeviceId = bootstrap?.session.deviceId
   useEffect(() => {
     if (!activeTableSessionId) return
     saveClientCart(activeTableSessionId, cart)
   }, [activeTableSessionId, cart])
 
   useEffect(() => {
-    if (!activeTableSessionId || !getClientSessionToken()) return
+    if (!activeDeviceId || !getClientSessionToken()) return
 
     const controller = new AbortController()
     let timeout: number | undefined
@@ -118,9 +124,13 @@ export function ClientTabletPage() {
         try {
           const state = await getClientState(controller.signal)
           setBootstrap((current) => current ? { ...current, ...state } : current)
+          if (state.session.tableSessionId !== activeTableSessionId) {
+            setCart(state.session.tableSessionId ? loadClientCart(state.session.tableSessionId) : [])
+            setScreen('welcome')
+          }
           if (state.session.status === 'Closed' && state.session.clearTabletAfterTableClose) {
             setCart([])
-            clearClientCart(state.session.tableSessionId)
+            if (state.session.tableSessionId) clearClientCart(state.session.tableSessionId)
           }
         } catch (error) {
           if (controller.signal.aborted) return
@@ -129,8 +139,8 @@ export function ClientTabletPage() {
             setBootstrap(undefined)
             setCart([])
             setScreen('welcome')
-            setActivationError('A sessão deste tablet expirou. Informe novamente o código do dispositivo.')
-            toast.error('Sessão encerrada', 'Ative novamente o tablet para continuar.')
+            setActivationError('O acesso deste tablet foi revogado ou encerrado. Faça uma nova ativação para continuar.')
+            toast.error('Tablet desconectado', 'Ative novamente o dispositivo para continuar.')
             return
           }
         }
@@ -143,7 +153,7 @@ export function ClientTabletPage() {
       if (timeout) window.clearTimeout(timeout)
       controller.abort()
     }
-  }, [activeTableSessionId, toast])
+  }, [activeDeviceId, activeTableSessionId, toast])
 
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0)
   const cartTotal = cart.reduce((total, item) => total + item.quantity * item.unitPrice, 0)
@@ -182,11 +192,61 @@ export function ClientTabletPage() {
       const data = await activateClientSession(deviceCode)
       setBootstrap(data)
       setCart([])
-      clearClientCart(data.session.tableSessionId)
+      if (data.session.tableSessionId) clearClientCart(data.session.tableSessionId)
       setScreen('welcome')
       toast.success('Tablet ativado', `Mesa ${data.session.tableNumber} conectada com sucesso.`)
     } catch (error) {
       setActivationError(getUserErrorMessage(error))
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
+  async function startTableSession(guestCount: number) {
+    setIsMutating(true)
+    setStartError(undefined)
+    try {
+      const data = await startClientTableSession({ guestCount })
+      setBootstrap(data)
+      setCart([])
+      if (data.session.tableSessionId) clearClientCart(data.session.tableSessionId)
+      setScreen('welcome')
+      toast.success('Comanda iniciada', `Atendimento aberto para ${guestCount} pessoa(s).`)
+    } catch (error) {
+      setStartError(getUserErrorMessage(error))
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
+  async function finishTableSession() {
+    if (!bootstrap?.session.tableSessionId || isMutating) return
+    setIsMutating(true)
+    const completedTableSessionId = bootstrap.session.tableSessionId
+    try {
+      const data = await completeClientTableSession()
+      clearClientCart(completedTableSessionId)
+      setCart([])
+      setBootstrap(data)
+      setScreen('welcome')
+    } catch (error) {
+      toast.error('Não foi possível preparar a mesa', getUserErrorMessage(error))
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
+  async function logoutTablet() {
+    if (!window.confirm('Desvincular este tablet? Será necessário ativá-lo novamente pelo painel administrativo.')) return
+    setIsMutating(true)
+    try {
+      await logoutClientTablet()
+      setBootstrap(undefined)
+      setCart([])
+      setScreen('welcome')
+      setActivationError('Tablet desvinculado com segurança.')
+    } catch (error) {
+      toast.error('Não foi possível desvincular', getUserErrorMessage(error))
     } finally {
       setIsMutating(false)
     }
@@ -312,14 +372,20 @@ export function ClientTabletPage() {
     return <ActivationView isSubmitting={isMutating} error={activationError} onActivate={activate} />
   }
 
+  if (bootstrap.session.status === 'Idle') {
+    return (
+      <StandbyView
+        session={bootstrap.session}
+        isSubmitting={isMutating}
+        error={startError}
+        onStart={(guestCount) => void startTableSession(guestCount)}
+        onLogout={() => void logoutTablet()}
+      />
+    )
+  }
+
   if (bootstrap.session.status === 'Closed' && bootstrap.bill.status === 'Paid') {
-    return <ThankYouView onFinish={() => {
-      clearClientSessionToken()
-      clearClientCart(bootstrap.session.tableSessionId)
-      setCart([])
-      setBootstrap(undefined)
-      setScreen('welcome')
-    }} />
+    return <ThankYouView isFinishing={isMutating} onFinish={() => void finishTableSession()} />
   }
 
   if (screen === 'welcome') {

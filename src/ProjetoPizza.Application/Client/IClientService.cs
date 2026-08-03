@@ -9,6 +9,19 @@ public interface IClientSessionService
     Task<ClientSessionContext?> ValidateSessionAsync(
         string token,
         CancellationToken cancellationToken);
+
+    Task<ClientBootstrapDto> StartTableSessionAsync(
+        ClientSessionContext session,
+        StartClientTableSessionCommand command,
+        CancellationToken cancellationToken);
+
+    Task<ClientBootstrapDto> CompleteTableSessionAsync(
+        ClientSessionContext session,
+        CancellationToken cancellationToken);
+
+    Task LogoutAsync(
+        ClientSessionContext session,
+        CancellationToken cancellationToken);
 }
 
 public interface IClientQueryService

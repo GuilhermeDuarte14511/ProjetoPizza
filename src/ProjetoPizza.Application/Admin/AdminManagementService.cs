@@ -1276,6 +1276,7 @@ public sealed class AdminManagementService(
         var employee = GetEmployee(identityUserId);
         var deviceId = new DeviceId(id);
         var device = context.Devices.Single(item => item.Id == deviceId);
+        var previousLinkedTableId = device.LinkedTableId;
         if (!Enum.TryParse<DeviceStatus>(command.Status, true, out var status))
         {
             throw new BusinessRuleException("device.status", "Unknown device status.");
@@ -1299,6 +1300,12 @@ public sealed class AdminManagementService(
 
         device.LinkToTable(linkedTableId);
         device.SetLocked(command.IsLocked);
+        if (previousLinkedTableId != linkedTableId || command.IsLocked)
+        {
+            RevokeDeviceAccess(device.Id, command.IsLocked
+                ? "Tablet blocked by an administrator."
+                : "Tablet table link changed by an administrator.");
+        }
         AddAudit(device.UnitId, employee.Id, "Devices", "Update", nameof(Device), device.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return new CommandResultDto(device.Id.Value, device.Status.ToString());
@@ -1349,6 +1356,7 @@ public sealed class AdminManagementService(
 
         var tableId = new RestaurantTableId(command.LinkedTableId);
         EnsureTableBelongsToUnit(tableId, device.UnitId);
+        RevokeDeviceAccess(device.Id, "Tablet reprovisioned by an administrator.");
         device.LinkToTable(tableId);
 
         var result = CreateProvisioning(device);
@@ -1375,6 +1383,24 @@ public sealed class AdminManagementService(
             DeviceProvisioningTokens.Hash(token),
             expiresAt));
         return new DeviceProvisioningDto(ToDeviceDto(device), token, expiresAt);
+    }
+
+    private void RevokeDeviceAccess(DeviceId deviceId, string reason)
+    {
+        foreach (var session in context.DeviceSessions
+                     .Where(candidate => candidate.DeviceId == deviceId && candidate.EndedAt == null)
+                     .ToArray())
+        {
+            session.End(reason);
+        }
+
+        foreach (var provisioning in context.DeviceProvisionings
+                     .Where(candidate => candidate.DeviceId == deviceId)
+                     .ToArray()
+                     .Where(candidate => candidate.IsAvailableAt(DateTimeOffset.UtcNow)))
+        {
+            provisioning.Revoke();
+        }
     }
 
     private void EnsureTableBelongsToUnit(RestaurantTableId tableId, RestaurantUnitId unitId)

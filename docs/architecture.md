@@ -48,7 +48,7 @@ Comandos seguem a mesma direção: o endpoint autentica e extrai a identidade, o
 
 ## Fluxo do tablet da mesa
 
-O Web ativa um dispositivo previamente provisionado e vinculado a uma mesa. A API encerra a sessão anterior do tablet, gera um token opaco aleatório e persiste somente seu hash SHA-256. Os endpoints dependem de portas específicas para sessão, consultas, pedidos e assistência; a implementação coordena o contexto do dispositivo e delega as transições aos agregados.
+O Web ativa uma única vez um dispositivo previamente provisionado e vinculado a uma mesa. A API encerra a credencial anterior, gera um token opaco aleatório e persiste somente seu hash SHA-256. A credencial identifica o aparelho até revogação e referencia opcionalmente a `TableSession` atual; por isso o tablet pode permanecer autenticado em espera entre comandas. A abertura pelo cliente registra `OpenedByDeviceId`, enquanto a abertura administrativa mantém `OpenedByEmployeeId`, preservando exatamente um ator de origem.
 
 Preço e disponibilidade são sempre recalculados no servidor. O cliente envia apenas identificadores, quantidades e personalizações; valores exibidos no navegador nunca são aceitos como autoridade. O identificador criado pelo cliente para o pedido funciona como chave de idempotência e evita duplicação em tentativas repetidas.
 
@@ -89,7 +89,7 @@ O empacotamento não move regras de negócio para Nginx, scripts ou containers. 
 - O frontend armazena apenas a sessão necessária e envia o bearer token pelo cliente HTTP centralizado.
 - O cache assíncrono do Web é centralizado no TanStack Query; SignalR apenas sinaliza mudanças e não transporta regras de domínio.
 - Formulários administrativos usam schemas Zod no limite da interface, sem duplicar invariantes cuja autoridade permanece no Domain/Application.
-- Sessões de tablet usam tokens opacos com hash persistido, expiração, encerramento explícito e limite de ativação por IP.
+- Credenciais de tablet usam tokens opacos com hash persistido, revogação administrativa/logout e limite de ativação por IP; somente o link temporário de provisionamento expira automaticamente.
 - Pedidos do tablet obedecem ao estado da mesa e às configurações operacionais de caixa antes de criar tickets por estação.
 - Ingredientes adicionais são configurados no agregado `Ingredient`; a Application resolve disponibilidade e preço do catálogo, valida o sabor de destino e persiste snapshots em `OrderItemModifier`. O Web calcula apenas uma prévia para interação.
 - Números de pedido, ticket de cozinha e comanda são obtidos por `IOperationNumberGenerator`; a Infrastructure usa sequências PostgreSQL atômicas, sem `MAX + 1` em produção.

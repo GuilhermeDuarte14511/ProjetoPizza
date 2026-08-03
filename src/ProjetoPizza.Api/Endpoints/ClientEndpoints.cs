@@ -37,6 +37,28 @@ public static class ClientEndpoints
             CancellationToken cancellationToken) =>
             service.GetStateAsync(GetSession(httpContext), cancellationToken));
 
+        sessionGroup.MapPost("/table-sessions", (
+            StartClientTableSessionCommand command,
+            HttpContext httpContext,
+            IClientSessionService service,
+            CancellationToken cancellationToken) =>
+            service.StartTableSessionAsync(GetSession(httpContext), command, cancellationToken));
+
+        sessionGroup.MapPost("/table-sessions/complete", (
+            HttpContext httpContext,
+            IClientSessionService service,
+            CancellationToken cancellationToken) =>
+            service.CompleteTableSessionAsync(GetSession(httpContext), cancellationToken));
+
+        sessionGroup.MapPost("/logout", async (
+            HttpContext httpContext,
+            IClientSessionService service,
+            CancellationToken cancellationToken) =>
+        {
+            await service.LogoutAsync(GetSession(httpContext), cancellationToken);
+            return Results.NoContent();
+        });
+
         sessionGroup.MapPost("/orders", async (
             SubmitClientOrderCommand command,
             HttpContext httpContext,

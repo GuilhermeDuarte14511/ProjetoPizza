@@ -5,20 +5,31 @@ import type {
   ClientBootstrap,
   ClientOrder,
   ClientState,
+  StartClientTableSession,
   SubmitClientOrder,
 } from '../types/client'
 
 const sessionTokenKey = 'projeto-pizza.client-session'
 
 export function getClientSessionToken() {
-  return sessionStorage.getItem(sessionTokenKey)
+  const persistentToken = localStorage.getItem(sessionTokenKey)
+  if (persistentToken) return persistentToken
+
+  const previousSessionToken = sessionStorage.getItem(sessionTokenKey)
+  if (previousSessionToken) {
+    localStorage.setItem(sessionTokenKey, previousSessionToken)
+    sessionStorage.removeItem(sessionTokenKey)
+  }
+  return previousSessionToken
 }
 
 export function setClientSessionToken(token: string) {
-  sessionStorage.setItem(sessionTokenKey, token)
+  localStorage.setItem(sessionTokenKey, token)
+  sessionStorage.removeItem(sessionTokenKey)
 }
 
 export function clearClientSessionToken() {
+  localStorage.removeItem(sessionTokenKey)
   sessionStorage.removeItem(sessionTokenKey)
 }
 
@@ -81,6 +92,24 @@ export function getClientBootstrap(signal?: AbortSignal) {
 
 export function getClientState(signal?: AbortSignal) {
   return clientRequest<ClientState>('/api/v1/client/state', {}, signal)
+}
+
+export function startClientTableSession(command: StartClientTableSession) {
+  return clientRequest<ClientBootstrap>('/api/v1/client/table-sessions', {
+    method: 'POST',
+    body: JSON.stringify(command),
+  })
+}
+
+export function completeClientTableSession() {
+  return clientRequest<ClientBootstrap>('/api/v1/client/table-sessions/complete', {
+    method: 'POST',
+  })
+}
+
+export async function logoutClientTablet() {
+  await clientRequest<void>('/api/v1/client/logout', { method: 'POST' })
+  clearClientSessionToken()
 }
 
 export function submitClientOrder(order: SubmitClientOrder) {

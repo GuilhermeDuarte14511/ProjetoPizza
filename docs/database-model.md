@@ -51,7 +51,8 @@ Uma mesa não armazena o estado visual `Livre`, `Ocupada`, `Chamando`, `Conta so
 - FKs transacionais usam `Restrict`; exclusões em cascata ficam limitadas às tabelas internas do ASP.NET Core Identity.
 - Índices únicos protegem identificadores como unidade/código, unidade/SKU, unidade/número do pedido e tamanho/sabor.
 - Índices compostos cobrem as leituras operacionais por unidade, estado e data.
-- `device_sessions.session_token_hash` possui índice único; a consulta de sessão ativa também é coberta por dispositivo, `ended_at` e `expires_at`. O token em texto puro não é persistido.
+- `device_sessions.session_token_hash` possui índice único; `table_session_id` e `expires_at` são opcionais para permitir a credencial persistente no estado de espera. A consulta de acesso ativo continua coberta por dispositivo, `ended_at` e `expires_at`, e o token em texto puro não é persistido.
+- `dining.table_sessions.opened_by_device_id` e `dining.table_session_tables.linked_by_device_id` registram comandas iniciadas pelo tablet. As colunas equivalentes de funcionário tornam-se opcionais, mas o Domain exige exatamente um ator de abertura/vínculo.
 - `catalog.pizza_crust_prices` mantém, por tamanho, o valor da borda inteira (`additional_price`) e de uma meia borda (`half_additional_price`).
 - `ordering.order_item_pizzas` preserva o modo da borda (`None`, `Whole` ou `Split`) e os snapshots das duas metades, garantindo que pedidos antigos não mudem quando o catálogo for alterado.
 - Agregados operacionais usam a coluna de sistema PostgreSQL `xmin` como token de concorrência otimista.

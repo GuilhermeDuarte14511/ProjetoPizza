@@ -1,5 +1,6 @@
 import type { ClientPizzaFlavor, ClientProduct } from '../../types/client'
 import heroImage from '../../assets/hero.png'
+import idleImage from '../../assets/tablet-idle-pizzeria.jpg'
 
 const images = {
   hero: heroImage,
@@ -10,6 +11,7 @@ const images = {
 } as const
 
 export const clientHeroImage = images.hero
+export const clientIdleImage = idleImage
 
 export function getProductImage(product: ClientProduct) {
   if (product.imageUrl?.startsWith('/')) return product.imageUrl

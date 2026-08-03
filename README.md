@@ -13,6 +13,7 @@ Fundação full stack de uma plataforma de gestão para pizzaria, construída co
 - Cadastros administrativos em modais acessíveis, feedback por toast, erros HTTP tratados, enums localizados em português e transições com suporte a movimento reduzido.
 - Fluxos operacionais para mesas, pedidos, cozinha, catálogo, pagamentos, caixa, dispositivos, usuários, perfis e configurações.
 - Jornada do cliente com ativação segura do tablet, cardápio real, montagem de pizza com adicionais por sabor, carrinho, acompanhamento, chamado e solicitação de conta.
+- POC navegável do ciclo completo do tablet em `poc/tablet-flow-demo.html`, incluindo espera, pedido, acompanhamento e encerramento.
 - Testes unitários de Domain/Application e teste de integração PostgreSQL preparado com Testcontainers.
 - Inventário completo das referências visuais e documentação das decisões.
 
@@ -609,9 +610,10 @@ Não execute `--seed` novamente em uma base comercial sem revisar a carga corres
 3. escolha **Adicionar novo tablet** ou **Vincular**;
 4. selecione a mesa;
 5. leia o QR Code ou digite no tablet a URL exibida;
-6. confirme que o cardápio e a mesa correta foram carregados.
+6. confirme que a tela de espera e a mesa correta foram carregadas;
+7. toque em **Iniciar atendimento**, informe a quantidade de pessoas e confirme a abertura da comanda.
 
-O vínculo é de uso único e expira. O tablet deve permanecer na mesma rede do servidor.
+O link de provisionamento é de uso único e expira em 30 minutos. Depois da ativação, o tablet permanece vinculado entre comandas até logout, bloqueio, desvínculo, troca de mesa ou reprovisionamento. O aparelho deve permanecer na mesma rede do servidor.
 
 ### 8. Verificação pós-instalação
 

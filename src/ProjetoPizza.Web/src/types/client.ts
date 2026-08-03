@@ -1,6 +1,6 @@
 export interface ClientSession {
   deviceId: string
-  tableSessionId: string
+  tableSessionId?: string
   restaurantName: string
   tableNumber: number
   tableName: string
@@ -169,6 +169,10 @@ export interface ClientBootstrap {
   serviceCallTypes: Array<{ id: string; code: string; name: string }>
   orders: ClientOrder[]
   bill: ClientBill
+}
+
+export interface StartClientTableSession {
+  guestCount: number
 }
 
 export interface ClientActivation {

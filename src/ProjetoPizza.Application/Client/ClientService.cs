@@ -61,21 +61,7 @@ public sealed class ClientService(
             throw new BusinessRuleException("client.device_not_linked", "Customer tablet is not linked to a table.");
         }
 
-        var activeSessionIds = context.TableSessions
-            .Where(IsActiveTableSession)
-            .Select(candidate => candidate.Id)
-            .ToHashSet();
-        var tableSessionId = context.TableSessionTables
-            .Where(link =>
-                link.RestaurantTableId == device.LinkedTableId.Value &&
-                link.UnlinkedAt == null &&
-                activeSessionIds.Contains(link.TableSessionId))
-            .Select(link => link.TableSessionId)
-            .SingleOrDefault();
-        if (tableSessionId == default)
-        {
-            throw new BusinessRuleException("client.table_session_required", "The linked table does not have an open session.");
-        }
+        var tableSessionId = FindActiveTableSessionId(device.LinkedTableId.Value);
 
         foreach (var activeDeviceSession in context.DeviceSessions
                      .Where(candidate => candidate.DeviceId == device.Id && candidate.EndedAt == null)
@@ -88,9 +74,8 @@ public sealed class ClientService(
         var deviceSession = new DeviceSession(
             DeviceSessionId.New(),
             device.Id,
-            tableSessionId,
             HashToken(token),
-            DateTimeOffset.UtcNow.AddHours(12));
+            tableSessionId);
         provisioning?.Consume();
         context.Add(deviceSession);
         await context.SaveChangesAsync(cancellationToken);
@@ -112,10 +97,8 @@ public sealed class ClientService(
 
         var tokenHash = HashToken(token);
         var deviceSession = context.DeviceSessions.SingleOrDefault(candidate =>
-            candidate.SessionTokenHash == tokenHash &&
-            candidate.EndedAt == null &&
-            candidate.ExpiresAt > DateTimeOffset.UtcNow);
-        if (deviceSession is null)
+            candidate.SessionTokenHash == tokenHash);
+        if (deviceSession is null || !deviceSession.IsAvailableAt(DateTimeOffset.UtcNow))
         {
             return Task.FromResult<ClientSessionContext?>(null);
         }
@@ -123,38 +106,33 @@ public sealed class ClientService(
         var device = context.Devices.SingleOrDefault(candidate =>
             candidate.Id == deviceSession.DeviceId &&
             candidate.DeviceType == DeviceType.CustomerTablet &&
-            !candidate.IsLocked);
-        var tableSession = context.TableSessions.SingleOrDefault(candidate =>
-            candidate.Id == deviceSession.TableSessionId);
-        var canReadCompletedSession = tableSession is not null &&
-            tableSession.Status == TableSessionStatus.Closed &&
-            tableSession.ClosedAt.HasValue &&
-            tableSession.ClosedAt.Value >= DateTimeOffset.UtcNow.AddHours(-2) &&
-            context.Bills.Any(candidate =>
-                candidate.TableSessionId == tableSession.Id &&
-                candidate.Status == BillStatus.Paid);
-        if (device is null ||
-            tableSession is null ||
-            (!IsActiveTableSession(tableSession) && !canReadCompletedSession))
+            !candidate.IsLocked &&
+            candidate.LinkedTableId.HasValue);
+        if (device is null)
         {
             return Task.FromResult<ClientSessionContext?>(null);
         }
 
-        var linkedTable = context.TableSessionTables.SingleOrDefault(link =>
-            link.TableSessionId == tableSession.Id &&
-            link.RestaurantTableId == device.LinkedTableId &&
-            link.UnlinkedAt == null);
-        if (linkedTable is null)
+        if (!device.LinkedTableId.HasValue)
         {
             return Task.FromResult<ClientSessionContext?>(null);
         }
 
-        var table = context.RestaurantTables.Single(candidate => candidate.Id == linkedTable.RestaurantTableId);
+        var table = context.RestaurantTables.SingleOrDefault(candidate =>
+            candidate.Id == device.LinkedTableId.Value &&
+            candidate.UnitId == device.UnitId);
+        if (table is null)
+        {
+            return Task.FromResult<ClientSessionContext?>(null);
+        }
+
+        var tableSessionId = ResolveReadableTableSessionId(deviceSession.TableSessionId, table.Id)
+            ?? FindActiveTableSessionId(table.Id);
         return Task.FromResult<ClientSessionContext?>(new ClientSessionContext(
             deviceSession.Id.Value,
             device.Id.Value,
-            tableSession.Id.Value,
-            tableSession.UnitId.Value,
+            tableSessionId?.Value,
+            device.UnitId.Value,
             table.Id.Value,
             table.Number));
     }
@@ -164,42 +142,7 @@ public sealed class ClientService(
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var sessionId = new TableSessionId(session.TableSessionId);
-        var unitId = new RestaurantUnitId(session.RestaurantUnitId);
-        var tableSession = context.TableSessions.Single(candidate => candidate.Id == sessionId);
-        var table = context.RestaurantTables.Single(candidate => candidate.Id == new RestaurantTableId(session.TableId));
-        var unit = context.RestaurantUnits.Single(candidate => candidate.Id == unitId);
-        var waiterName = tableSession.PrimaryWaiterId.HasValue
-            ? context.Employees
-                .Where(employee => employee.Id == tableSession.PrimaryWaiterId.Value)
-                .Select(employee => employee.DisplayName)
-                .SingleOrDefault()
-            : null;
-        var operationSettings = context.OperationSettings
-            .ToArray()
-            .Single(candidate => candidate.UnitId == unitId);
-
-        var sessionDto = new ClientSessionDto(
-            session.DeviceId,
-            session.TableSessionId,
-            unit.TradeName,
-            table.Number,
-            table.Name,
-            tableSession.GuestCount,
-            tableSession.Status.ToString(),
-            waiterName,
-            operationSettings.ClearTabletAfterTableClose);
-
-        return Task.FromResult(new ClientBootstrapDto(
-            sessionDto,
-            CreateCatalog(unitId),
-            context.ServiceCallTypes
-                .Where(callType => callType.IsActive)
-                .OrderBy(callType => callType.Name)
-                .Select(callType => new ClientServiceCallTypeDto(callType.Id.Value, callType.Code, callType.Name))
-                .ToArray(),
-            CreateOrders(sessionId),
-            CreateBill(tableSession)));
+        return Task.FromResult(CreateBootstrap(session));
     }
 
     public Task<ClientStateDto> GetStateAsync(
@@ -207,35 +150,85 @@ public sealed class ClientService(
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var sessionId = new TableSessionId(session.TableSessionId);
+        return Task.FromResult(CreateState(session));
+    }
+
+    public async Task<ClientBootstrapDto> StartTableSessionAsync(
+        ClientSessionContext session,
+        StartClientTableSessionCommand command,
+        CancellationToken cancellationToken)
+    {
+        if (command.GuestCount is < 1 or > 50)
+        {
+            throw new BusinessRuleException("client.guest_count", "Guest count must be between one and fifty.");
+        }
+
+        var deviceSession = GetAvailableDeviceSession(session.DeviceSessionId);
+        var tableId = new RestaurantTableId(session.TableId);
+        var table = context.RestaurantTables.Single(candidate => candidate.Id == tableId);
+        table.EnsureCanOpenSession();
+
+        var existingSessionId = FindActiveTableSessionId(tableId);
+        if (existingSessionId.HasValue)
+        {
+            deviceSession.BindToTableSession(existingSessionId.Value);
+            await context.SaveChangesAsync(cancellationToken);
+            return CreateBootstrap(session with { TableSessionId = existingSessionId.Value.Value });
+        }
+
         var unitId = new RestaurantUnitId(session.RestaurantUnitId);
-        var tableSession = context.TableSessions.Single(candidate => candidate.Id == sessionId);
-        var table = context.RestaurantTables.Single(candidate => candidate.Id == new RestaurantTableId(session.TableId));
-        var unit = context.RestaurantUnits.Single(candidate => candidate.Id == unitId);
-        var waiterName = tableSession.PrimaryWaiterId.HasValue
-            ? context.Employees
-                .Where(employee => employee.Id == tableSession.PrimaryWaiterId.Value)
-                .Select(employee => employee.DisplayName)
-                .SingleOrDefault()
-            : null;
-        var operationSettings = context.OperationSettings
+        var settings = context.OperationSettings
             .ToArray()
             .Single(candidate => candidate.UnitId == unitId);
-        var sessionDto = new ClientSessionDto(
-            session.DeviceId,
-            session.TableSessionId,
-            unit.TradeName,
-            table.Number,
-            table.Name,
-            tableSession.GuestCount,
-            tableSession.Status.ToString(),
-            waiterName,
-            operationSettings.ClearTabletAfterTableClose);
+        var sessionNumber = numberGenerator is null
+            ? context.TableSessions.Any() ? context.TableSessions.Max(candidate => candidate.SessionNumber) + 1 : 1
+            : await numberGenerator.NextTableSessionNumberAsync(cancellationToken);
+        var tableSession = TableSession.OpenFromDevice(
+            TableSessionId.New(),
+            unitId,
+            sessionNumber,
+            command.GuestCount,
+            new DeviceId(session.DeviceId),
+            settings.ServiceFeePercentage,
+            [table]);
 
-        return Task.FromResult(new ClientStateDto(
-            sessionDto,
-            CreateOrders(sessionId),
-            CreateBill(tableSession)));
+        context.Add(tableSession);
+        deviceSession.BindToTableSession(tableSession.Id);
+        context.Add(new AuditLog(
+            AuditLogId.New(),
+            unitId,
+            "Dining",
+            "OpenFromTablet",
+            nameof(TableSession),
+            tableSession.Id.Value.ToString()));
+        await context.SaveChangesAsync(cancellationToken);
+        return CreateBootstrap(session with { TableSessionId = tableSession.Id.Value });
+    }
+
+    public async Task<ClientBootstrapDto> CompleteTableSessionAsync(
+        ClientSessionContext session,
+        CancellationToken cancellationToken)
+    {
+        var tableSessionId = RequireTableSessionId(session);
+        var tableSession = context.TableSessions.Single(candidate => candidate.Id == tableSessionId);
+        var isPaidAndClosed = tableSession.Status == TableSessionStatus.Closed &&
+            context.Bills.Any(candidate => candidate.TableSessionId == tableSessionId && candidate.Status == BillStatus.Paid);
+        if (!isPaidAndClosed)
+        {
+            throw new BusinessRuleException(
+                "client.table_session_not_completed",
+                "Only a paid and closed table session can return the tablet to standby.");
+        }
+
+        GetAvailableDeviceSession(session.DeviceSessionId).ClearTableSession();
+        await context.SaveChangesAsync(cancellationToken);
+        return CreateBootstrap(session with { TableSessionId = null });
+    }
+
+    public async Task LogoutAsync(ClientSessionContext session, CancellationToken cancellationToken)
+    {
+        GetAvailableDeviceSession(session.DeviceSessionId).End("Logged out from the tablet.");
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<ClientOrderDto> SubmitOrderAsync(
@@ -243,7 +236,7 @@ public sealed class ClientService(
         SubmitClientOrderCommand command,
         CancellationToken cancellationToken)
     {
-        var tableSessionId = new TableSessionId(session.TableSessionId);
+        var tableSessionId = RequireTableSessionId(session);
         var tableSession = context.TableSessions.Single(candidate => candidate.Id == tableSessionId);
         if (tableSession.Status != TableSessionStatus.Open)
         {
@@ -319,7 +312,7 @@ public sealed class ClientService(
         CreateClientServiceCallCommand command,
         CancellationToken cancellationToken)
     {
-        var tableSessionId = new TableSessionId(session.TableSessionId);
+        var tableSessionId = RequireTableSessionId(session);
         var tableSession = context.TableSessions.Single(candidate => candidate.Id == tableSessionId);
         if (!IsActiveTableSession(tableSession))
         {
@@ -368,7 +361,7 @@ public sealed class ClientService(
         RequestClientBillCommand command,
         CancellationToken cancellationToken)
     {
-        var sessionId = new TableSessionId(session.TableSessionId);
+        var sessionId = RequireTableSessionId(session);
         var tableSession = context.TableSessions.Single(candidate => candidate.Id == sessionId);
         var bill = context.Bills
             .Where(candidate => candidate.TableSessionId == sessionId && candidate.Status != BillStatus.Cancelled)
@@ -412,6 +405,139 @@ public sealed class ClientService(
         await context.SaveChangesAsync(cancellationToken);
         return ToBillDto(bill);
     }
+
+    private ClientBootstrapDto CreateBootstrap(ClientSessionContext session)
+    {
+        var unitId = new RestaurantUnitId(session.RestaurantUnitId);
+        var table = context.RestaurantTables.Single(candidate => candidate.Id == new RestaurantTableId(session.TableId));
+        var unit = context.RestaurantUnits.Single(candidate => candidate.Id == unitId);
+        var tableSession = session.TableSessionId.HasValue
+            ? context.TableSessions.SingleOrDefault(candidate => candidate.Id == new TableSessionId(session.TableSessionId.Value))
+            : null;
+
+        return new ClientBootstrapDto(
+            CreateSessionDto(session, unit.TradeName, table, tableSession),
+            CreateCatalog(unitId),
+            context.ServiceCallTypes
+                .Where(callType => callType.IsActive)
+                .OrderBy(callType => callType.Name)
+                .Select(callType => new ClientServiceCallTypeDto(callType.Id.Value, callType.Code, callType.Name))
+                .ToArray(),
+            tableSession is null ? [] : CreateOrders(tableSession.Id),
+            tableSession is null ? EmptyBill() : CreateBill(tableSession));
+    }
+
+    private ClientStateDto CreateState(ClientSessionContext session)
+    {
+        var unitId = new RestaurantUnitId(session.RestaurantUnitId);
+        var table = context.RestaurantTables.Single(candidate => candidate.Id == new RestaurantTableId(session.TableId));
+        var unit = context.RestaurantUnits.Single(candidate => candidate.Id == unitId);
+        var tableSession = session.TableSessionId.HasValue
+            ? context.TableSessions.SingleOrDefault(candidate => candidate.Id == new TableSessionId(session.TableSessionId.Value))
+            : null;
+
+        return new ClientStateDto(
+            CreateSessionDto(session, unit.TradeName, table, tableSession),
+            tableSession is null ? [] : CreateOrders(tableSession.Id),
+            tableSession is null ? EmptyBill() : CreateBill(tableSession));
+    }
+
+    private ClientSessionDto CreateSessionDto(
+        ClientSessionContext session,
+        string restaurantName,
+        RestaurantTable table,
+        TableSession? tableSession)
+    {
+        var waiterName = tableSession?.PrimaryWaiterId.HasValue == true
+            ? context.Employees
+                .Where(employee => employee.Id == tableSession.PrimaryWaiterId.Value)
+                .Select(employee => employee.DisplayName)
+                .SingleOrDefault()
+            : null;
+        var clearAfterClose = context.OperationSettings
+            .ToArray()
+            .Single(candidate => candidate.UnitId == new RestaurantUnitId(session.RestaurantUnitId))
+            .ClearTabletAfterTableClose;
+
+        return new ClientSessionDto(
+            session.DeviceId,
+            tableSession?.Id.Value,
+            restaurantName,
+            table.Number,
+            table.Name,
+            tableSession?.GuestCount ?? 0,
+            tableSession?.Status.ToString() ?? "Idle",
+            waiterName,
+            clearAfterClose);
+    }
+
+    private TableSessionId? ResolveReadableTableSessionId(
+        TableSessionId? tableSessionId,
+        RestaurantTableId tableId)
+    {
+        if (!tableSessionId.HasValue)
+        {
+            return null;
+        }
+
+        var tableSession = context.TableSessions.SingleOrDefault(candidate => candidate.Id == tableSessionId.Value);
+        var belongsToTable = tableSession is not null && context.TableSessionTables.Any(link =>
+            link.TableSessionId == tableSession.Id &&
+            link.RestaurantTableId == tableId &&
+            link.UnlinkedAt == null);
+        if (!belongsToTable || tableSession is null)
+        {
+            return null;
+        }
+
+        if (IsActiveTableSession(tableSession))
+        {
+            return tableSession.Id;
+        }
+
+        var isRecentlyPaid = tableSession.Status == TableSessionStatus.Closed &&
+            tableSession.ClosedAt >= DateTimeOffset.UtcNow.AddHours(-2) &&
+            context.Bills.Any(candidate =>
+                candidate.TableSessionId == tableSession.Id &&
+                candidate.Status == BillStatus.Paid);
+        return isRecentlyPaid ? tableSession.Id : null;
+    }
+
+    private TableSessionId? FindActiveTableSessionId(RestaurantTableId tableId)
+    {
+        var activeSessionIds = context.TableSessions
+            .Where(IsActiveTableSession)
+            .Select(candidate => candidate.Id)
+            .ToHashSet();
+        var tableSessionId = context.TableSessionTables
+            .Where(link =>
+                link.RestaurantTableId == tableId &&
+                link.UnlinkedAt == null &&
+                activeSessionIds.Contains(link.TableSessionId))
+            .Select(link => link.TableSessionId)
+            .SingleOrDefault();
+        return tableSessionId == default ? null : tableSessionId;
+    }
+
+    private DeviceSession GetAvailableDeviceSession(Guid id)
+    {
+        var deviceSession = context.DeviceSessions.SingleOrDefault(candidate =>
+            candidate.Id == new DeviceSessionId(id));
+        if (deviceSession is null || !deviceSession.IsAvailableAt(DateTimeOffset.UtcNow))
+        {
+            throw new BusinessRuleException("client.session_unavailable", "Tablet access is no longer available.");
+        }
+
+        return deviceSession;
+    }
+
+    private static TableSessionId RequireTableSessionId(ClientSessionContext session) =>
+        session.TableSessionId.HasValue
+            ? new TableSessionId(session.TableSessionId.Value)
+            : throw new BusinessRuleException("client.table_session_required", "Start a table session before using this feature.");
+
+    private static ClientBillDto EmptyBill() =>
+        new(null, "Idle", 0, 0, 0, 0, 0, 0, null, null);
 
     private ClientCatalogDto CreateCatalog(RestaurantUnitId unitId)
     {

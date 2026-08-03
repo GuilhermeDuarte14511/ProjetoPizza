@@ -96,11 +96,11 @@ public sealed class DeviceSession : AggregateRoot<DeviceSessionId>
     public DeviceSession(
         DeviceSessionId id,
         DeviceId deviceId,
-        TableSessionId tableSessionId,
         string sessionTokenHash,
-        DateTimeOffset expiresAt) : base(id)
+        TableSessionId? tableSessionId = null,
+        DateTimeOffset? expiresAt = null) : base(id)
     {
-        if (expiresAt <= DateTimeOffset.UtcNow)
+        if (expiresAt.HasValue && expiresAt.Value <= DateTimeOffset.UtcNow)
         {
             throw new BusinessRuleException(
                 "device_session.expiration",
@@ -115,12 +115,29 @@ public sealed class DeviceSession : AggregateRoot<DeviceSessionId>
     }
 
     public DeviceId DeviceId { get; private set; }
-    public TableSessionId TableSessionId { get; private set; }
+    public TableSessionId? TableSessionId { get; private set; }
     public DateTimeOffset StartedAt { get; private set; }
-    public DateTimeOffset ExpiresAt { get; private set; }
+    public DateTimeOffset? ExpiresAt { get; private set; }
     public DateTimeOffset? EndedAt { get; private set; }
     public string SessionTokenHash { get; private set; } = string.Empty;
     public string? EndedReason { get; private set; }
+
+    public bool IsAvailableAt(DateTimeOffset now) =>
+        EndedAt is null && (!ExpiresAt.HasValue || ExpiresAt.Value > now);
+
+    public void BindToTableSession(TableSessionId tableSessionId)
+    {
+        if (EndedAt.HasValue)
+        {
+            throw new BusinessRuleException(
+                "device_session.ended",
+                "An ended device session cannot be linked to a table session.");
+        }
+
+        TableSessionId = tableSessionId;
+    }
+
+    public void ClearTableSession() => TableSessionId = null;
 
     public void End(string reason)
     {

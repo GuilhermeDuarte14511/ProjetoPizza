@@ -10,6 +10,27 @@ public sealed class TableSessionTests
     private readonly EmployeeId _employeeId = EmployeeId.New();
 
     [Fact]
+    public void OpenFromDevice_ShouldKeepDeviceAsTheOpeningActor()
+    {
+        var table = new RestaurantTable(RestaurantTableId.New(), _unitId, DiningAreaId.New(), 8, 4);
+        var deviceId = DeviceId.New();
+
+        var session = TableSession.OpenFromDevice(
+            TableSessionId.New(),
+            _unitId,
+            2,
+            3,
+            deviceId,
+            new Percentage(10),
+            [table]);
+
+        session.OpenedByDeviceId.Should().Be(deviceId);
+        session.OpenedByEmployeeId.Should().BeNull();
+        session.Tables.Single().LinkedByDeviceId.Should().Be(deviceId);
+        session.Tables.Single().LinkedByEmployeeId.Should().BeNull();
+    }
+
+    [Fact]
     public void Open_WithTable_ShouldCreateOpenSession()
     {
         var session = OpenSession();

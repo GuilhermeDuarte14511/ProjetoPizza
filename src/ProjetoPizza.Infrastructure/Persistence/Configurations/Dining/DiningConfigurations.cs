@@ -49,7 +49,8 @@ internal sealed class TableSessionConfiguration : IEntityTypeConfiguration<Table
         builder.Property(entity => entity.Id).HasConversion(id => id.Value, value => new TableSessionId(value));
         builder.Property(entity => entity.UnitId).HasConversion(id => id.Value, value => new RestaurantUnitId(value));
         builder.Property(entity => entity.PrimaryWaiterId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new EmployeeId(value.Value) : null);
-        builder.Property(entity => entity.OpenedByEmployeeId).HasConversion(id => id.Value, value => new EmployeeId(value));
+        builder.Property(entity => entity.OpenedByEmployeeId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new EmployeeId(value.Value) : null);
+        builder.Property(entity => entity.OpenedByDeviceId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new DeviceId(value.Value) : null);
         builder.Property(entity => entity.ClosedByEmployeeId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new EmployeeId(value.Value) : null);
         builder.Property(entity => entity.Status).HasConversion<string>().HasMaxLength(30);
         builder.Property(entity => entity.ServiceFeePercentageSnapshot).HasPercentageConversion();
@@ -58,6 +59,7 @@ internal sealed class TableSessionConfiguration : IEntityTypeConfiguration<Table
         builder.HasIndex(entity => new { entity.UnitId, entity.SessionNumber }).IsUnique();
         builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Employee>().WithMany().HasForeignKey(entity => entity.OpenedByEmployeeId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Device>().WithMany().HasForeignKey(entity => entity.OpenedByDeviceId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Employee>().WithMany().HasForeignKey(entity => entity.PrimaryWaiterId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Employee>().WithMany().HasForeignKey(entity => entity.ClosedByEmployeeId).OnDelete(DeleteBehavior.Restrict);
         builder.Navigation(entity => entity.Tables).UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -73,11 +75,13 @@ internal sealed class TableSessionTableConfiguration : IEntityTypeConfiguration<
         builder.HasKey(entity => new { entity.TableSessionId, entity.RestaurantTableId, entity.LinkedAt });
         builder.Property(entity => entity.TableSessionId).HasConversion(id => id.Value, value => new TableSessionId(value));
         builder.Property(entity => entity.RestaurantTableId).HasConversion(id => id.Value, value => new RestaurantTableId(value));
-        builder.Property(entity => entity.LinkedByEmployeeId).HasConversion(id => id.Value, value => new EmployeeId(value));
+        builder.Property(entity => entity.LinkedByEmployeeId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new EmployeeId(value.Value) : null);
+        builder.Property(entity => entity.LinkedByDeviceId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new DeviceId(value.Value) : null);
         builder.HasIndex(entity => new { entity.RestaurantTableId, entity.UnlinkedAt });
         builder.HasOne<TableSession>().WithMany(entity => entity.Tables).HasForeignKey(entity => entity.TableSessionId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<RestaurantTable>().WithMany().HasForeignKey(entity => entity.RestaurantTableId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Employee>().WithMany().HasForeignKey(entity => entity.LinkedByEmployeeId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Device>().WithMany().HasForeignKey(entity => entity.LinkedByDeviceId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

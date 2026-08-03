@@ -21,7 +21,7 @@ namespace ProjetoPizza.Application.Tests.Client;
 public sealed class ClientServiceTests
 {
     [Fact]
-    public async Task Activate_ShouldCreateHashedSessionForLinkedTablet()
+    public async Task Activate_ShouldCreatePersistentHashedAccessForLinkedTablet()
     {
         var fixture = CreateFixture();
         var service = new ClientService(fixture.Context);
@@ -35,8 +35,96 @@ public sealed class ClientServiceTests
         fixture.Context.DeviceSessionItems.Should().ContainSingle();
         fixture.Context.DeviceSessionItems[0].SessionTokenHash.Should().NotBe(result.Token);
         fixture.Context.DeviceSessionItems[0].SessionTokenHash.Should().HaveLength(64);
-        fixture.Context.DeviceSessionItems[0].ExpiresAt.Should().BeAfter(DateTimeOffset.UtcNow.AddHours(11));
+        fixture.Context.DeviceSessionItems[0].ExpiresAt.Should().BeNull();
         fixture.Context.SaveChangesCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Activate_WithoutOpenTableSession_ShouldKeepTabletInStandby()
+    {
+        var fixture = CreateFixture(withOpenTableSession: false);
+        var service = new ClientService(fixture.Context);
+
+        var result = await service.ActivateAsync(
+            new ActivateClientSessionCommand(fixture.Device.SerialNumber),
+            CancellationToken.None);
+
+        result.Bootstrap.Session.Status.Should().Be("Idle");
+        result.Bootstrap.Session.TableSessionId.Should().BeNull();
+        result.Bootstrap.Session.TableNumber.Should().Be(2);
+        fixture.Context.DeviceSessionItems.Should().ContainSingle()
+            .Which.TableSessionId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task StartTableSession_FromStandby_ShouldOpenComandaAndBindCredential()
+    {
+        var fixture = CreateFixture(withOpenTableSession: false);
+        var service = new ClientService(fixture.Context);
+        var activation = await service.ActivateAsync(
+            new ActivateClientSessionCommand(fixture.Device.SerialNumber),
+            CancellationToken.None);
+        var session = await service.ValidateSessionAsync(activation.Token, CancellationToken.None);
+
+        var result = await service.StartTableSessionAsync(
+            session!,
+            new StartClientTableSessionCommand(3),
+            CancellationToken.None);
+
+        result.Session.Status.Should().Be("Open");
+        result.Session.GuestCount.Should().Be(3);
+        var tableSession = fixture.Context.TableSessionItems.Should().ContainSingle().Which;
+        tableSession.OpenedByDeviceId.Should().Be(fixture.Device.Id);
+        tableSession.OpenedByEmployeeId.Should().BeNull();
+        fixture.Context.DeviceSessionItems.Single().TableSessionId.Should().Be(tableSession.Id);
+    }
+
+    [Fact]
+    public async Task CompleteTableSession_ShouldReturnToStandbyWithoutEndingDeviceAccess()
+    {
+        var fixture = CreateFixture();
+        var service = new ClientService(fixture.Context);
+        var activation = await service.ActivateAsync(
+            new ActivateClientSessionCommand(fixture.Device.SerialNumber),
+            CancellationToken.None);
+        var session = await service.ValidateSessionAsync(activation.Token, CancellationToken.None);
+        var tableSession = fixture.Context.TableSessionItems.Single();
+        var bill = new Bill(
+            BillId.New(),
+            fixture.Unit.Id,
+            tableSession.Id,
+            new Money(100m),
+            tableSession.ServiceFeePercentageSnapshot);
+        bill.RegisterPayment(bill.TotalAmount);
+        tableSession.Close(fixture.Employee.Id);
+        fixture.Context.BillItems.Add(bill);
+
+        var result = await service.CompleteTableSessionAsync(session!, CancellationToken.None);
+
+        result.Session.Status.Should().Be("Idle");
+        result.Session.TableSessionId.Should().BeNull();
+        var deviceSession = fixture.Context.DeviceSessionItems.Single();
+        deviceSession.TableSessionId.Should().BeNull();
+        deviceSession.EndedAt.Should().BeNull();
+        (await service.ValidateSessionAsync(activation.Token, CancellationToken.None))
+            .Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Logout_ShouldEndDeviceAccess()
+    {
+        var fixture = CreateFixture();
+        var service = new ClientService(fixture.Context);
+        var activation = await service.ActivateAsync(
+            new ActivateClientSessionCommand(fixture.Device.SerialNumber),
+            CancellationToken.None);
+        var session = await service.ValidateSessionAsync(activation.Token, CancellationToken.None);
+
+        await service.LogoutAsync(session!, CancellationToken.None);
+
+        fixture.Context.DeviceSessionItems.Single().EndedAt.Should().NotBeNull();
+        (await service.ValidateSessionAsync(activation.Token, CancellationToken.None))
+            .Should().BeNull();
     }
 
     [Fact]
@@ -429,7 +517,7 @@ public sealed class ClientServiceTests
         state.Orders.Should().BeEmpty();
     }
 
-    private static Fixture CreateFixture()
+    private static Fixture CreateFixture(bool withOpenTableSession = true)
     {
         var unit = new RestaurantUnit(
             RestaurantUnitId.New(),
@@ -449,15 +537,17 @@ public sealed class ClientServiceTests
             "GARCOM");
         var area = new DiningArea(DiningAreaId.New(), unit.Id, "Salão");
         var table = new RestaurantTable(RestaurantTableId.New(), unit.Id, area.Id, 2, 4);
-        var tableSession = TableSession.Open(
-            TableSessionId.New(),
-            unit.Id,
-            1002,
-            2,
-            employee.Id,
-            new Percentage(10),
-            [table]);
-        tableSession.AssignWaiter(employee.Id);
+        var tableSession = withOpenTableSession
+            ? TableSession.Open(
+                TableSessionId.New(),
+                unit.Id,
+                1002,
+                2,
+                employee.Id,
+                new Percentage(10),
+                [table])
+            : null;
+        tableSession?.AssignWaiter(employee.Id);
         var device = new Device(
             DeviceId.New(),
             unit.Id,
@@ -474,7 +564,7 @@ public sealed class ClientServiceTests
             EmployeeItems = [employee],
             DiningAreaItems = [area],
             RestaurantTableItems = [table],
-            TableSessionItems = [tableSession],
+            TableSessionItems = tableSession is null ? [] : [tableSession],
             DeviceItems = [device],
         };
         return new Fixture(
@@ -485,7 +575,7 @@ public sealed class ClientServiceTests
             new ClientSessionContext(
                 Guid.NewGuid(),
                 device.Id.Value,
-                tableSession.Id.Value,
+                tableSession?.Id.Value,
                 unit.Id.Value,
                 table.Id.Value,
                 table.Number));
@@ -516,7 +606,7 @@ public sealed class ClientServiceTests
         public List<OrderItemModifier> OrderItemModifierItems { get; } = [];
         public DiningArea[] DiningAreaItems { get; init; } = [];
         public RestaurantTable[] RestaurantTableItems { get; init; } = [];
-        public TableSession[] TableSessionItems { get; init; } = [];
+        public List<TableSession> TableSessionItems { get; init; } = [];
         public List<Order> OrderItemsData { get; } = [];
         public List<ProductionStation> ProductionStationItems { get; } = [];
         public List<KitchenTicket> KitchenTicketItemsData { get; } = [];
@@ -580,6 +670,7 @@ public sealed class ClientServiceTests
         public void Add<TEntity>(TEntity entity) where TEntity : class
         {
             if (entity is DeviceSession deviceSession) DeviceSessionItems.Add(deviceSession);
+            if (entity is TableSession tableSession) TableSessionItems.Add(tableSession);
             if (entity is ProductExtra productExtra) ProductExtraItems.Add(productExtra);
             if (entity is DeviceProvisioning provisioning) DeviceProvisioningItems.Add(provisioning);
             if (entity is ServiceCall serviceCall) ServiceCallItems.Add(serviceCall);

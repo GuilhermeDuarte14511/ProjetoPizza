@@ -34,6 +34,8 @@ Fonte analisada: `C:\teste\designs`. Foram lidos 40 arquivos HTML, 39 arquivos `
 
 ## Telas do tablet/cliente
 
+| Tela de espera | `designs/telaIdle/code.html` | Iniciar atendimento | fotografia em tela cheia, identificação da mesa, CTA e sugestão do chef | DeviceSession, RestaurantTable | Referência vigente para o estado idle; implementada com asset local e escolha de pessoas após o toque. |
+
 | Tela | Arquivo | Finalidade | Componentes e ações | Entidades relacionadas | Observações |
 |---|---|---|---|---|---|
 | Boas-vindas da mesa | `designs/boas_vindas_mesa_12_forno_27/code.html` | Iniciar jornada | foto, identificação da mesa, ver cardápio, ajuda | DeviceSession, TableSession, RestaurantTable | Implementada em `/mesa`, após ativação do dispositivo vinculado. |
