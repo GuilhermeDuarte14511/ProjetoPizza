@@ -37,6 +37,24 @@ public static class ClientEndpoints
             CancellationToken cancellationToken) =>
             service.GetStateAsync(GetSession(httpContext), cancellationToken));
 
+        sessionGroup.MapPost("/telemetry", async (
+            UpdateClientTelemetryRequest request,
+            HttpContext httpContext,
+            IClientSessionService service,
+            CancellationToken cancellationToken) =>
+        {
+            await service.UpdateTelemetryAsync(
+                GetSession(httpContext),
+                new UpdateClientTelemetryCommand(
+                    request.BatteryPercentage,
+                    request.IsCharging,
+                    request.NetworkStatus,
+                    request.AppVersion,
+                    GetClientIpAddress(httpContext)),
+                cancellationToken);
+            return Results.NoContent();
+        });
+
         sessionGroup.MapPost("/table-sessions", (
             StartClientTableSessionCommand command,
             HttpContext httpContext,
@@ -98,4 +116,20 @@ public static class ClientEndpoints
     private static ClientSessionContext GetSession(HttpContext httpContext) =>
         httpContext.Items[ClientSessionFilter.HttpContextKey] as ClientSessionContext
         ?? throw new UnauthorizedAccessException("Tablet session is missing.");
+
+    private static string? GetClientIpAddress(HttpContext httpContext)
+    {
+        var forwardedAddress = httpContext.Request.Headers["X-Forwarded-For"]
+            .ToString()
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault();
+        var address = forwardedAddress ?? httpContext.Connection.RemoteIpAddress?.ToString();
+        return address is { Length: <= 64 } ? address : null;
+    }
 }
+
+public sealed record UpdateClientTelemetryRequest(
+    int? BatteryPercentage,
+    bool IsCharging,
+    string? NetworkStatus,
+    string? AppVersion);

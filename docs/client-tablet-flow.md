@@ -37,11 +37,13 @@ Os arquivos em `designs` são somente referência. As variantes `*_atualizada` o
 - Solicitações duplicadas de atendimento com o mesmo motivo são rejeitadas enquanto estiverem pendentes.
 - O carrinho é isolado pelo identificador da sessão da mesa e é limpo quando a operação determina a limpeza após o fechamento.
 - Após o bootstrap inicial, a atualização periódica usa `/api/v1/client/state`; o catálogo completo não é transferido a cada ciclo.
+- A telemetria usa `POST /api/v1/client/telemetry` com a mesma credencial do aparelho. O envio ocorre a cada minuto, ao recuperar visibilidade e em mudanças de bateria ou conectividade; a ausência da Battery Status API resulta em percentual desconhecido.
 
 ## Integração operacional
 
 - Chamados aparecem em `/admin/service-calls`, com mesa, motivo, tempo, responsável e ações separadas para assumir e concluir.
 - `TableCallToleranceMinutes` destaca chamados atrasados e `TableCallSoundEnabled` controla o aviso sonoro de novos chamados.
+- Todo pedido novo enviado pelo tablet gera um evento SignalR com origem `client`. O painel revalida os dados, mostra um aviso e toca o alerta de dois tons em qualquer rota administrativa; o controle de volume no cabeçalho permite liberar e testar o áudio após a primeira interação exigida pelo navegador.
 - Quando a mesa escolhe dividir a conta, `RequestedSplitCount` é gravado em `billing.bills` e abre o modal do caixa no modo dividido com a quantidade solicitada.
 - A tela final usa `VITE_GOOGLE_REVIEW_URL` no QR Code e `VITE_INSTAGRAM_URL` no acesso social, preservando `VITE_FEEDBACK_URL` e `VITE_SOCIAL_URL` como aliases legados. Depois de 20 segundos, encerra somente o contexto da comanda e retorna à espera sem apagar o vínculo do aparelho.
 - O logout explícito fica disponível na espera e exige confirmação local; depois dele, uma nova ativação administrativa é necessária.

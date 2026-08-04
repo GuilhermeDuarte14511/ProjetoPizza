@@ -1,4 +1,5 @@
 import { getJson, isApiConfigured, postJson, putJson } from '../api/httpClient'
+import { createUuid } from '../lib/uuid'
 import {
   getMockTableDetail,
   mockCategories,
@@ -69,7 +70,7 @@ function fromApiOrMock<T>(request: () => Promise<T>, fallback: T): Promise<T> {
   })
 }
 
-const demoResult = { id: crypto.randomUUID(), status: 'Saved' }
+const demoResult = { id: createUuid(), status: 'Saved' }
 
 export const adminService = {
   login: async (email: string, password: string): Promise<AuthenticationResult> => {
@@ -170,7 +171,7 @@ export const adminService = {
     isApiConfigured
       ? postJson('/api/v1/admin/cashier/open', command)
       : Promise.resolve({
-          id: crypto.randomUUID(),
+          id: createUuid(),
           register: mockCashRegisters.find((register) => register.id === command.cashRegisterId)?.name ?? 'Caixa',
           operator: 'Administrador',
           status: 'Open',
@@ -190,9 +191,9 @@ export const adminService = {
       ? postJson('/api/v1/admin/devices/tablets', command)
       : Promise.resolve({
           device: {
-            id: crypto.randomUUID(),
+            id: createUuid(),
             name: command.name,
-            serialNumber: `TAB-${crypto.randomUUID().slice(0, 12).toUpperCase()}`,
+            serialNumber: `TAB-${createUuid().slice(0, 12).toUpperCase()}`,
             type: 'CustomerTablet',
             platform: command.platform,
             status: 'Offline',
@@ -200,7 +201,7 @@ export const adminService = {
             linkedTableId: command.linkedTableId,
             isLocked: false,
           },
-          activationToken: crypto.randomUUID().replaceAll('-', ''),
+          activationToken: createUuid().replaceAll('-', ''),
           expiresAt: new Date(Date.now() + 30 * 60_000).toISOString(),
         }),
   provisionCustomerTablet: (id: string, linkedTableId: string): Promise<DeviceProvisioning> =>
@@ -208,7 +209,7 @@ export const adminService = {
       ? postJson(`/api/v1/admin/devices/${id}/provision`, { linkedTableId })
       : Promise.resolve({
           device: { ...mockDevices.find((device) => device.id === id)!, linkedTableId },
-          activationToken: crypto.randomUUID().replaceAll('-', ''),
+          activationToken: createUuid().replaceAll('-', ''),
           expiresAt: new Date(Date.now() + 30 * 60_000).toISOString(),
         }),
   saveUser: (command: Partial<AdminUser> & { password?: string; phone?: string }): Promise<string> =>

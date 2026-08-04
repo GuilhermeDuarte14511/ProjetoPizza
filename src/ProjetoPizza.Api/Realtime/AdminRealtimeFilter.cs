@@ -21,9 +21,12 @@ public sealed class AdminRealtimeFilter(IAdminEventPublisher publisher) : IEndpo
         var resource = segments.Length >= 4
             ? segments[3]
             : segments.LastOrDefault() ?? "admin";
+        var source = segments.Length >= 3
+            ? segments[2]
+            : "unknown";
 
         await publisher.PublishAsync(
-            new AdminResourceChanged(resource, request.Method, DateTimeOffset.UtcNow),
+            new AdminResourceChanged(resource, request.Method, source, DateTimeOffset.UtcNow),
             context.HttpContext.RequestAborted);
 
         return result;

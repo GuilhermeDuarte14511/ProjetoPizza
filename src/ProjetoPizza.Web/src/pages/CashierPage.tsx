@@ -11,6 +11,7 @@ import { useToast } from '../components/ui/toast'
 import { cashCloseSchema, cashMovementSchema, cashOpenSchema, type CashCloseFormData, type CashMovementFormData, type CashOpenFormData } from '../features/admin/formSchemas'
 import { useAdminQuery } from '../hooks/useAdminQuery'
 import { queryKeys } from '../lib/queryKeys'
+import { createUuid } from '../lib/uuid'
 import { adminService } from '../services/adminService'
 import { hasPermission } from '../services/authSession'
 import { getUserErrorMessage } from '../utils/errors'
@@ -67,7 +68,7 @@ export function CashierPage() {
     try {
       await adminService.registerCashMovement(draft)
       const signed = draft.type === 'Supply' ? draft.amount : -draft.amount
-      setShift({ ...shift, expectedCashAmount: shift.expectedCashAmount + signed, movements: [{ id: crypto.randomUUID(), ...draft, createdAt: new Date().toISOString() }, ...shift.movements] })
+      setShift({ ...shift, expectedCashAmount: shift.expectedCashAmount + signed, movements: [{ id: createUuid(), ...draft, createdAt: new Date().toISOString() }, ...shift.movements] })
       movementForm.reset()
       setMovementOpen(false)
       toast.success('Movimentação registrada', `${translateEnum(draft.type)} de ${currency.format(draft.amount)} salva.`)

@@ -3,6 +3,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { WifiOff } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { apiBaseUrl, getAccessToken, isApiConfigured } from '../../api/httpClient'
+import { isNewClientOrder, type AdminResourceChanged } from '../../lib/adminEvents'
+import { playNotificationTone, unlockNotificationSound } from '../../lib/notificationSound'
 import { queryKeys } from '../../lib/queryKeys'
 import { useToast } from '../ui/toast'
 
@@ -12,6 +14,18 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const toast = useToast()
   const [status, setStatus] = useState<ConnectionStatus>(navigator.onLine ? 'connected' : 'offline')
+
+  useEffect(() => {
+    const unlock = () => {
+      void unlockNotificationSound()
+    }
+    document.addEventListener('pointerdown', unlock, { once: true })
+    document.addEventListener('keydown', unlock, { once: true })
+    return () => {
+      document.removeEventListener('pointerdown', unlock)
+      document.removeEventListener('keydown', unlock)
+    }
+  }, [])
 
   useEffect(() => {
     function handleOffline() {
@@ -40,8 +54,14 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       .configureLogging(import.meta.env.DEV ? LogLevel.Warning : LogLevel.Error)
       .build()
 
-    connection.on('admin:changed', () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.all })
+    connection.on('admin:changed', (notification: AdminResourceChanged) => {
+      const queryKey = notification.resource === 'telemetry' ? queryKeys.devices : queryKeys.all
+      void queryClient.invalidateQueries({ queryKey })
+
+      if (isNewClientOrder(notification)) {
+        void playNotificationTone('order')
+        toast.info('Novo pedido recebido', 'Um pedido do tablet acabou de chegar para a operação.')
+      }
     })
     connection.onreconnecting(() => setStatus('reconnecting'))
     connection.onreconnected(() => {

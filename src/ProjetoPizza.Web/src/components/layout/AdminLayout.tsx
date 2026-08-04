@@ -16,6 +16,7 @@ import {
   Settings,
   TableProperties,
   Users,
+  Volume2,
   WalletCards,
 } from 'lucide-react'
 import type { FormEvent, ReactNode } from 'react'
@@ -23,6 +24,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useLocation } from 'wouter'
 import { queryKeys } from '../../lib/queryKeys'
+import { playNotificationTone } from '../../lib/notificationSound'
 import { runViewTransition } from '../../lib/viewTransitions'
 import { adminService } from '../../services/adminService'
 import { getAuthenticatedUser, hasPermission, logout } from '../../services/authSession'
@@ -91,7 +93,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       pendingCalls > previousPendingCalls.current &&
       operationSettings?.tableCallSoundEnabled
     ) {
-      playNotificationTone()
+      void playNotificationTone('service-call')
     }
     previousPendingCalls.current = pendingCalls
   }, [operationSettings?.tableCallSoundEnabled, pendingCalls])
@@ -119,6 +121,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   function signOut() {
     logout()
     runViewTransition(() => navigate('/login'))
+  }
+
+  async function testNotificationSound() {
+    await playNotificationTone('confirmation')
   }
 
   return (
@@ -177,6 +183,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <span className="status-dot" /> {isCashShiftLoading ? 'Verificando caixa' : isCashShiftOpen ? 'Caixa aberto' : 'Caixa fechado'}
           </button>
           <button
+            type="button"
+            className="icon-button"
+            aria-label="Testar som de notificações"
+            title="Testar som de notificações"
+            onClick={() => void testNotificationSound()}
+          >
+            <Volume2 size={19} />
+          </button>
+          <button
             className="icon-button"
             aria-label={pendingCalls ? `${pendingCalls} chamado(s) de mesa pendente(s)` : 'Nenhum chamado de mesa pendente'}
             onClick={() => runViewTransition(() => navigate('/admin/service-calls'))}
@@ -192,31 +207,4 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </div>
     </div>
   )
-}
-
-function playNotificationTone() {
-  try {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext
-    const audioContext = new AudioContextClass()
-    const oscillator = audioContext.createOscillator()
-    const gain = audioContext.createGain()
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(740, audioContext.currentTime)
-    gain.gain.setValueAtTime(0.0001, audioContext.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.12, audioContext.currentTime + 0.02)
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.28)
-    oscillator.connect(gain)
-    gain.connect(audioContext.destination)
-    oscillator.start()
-    oscillator.stop(audioContext.currentTime + 0.3)
-    oscillator.addEventListener('ended', () => void audioContext.close())
-  } catch {
-    // Browsers may block audio before the first user interaction.
-  }
-}
-
-declare global {
-  interface Window {
-    webkitAudioContext: typeof AudioContext
-  }
 }

@@ -50,6 +50,8 @@ Comandos seguem a mesma direção: o endpoint autentica e extrai a identidade, o
 
 O Web ativa uma única vez um dispositivo previamente provisionado e vinculado a uma mesa. A API encerra a credencial anterior, gera um token opaco aleatório e persiste somente seu hash SHA-256. A credencial identifica o aparelho até revogação e referencia opcionalmente a `TableSession` atual; por isso o tablet pode permanecer autenticado em espera entre comandas. A abertura pelo cliente registra `OpenedByDeviceId`, enquanto a abertura administrativa mantém `OpenedByEmployeeId`, preservando exatamente um ator de origem.
 
+O mesmo token autentica `POST /api/v1/client/telemetry`. O tablet envia nível de bateria, carregamento, conectividade e versão a cada minuto e quando esses valores mudam; a API determina o IP observado e delega ao agregado `Device` a validação do percentual entre 0 e 100. Navegadores que não oferecem a Battery Status API enviam bateria desconhecida sem inventar um valor.
+
 Preço e disponibilidade são sempre recalculados no servidor. O cliente envia apenas identificadores, quantidades e personalizações; valores exibidos no navegador nunca são aceitos como autoridade. O identificador criado pelo cliente para o pedido funciona como chave de idempotência e evita duplicação em tentativas repetidas.
 
 ## Implantação local no cliente
@@ -88,6 +90,7 @@ O empacotamento não move regras de negócio para Nginx, scripts ou containers. 
 - Identity emite JWT local assinado, com roles e claims de permissão; políticas distintas protegem leitura e escrita administrativa/operacional.
 - O frontend armazena apenas a sessão necessária e envia o bearer token pelo cliente HTTP centralizado.
 - O cache assíncrono do Web é centralizado no TanStack Query; SignalR apenas sinaliza mudanças e não transporta regras de domínio.
+- Eventos SignalR identificam o recurso, método e origem da mutação. O Web usa essa informação somente para revalidar o cache e tocar o aviso de pedido recebido, sem transportar nem decidir estado de domínio no Hub.
 - Formulários administrativos usam schemas Zod no limite da interface, sem duplicar invariantes cuja autoridade permanece no Domain/Application.
 - Credenciais de tablet usam tokens opacos com hash persistido, revogação administrativa/logout e limite de ativação por IP; somente o link temporário de provisionamento expira automaticamente.
 - Pedidos do tablet obedecem ao estado da mesa e às configurações operacionais de caixa antes de criar tickets por estação.

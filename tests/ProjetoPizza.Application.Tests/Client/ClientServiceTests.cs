@@ -128,6 +128,32 @@ public sealed class ClientServiceTests
     }
 
     [Fact]
+    public async Task UpdateTelemetry_ShouldPersistAuthenticatedTabletStatus()
+    {
+        var fixture = CreateFixture();
+        var service = new ClientService(fixture.Context);
+
+        await service.UpdateTelemetryAsync(
+            fixture.SessionContext,
+            new UpdateClientTelemetryCommand(
+                37,
+                true,
+                "Wi-Fi",
+                "Web 1.0.0",
+                "192.168.15.25"),
+            CancellationToken.None);
+
+        fixture.Device.Status.Should().Be(DeviceStatus.Online);
+        fixture.Device.BatteryPercentage.Should().Be(37);
+        fixture.Device.IsCharging.Should().BeTrue();
+        fixture.Device.NetworkStatus.Should().Be("Wi-Fi");
+        fixture.Device.IpAddress.Should().Be("192.168.15.25");
+        fixture.Device.AppVersion.Should().Be("Web 1.0.0");
+        fixture.Device.LastSeenAt.Should().NotBeNull();
+        fixture.Context.SaveChangesCalls.Should().Be(1);
+    }
+
+    [Fact]
     public async Task Activate_WithUnknownDevice_ShouldBeRejected()
     {
         var fixture = CreateFixture();

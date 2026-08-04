@@ -3,6 +3,7 @@ import { Banknote, CreditCard, QrCode, UsersRound, UserRound } from 'lucide-reac
 import { useMemo, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { paymentSchema, type PaymentFormData } from '../../features/admin/formSchemas'
+import { createUuid } from '../../lib/uuid'
 import { adminService } from '../../services/adminService'
 import type { PaymentMethod } from '../../types/admin'
 import { getUserErrorMessage } from '../../utils/errors'
@@ -185,7 +186,7 @@ export function PaymentDialog({
 
 function createSplitPayments(total: number, people: number, defaultMethodId: string, current: SplitPaymentDraft[] = []): SplitPaymentDraft[] {
   return splitMoneyEqually(total, people).map((amount, index) => ({
-    key: current[index]?.key ?? crypto.randomUUID(),
+    key: current[index]?.key ?? createUuid(),
     payer: current[index]?.payer ?? `Pessoa ${index + 1}`,
     paymentMethodId: current[index]?.paymentMethodId ?? defaultMethodId,
     amount,

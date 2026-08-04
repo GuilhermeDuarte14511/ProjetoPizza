@@ -5,6 +5,7 @@ import type {
   ClientBootstrap,
   ClientOrder,
   ClientState,
+  ClientTelemetry,
   StartClientTableSession,
   SubmitClientOrder,
 } from '../types/client'
@@ -92,6 +93,13 @@ export function getClientBootstrap(signal?: AbortSignal) {
 
 export function getClientState(signal?: AbortSignal) {
   return clientRequest<ClientState>('/api/v1/client/state', {}, signal)
+}
+
+export function updateClientTelemetry(telemetry: ClientTelemetry, signal?: AbortSignal) {
+  return clientRequest<void>('/api/v1/client/telemetry', {
+    method: 'POST',
+    body: JSON.stringify(telemetry),
+  }, signal)
 }
 
 export function startClientTableSession(command: StartClientTableSession) {

@@ -225,6 +225,26 @@ public sealed class ClientService(
         return CreateBootstrap(session with { TableSessionId = null });
     }
 
+    public async Task UpdateTelemetryAsync(
+        ClientSessionContext session,
+        UpdateClientTelemetryCommand command,
+        CancellationToken cancellationToken)
+    {
+        var deviceId = new DeviceId(session.DeviceId);
+        var device = context.Devices.Single(candidate =>
+            candidate.Id == deviceId &&
+            candidate.DeviceType == DeviceType.CustomerTablet);
+
+        device.UpdateStatus(
+            DeviceStatus.Online,
+            command.BatteryPercentage,
+            command.IsCharging,
+            command.NetworkStatus,
+            command.IpAddress,
+            command.AppVersion);
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task LogoutAsync(ClientSessionContext session, CancellationToken cancellationToken)
     {
         GetAvailableDeviceSession(session.DeviceSessionId).End("Logged out from the tablet.");

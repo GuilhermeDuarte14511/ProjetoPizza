@@ -180,6 +180,13 @@ export interface ClientActivation {
   bootstrap: ClientBootstrap
 }
 
+export interface ClientTelemetry {
+  batteryPercentage?: number
+  isCharging: boolean
+  networkStatus: string
+  appVersion: string
+}
+
 export interface PizzaCartConfiguration {
   sizeId: string
   sizeName: string

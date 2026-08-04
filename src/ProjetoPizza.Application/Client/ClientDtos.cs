@@ -29,6 +29,13 @@ public sealed record ClientSessionDto(
 
 public sealed record StartClientTableSessionCommand(int GuestCount);
 
+public sealed record UpdateClientTelemetryCommand(
+    int? BatteryPercentage,
+    bool IsCharging,
+    string? NetworkStatus,
+    string? AppVersion,
+    string? IpAddress);
+
 public sealed record ClientBootstrapDto(
     ClientSessionDto Session,
     ClientCatalogDto Catalog,

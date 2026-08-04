@@ -5,6 +5,7 @@ namespace ProjetoPizza.Api.Realtime;
 public sealed record AdminResourceChanged(
     string Resource,
     string Action,
+    string Source,
     DateTimeOffset OccurredAt);
 
 public interface IAdminEventPublisher

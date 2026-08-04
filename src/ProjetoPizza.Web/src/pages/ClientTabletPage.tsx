@@ -16,6 +16,8 @@ import { MenuView } from '../features/client/MenuView'
 import { PizzaBuilder, type PizzaBuilderResult } from '../features/client/PizzaBuilder'
 import { getProductImage } from '../features/client/clientPresentation'
 import { clearClientCart, loadClientCart, saveClientCart } from '../features/client/clientCartStorage'
+import { createClientTelemetry, getClientBattery, type ClientBatteryManager } from '../lib/deviceTelemetry'
+import { createUuid } from '../lib/uuid'
 import {
   activateClientSession,
   activateClientProvisioning,
@@ -29,6 +31,7 @@ import {
   requestClientBill,
   startClientTableSession,
   submitClientOrder,
+  updateClientTelemetry,
 } from '../services/clientService'
 import { ApiError } from '../api/httpClient'
 import type {
@@ -155,6 +158,45 @@ export function ClientTabletPage() {
     }
   }, [activeDeviceId, activeTableSessionId, toast])
 
+  useEffect(() => {
+    if (!activeDeviceId || !getClientSessionToken()) return
+
+    const controller = new AbortController()
+    let battery: ClientBatteryManager | undefined
+
+    const sendTelemetry = () => {
+      if (controller.signal.aborted) return
+      void updateClientTelemetry(createClientTelemetry(battery), controller.signal)
+        .catch(() => undefined)
+    }
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') sendTelemetry()
+    }
+
+    void getClientBattery().then((manager) => {
+      if (controller.signal.aborted) return
+      battery = manager
+      battery?.addEventListener('chargingchange', sendTelemetry)
+      battery?.addEventListener('levelchange', sendTelemetry)
+      sendTelemetry()
+    })
+
+    const interval = window.setInterval(sendTelemetry, 60_000)
+    window.addEventListener('online', sendTelemetry)
+    window.addEventListener('offline', sendTelemetry)
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      controller.abort()
+      window.clearInterval(interval)
+      window.removeEventListener('online', sendTelemetry)
+      window.removeEventListener('offline', sendTelemetry)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      battery?.removeEventListener('chargingchange', sendTelemetry)
+      battery?.removeEventListener('levelchange', sendTelemetry)
+    }
+  }, [activeDeviceId])
+
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0)
   const cartTotal = cart.reduce((total, item) => total + item.quantity * item.unitPrice, 0)
   const existingConsumption = bootstrap?.orders
@@ -261,7 +303,7 @@ export function ClientTabletPage() {
           : item)
       }
       return [...current, {
-        key: crypto.randomUUID(),
+        key: createUuid(),
         productId: product.id,
         name: product.name,
         quantity: 1,
@@ -273,7 +315,7 @@ export function ClientTabletPage() {
   }
 
   function addPizza(result: PizzaBuilderResult) {
-    setCart((current) => [...current, { key: crypto.randomUUID(), ...result }])
+    setCart((current) => [...current, { key: createUuid(), ...result }])
     setBuilderProduct(undefined)
     setScreen('cart')
     toast.success('Pizza adicionada', 'Sua montagem está pronta no carrinho.')
@@ -298,7 +340,7 @@ export function ClientTabletPage() {
     if (!cart.length) return
     setIsMutating(true)
     const payload: SubmitClientOrder = {
-      requestId: crypto.randomUUID(),
+      requestId: createUuid(),
       items: cart.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,

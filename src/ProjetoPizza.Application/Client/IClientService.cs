@@ -19,6 +19,11 @@ public interface IClientSessionService
         ClientSessionContext session,
         CancellationToken cancellationToken);
 
+    Task UpdateTelemetryAsync(
+        ClientSessionContext session,
+        UpdateClientTelemetryCommand command,
+        CancellationToken cancellationToken);
+
     Task LogoutAsync(
         ClientSessionContext session,
         CancellationToken cancellationToken);
