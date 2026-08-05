@@ -6,6 +6,7 @@ using ProjetoPizza.Domain.Billing;
 using ProjetoPizza.Domain.Cashier;
 using ProjetoPizza.Domain.Catalog;
 using ProjetoPizza.Domain.Core;
+using ProjetoPizza.Domain.Customers;
 using ProjetoPizza.Domain.Devices;
 using ProjetoPizza.Domain.Dining;
 using ProjetoPizza.Domain.Identity;
@@ -48,6 +49,13 @@ public sealed class DevelopmentDataSeeder(
             "admin@projetopizza.local",
             "DEV-ADMIN");
         context.Employees.Add(employee);
+        var phoneCustomer = new Customer(
+            new CustomerId(Guid.Parse("21000000-0000-0000-0000-000000000001")),
+            UnitId,
+            "Cliente Delivery",
+            "11999990001",
+            new DateOnly(1990, 5, 15));
+        context.Customers.Add(phoneCustomer);
 
         var categories = CreateCategories();
         context.Categories.AddRange(categories);
@@ -101,7 +109,7 @@ public sealed class DevelopmentDataSeeder(
 
         var devices = CreateDevices();
         context.Devices.AddRange(devices);
-        AddOperationalSamples(tables, products, stations, callTypes, devices);
+        AddOperationalSamples(tables, products, stations, callTypes, devices, phoneCustomer);
 
         await context.SaveChangesAsync(cancellationToken);
     }
@@ -515,7 +523,8 @@ public sealed class DevelopmentDataSeeder(
         IReadOnlyList<Product> products,
         IReadOnlyList<ProductionStation> stations,
         IReadOnlyList<ServiceCallType> callTypes,
-        IReadOnlyList<Device> devices)
+        IReadOnlyList<Device> devices,
+        Customer phoneCustomer)
     {
         var session2 = TableSession.Open(
             new TableSessionId(Guid.Parse("73000000-0000-0000-0000-000000000002")),
@@ -586,6 +595,8 @@ public sealed class DevelopmentDataSeeder(
             SalesChannel.Delivery,
             FulfillmentType.Delivery,
             EmployeeId);
+        completed.AssignCustomer(phoneCustomer.Id, phoneCustomer.Name);
+        completed.ConfigureDeliveryAddress("[DEV] Rua das Pizzas, 27 - Centro");
         completed.AddItem(
             new OrderItemId(Guid.Parse("75000000-0000-0000-0000-000000001023")),
             products[1].Id,

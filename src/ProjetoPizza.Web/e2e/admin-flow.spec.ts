@@ -118,6 +118,29 @@ test('exporta a lista de pedidos como PDF tabular', async ({ page }) => {
   await expect(page.getByText('Relatório PDF gerado')).toBeVisible()
 })
 
+test('cria pedido de entrega e apresenta a comanda térmica', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
+  await page.getByLabel('Senha', { exact: true }).fill('senha-local')
+  await page.getByRole('button', { name: 'Entrar no sistema' }).click()
+
+  await page.goto('/admin/orders/new')
+  await page.getByLabel('Buscar cliente').fill('Cliente Delivery')
+  await page.getByRole('button', { name: /Cliente Delivery/ }).click()
+  await page.getByRole('radio', { name: /Entrega/ }).click()
+  await page.getByLabel(/Endereço completo/).fill('Rua das Flores, 27 - Centro')
+  await page.locator('.admin-order-products article', { hasText: 'Batata Frita Especial' }).getByRole('button', { name: 'Adicionar' }).click()
+  await page.getByLabel('Observações').fill('Entregar na portaria.')
+  await page.getByRole('button', { name: 'Confirmar e enviar para produção' }).click()
+
+  const receipt = page.getByRole('dialog', { name: /Pedido #\d+ criado/ })
+  await expect(receipt.getByText('COMANDA NÃO FISCAL')).toBeVisible()
+  await expect(receipt.getByText('1x Batata Frita Especial')).toBeVisible()
+  await expect(receipt.getByText('Rua das Flores, 27 - Centro')).toBeVisible()
+  await expect(receipt.getByText('Taxa de entrega')).toBeVisible()
+  await expect(receipt.getByRole('button', { name: 'Imprimir comanda' })).toBeVisible()
+})
+
 test('fecha e abre um novo turno de caixa pelo fluxo completo', async ({ page }, testInfo) => {
   await page.goto('/login')
   await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')

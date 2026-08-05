@@ -51,6 +51,12 @@ O modal de pagamento alterna entre recebimento único e divisão por 2 a 50 pess
 
 O histórico administrativo traduz ação, módulo e entidade para português. Para tickets de cozinha, a API projeta o número operacional (`Ticket #1024`) no lugar do GUID, mantendo o identificador técnico no contrato e na exportação CSV.
 
+## Pedido administrativo e impressão térmica
+
+A rota `/admin/orders/new` conduz o atendimento em três blocos: seleção ou cadastro rápido do cliente, escolha entre retirada e entrega e montagem dos itens com o mesmo catálogo/compositor de pizzas do tablet. Em entrega, o endereço é obrigatório e a prévia usa `DefaultDeliveryFee`; preço, disponibilidade, taxa e desconto são confirmados novamente pela API. O identificador da tentativa é mantido durante o envio para impedir pedido duplicado em uma repetição da requisição.
+
+Após a confirmação, a interface abre uma comanda não fiscal com largura de 80 mm. Ela contém cliente, telefone, tipo de atendimento, endereço, quantidades, valores unitários, sabores, bordas, remoções, adicionais, observações, subtotal, taxa, desconto e total. A mesma comanda pode ser reaberta na listagem de pedidos. O botão usa `window.print()`, e o CSS de impressão oculta o painel para enviar somente a comanda ao driver térmico.
+
 ## Relatórios
 
 A área financeira exporta um arquivo Excel (`.xlsx`) em vez de imprimir a página web. O gerador é carregado somente após a ação do usuário e cria três abas: resumo executivo, pedidos e pagamentos. A planilha preserva valores e datas como tipos nativos, aplica máscaras monetárias, totais, percentuais, cabeçalhos fixos, larguras adequadas e o período selecionado. A geração utiliza `write-excel-file`, escolhida por suportar navegador, múltiplas abas e estilos sem alertas conhecidos no `npm audit`.

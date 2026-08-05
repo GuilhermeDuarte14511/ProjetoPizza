@@ -49,6 +49,18 @@ public static class AdminEndpoints
 
         group.MapGet("/orders", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.ListOrdersAsync(cancellationToken));
+        group.MapGet("/orders/{id:guid}/receipt", async (
+            Guid id,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+        {
+            var receipt = await service.GetOrderReceiptAsync(id, cancellationToken);
+            return receipt is null ? Results.NotFound() : Results.Ok(receipt);
+        });
+        group.MapGet("/orders/catalog", (IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.GetOrderCatalogAsync(cancellationToken));
+        group.MapGet("/customers", (IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.ListCustomersAsync(cancellationToken));
         group.MapGet("/pizza-crusts", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.ListPizzaCrustsAsync(cancellationToken));
         group.MapGet("/ingredients", (IAdminManagementService service, CancellationToken cancellationToken) =>
@@ -87,6 +99,30 @@ public static class AdminEndpoints
 
     private static void MapWriteEndpoints(RouteGroupBuilder group)
     {
+        group.MapPost("/orders", (
+            CreateAdministrativeOrderCommand command,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.CreateOrderAsync(command, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+
+        group.MapPost("/customers", (
+            SaveCustomerCommand command,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.SaveCustomerAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPut("/customers/{id:guid}", (
+            Guid id,
+            SaveCustomerCommand command,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.SaveCustomerAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+
         group.MapPut("/settings/unit", async (
             UpdateUnitCommand command,
             ClaimsPrincipal user,

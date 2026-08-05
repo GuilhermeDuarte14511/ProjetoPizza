@@ -15,6 +15,7 @@ import {
   Search,
   Settings,
   TableProperties,
+  UserRound,
   Users,
   Volume2,
   WalletCards,
@@ -54,6 +55,7 @@ const navigation = [
     items: [
       { to: '/admin/catalog/products', label: 'Cardápio', icon: BookOpen },
       { to: '/admin/devices', label: 'Tablets', icon: MonitorSmartphone },
+      { to: '/admin/customers', label: 'Clientes', icon: UserRound },
       { to: '/admin/users', label: 'Usuários', icon: Users },
       { to: '/admin/audit', label: 'Auditoria', icon: History },
       { to: '/admin/settings/general', label: 'Configurações', icon: Settings },
@@ -135,7 +137,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <span className="brand-mark"><ChefHat size={20} /></span>
           <span><strong>Forno 27</strong><small>Unidade Principal</small></span>
         </div>
-        {hasPermission('operations:write') && <ViewTransitionLink href="/admin/orders" className="primary-button sidebar-action"><ReceiptText size={17} /> Novo Pedido</ViewTransitionLink>}
+        {hasPermission('admin:write') && <ViewTransitionLink href="/admin/orders/new" className="primary-button sidebar-action"><ReceiptText size={17} /> Novo Pedido</ViewTransitionLink>}
         <nav className="sidebar-nav" aria-label="Navegação principal">
           {navigation.map((group) => (
             <section key={group.label}>

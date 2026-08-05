@@ -11,6 +11,8 @@ export const queryKeys = {
   pizzaRules: ['admin', 'settings', 'pizza-rules'] as const,
   kitchenTickets: ['admin', 'kitchen', 'tickets'] as const,
   orders: ['admin', 'orders'] as const,
+  orderCatalog: ['admin', 'orders', 'catalog'] as const,
+  customers: ['admin', 'customers'] as const,
   crusts: ['admin', 'pizza-crusts'] as const,
   ingredients: ['admin', 'ingredients'] as const,
   unitSettings: ['admin', 'settings', 'unit'] as const,

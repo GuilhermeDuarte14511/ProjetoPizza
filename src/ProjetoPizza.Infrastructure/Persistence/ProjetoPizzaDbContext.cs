@@ -8,6 +8,7 @@ using ProjetoPizza.Domain.Billing;
 using ProjetoPizza.Domain.Cashier;
 using ProjetoPizza.Domain.Catalog;
 using ProjetoPizza.Domain.Core;
+using ProjetoPizza.Domain.Customers;
 using ProjetoPizza.Domain.Devices;
 using ProjetoPizza.Domain.Dining;
 using ProjetoPizza.Domain.Identity;
@@ -26,6 +27,7 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     public DbSet<OperationSettings> OperationSettings => Set<OperationSettings>();
     public DbSet<PizzaSettings> PizzaSettings => Set<PizzaSettings>();
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductExtra> ProductExtras => Set<ProductExtra>();
@@ -79,6 +81,7 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     IQueryable<OperationSettings> IProjetoPizzaDbContext.OperationSettings => OperationSettings;
     IQueryable<PizzaSettings> IProjetoPizzaDbContext.PizzaSettings => PizzaSettings;
     IQueryable<Employee> IProjetoPizzaDbContext.Employees => Employees;
+    IQueryable<Customer> IProjetoPizzaDbContext.Customers => Customers;
     IQueryable<Product> IProjetoPizzaDbContext.Products => Products;
     IQueryable<ProductExtra> IProjetoPizzaDbContext.ProductExtras => ProductExtras;
     IQueryable<ProductImage> IProjetoPizzaDbContext.ProductImages => ProductImages;

@@ -1,3 +1,5 @@
+using ProjetoPizza.Application.Client;
+
 namespace ProjetoPizza.Application.Admin;
 
 public sealed record OrderManagementDto(
@@ -6,12 +8,47 @@ public sealed record OrderManagementDto(
     string Channel,
     string Fulfillment,
     string Status,
+    Guid? CustomerId,
+    string? CustomerName,
+    string? DeliveryAddress,
+    string? Notes,
     decimal Total,
     DateTimeOffset CreatedAt,
     DateTimeOffset? PlacedAt,
     IReadOnlyCollection<OrderLineDto> Items);
 
 public sealed record OrderLineDto(Guid Id, string Name, int Quantity, decimal UnitPrice, decimal TotalPrice, string Status);
+public sealed record AdministrativeOrderCatalogDto(ClientCatalogDto Catalog, decimal DefaultDeliveryFee);
+public sealed record CustomerDto(
+    Guid Id,
+    string Name,
+    string Phone,
+    DateOnly BirthDate,
+    bool IsActive,
+    DateTimeOffset CreatedAt);
+public sealed record CreatedOrderDto(Guid Id, long Number, string Status, decimal Total, OrderReceiptDto Receipt);
+public sealed record OrderReceiptDto(
+    Guid Id,
+    long Number,
+    string CustomerName,
+    string CustomerPhone,
+    string Fulfillment,
+    string? DeliveryAddress,
+    DateTimeOffset PlacedAt,
+    decimal Subtotal,
+    decimal DeliveryFee,
+    decimal Discount,
+    decimal Total,
+    string? Notes,
+    IReadOnlyCollection<OrderReceiptItemDto> Items);
+public sealed record OrderReceiptItemDto(
+    Guid Id,
+    string Name,
+    int Quantity,
+    decimal UnitPrice,
+    decimal TotalPrice,
+    string? Notes,
+    IReadOnlyCollection<string> Details);
 public sealed record PizzaCrustDto(
     Guid Id,
     string Name,
@@ -268,6 +305,22 @@ public sealed record SavePizzaFlavorExtraCommand(
     Guid IngredientId,
     decimal Price,
     int MaxQuantity);
+
+public sealed record SaveCustomerCommand(
+    Guid? Id,
+    string Name,
+    string Phone,
+    DateOnly BirthDate,
+    bool IsActive = true);
+
+public sealed record CreateAdministrativeOrderCommand(
+    Guid RequestId,
+    Guid CustomerId,
+    string Fulfillment,
+    string? DeliveryAddress,
+    decimal DiscountAmount,
+    string? Notes,
+    IReadOnlyList<SubmitClientOrderItemCommand> Items);
 
 public sealed record OpenTableCommand(Guid TableId, int GuestCount);
 public sealed record RecordPaymentCommand(Guid BillId, Guid PaymentMethodId, decimal Amount, decimal ReceivedAmount, string? ExternalReference);

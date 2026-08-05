@@ -6,6 +6,7 @@ using ProjetoPizza.Domain.Audit;
 using ProjetoPizza.Domain.Cashier;
 using ProjetoPizza.Domain.Catalog;
 using ProjetoPizza.Domain.Core;
+using ProjetoPizza.Domain.Customers;
 using ProjetoPizza.Domain.Devices;
 using ProjetoPizza.Domain.Dining;
 using ProjetoPizza.Domain.Identity;
@@ -56,6 +57,7 @@ public sealed class AdminQueryServiceTests
         public IQueryable<OperationSettings> OperationSettings => Array.Empty<OperationSettings>().AsQueryable();
         public IQueryable<PizzaSettings> PizzaSettings => Array.Empty<PizzaSettings>().AsQueryable();
         public IQueryable<Employee> Employees => Array.Empty<Employee>().AsQueryable();
+        public IQueryable<Customer> Customers => Array.Empty<Customer>().AsQueryable();
         public IQueryable<Category> Categories => CategoryItems.AsQueryable();
         public IQueryable<Product> Products => ProductItems.AsQueryable();
         public IQueryable<ProductExtra> ProductExtras => Array.Empty<ProductExtra>().AsQueryable();

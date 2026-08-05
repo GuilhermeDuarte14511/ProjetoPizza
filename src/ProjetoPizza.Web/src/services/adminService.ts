@@ -28,7 +28,9 @@ import {
   mockUnitSettings,
   mockUsers,
 } from '../mocks/adminManagementData'
+import { mockAdministrativeOrderCatalog, mockCustomers } from '../mocks/adminOrderData'
 import type {
+  AdministrativeOrderCatalog,
   AdminRole,
   AdminUser,
   AuditLog,
@@ -36,6 +38,9 @@ import type {
   CashRegister,
   CashShift,
   Category,
+  CreateAdministrativeOrder,
+  CreatedOrder,
+  Customer,
   Dashboard,
   Device,
   DeviceProvisioning,
@@ -44,6 +49,7 @@ import type {
   Ingredient,
   ManagedOrder,
   OperationSettings,
+  OrderReceipt,
   Payment,
   PaymentMethod,
   PizzaCrust,
@@ -71,6 +77,114 @@ function fromApiOrMock<T>(request: () => Promise<T>, fallback: T): Promise<T> {
 }
 
 const demoResult = { id: createUuid(), status: 'Saved' }
+const mockCustomerStore = [...mockCustomers]
+const mockReceiptStore = new Map<string, OrderReceipt>()
+
+function saveMockCustomer(command: Omit<Customer, 'id' | 'createdAt'> & { id?: string }): Customer {
+  const customer: Customer = {
+    ...command,
+    id: command.id || createUuid(),
+    phone: command.phone.replace(/\D/g, ''),
+    createdAt: mockCustomerStore.find((item) => item.id === command.id)?.createdAt ?? new Date().toISOString(),
+  }
+  const index = mockCustomerStore.findIndex((item) => item.id === customer.id)
+  if (index >= 0) mockCustomerStore[index] = customer
+  else mockCustomerStore.push(customer)
+  return customer
+}
+
+function createMockAdministrativeOrder(command: CreateAdministrativeOrder): CreatedOrder {
+  const existingReceipt = mockReceiptStore.get(command.requestId)
+  if (existingReceipt) {
+    return { id: existingReceipt.id, number: existingReceipt.number, status: 'Submitted', total: existingReceipt.total, receipt: existingReceipt }
+  }
+
+  const number = Math.max(0, ...mockOrders.map((order) => order.number)) + 1
+  const placedAt = new Date().toISOString()
+  const customer = mockCustomerStore.find((item) => item.id === command.customerId)
+  const receiptItems = command.items.map((requestedItem) => {
+    const product = mockAdministrativeOrderCatalog.catalog.products.find((item) => item.id === requestedItem.productId)
+    const details: string[] = []
+    let name = product?.name ?? 'Produto'
+    let unitPrice = product?.price ?? 0
+    if (requestedItem.pizza) {
+      const size = mockAdministrativeOrderCatalog.catalog.pizza.sizes.find((item) => item.id === requestedItem.pizza?.sizeId)
+      const flavors = requestedItem.pizza.flavorIds
+        .map((id) => mockAdministrativeOrderCatalog.catalog.pizza.flavors.find((item) => item.id === id))
+        .filter((item) => item !== undefined)
+      const flavorPrices = flavors.map((flavor) => flavor.prices.find((price) => price.pizzaSizeId === size?.id)?.price ?? 0)
+      unitPrice = flavorPrices.length ? Math.max(...flavorPrices) : (size?.basePrice ?? unitPrice)
+      name = `Pizza ${size?.name ?? ''} · ${flavors.length} sabor(es)`.trim()
+      details.push(`Tamanho: ${size?.name ?? '-'}`, `Sabores: ${flavors.map((flavor) => flavor.name).join(' / ')}`)
+      const firstCrust = mockAdministrativeOrderCatalog.catalog.pizza.crusts.find((item) => item.id === requestedItem.pizza?.crustId)
+      const secondCrust = mockAdministrativeOrderCatalog.catalog.pizza.crusts.find((item) => item.id === requestedItem.pizza?.secondCrustId)
+      if (firstCrust && size) {
+        const firstPrice = firstCrust.prices.find((price) => price.pizzaSizeId === size.id)
+        if (secondCrust) {
+          const secondPrice = secondCrust.prices.find((price) => price.pizzaSizeId === size.id)
+          unitPrice += (firstPrice?.halfPrice ?? 0) + (secondPrice?.halfPrice ?? 0)
+          details.push(`Borda: 1/2 ${firstCrust.name} + 1/2 ${secondCrust.name}`)
+        } else {
+          unitPrice += firstPrice?.fullPrice ?? 0
+          details.push(`Borda: ${firstCrust.name}`)
+        }
+      }
+      for (const extra of requestedItem.pizza.extraIngredients ?? []) {
+        const flavor = flavors.find((item) => item.id === extra.pizzaFlavorId)
+        const catalogExtra = flavor?.extras.find((item) => item.id === extra.ingredientId)
+          ?? mockAdministrativeOrderCatalog.catalog.pizza.extras.find((item) => item.id === extra.ingredientId)
+          ?? product?.complements.find((item) => item.id === extra.ingredientId)
+        const extraTotal = (catalogExtra?.price ?? 0) * extra.quantity
+        unitPrice += extraTotal
+        details.push(`Adicional: ${extra.quantity}x ${catalogExtra?.name ?? 'Item'} (+ ${extraTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`)
+      }
+    }
+    return {
+      id: createUuid(),
+      name,
+      quantity: requestedItem.quantity,
+      unitPrice,
+      totalPrice: unitPrice * requestedItem.quantity,
+      notes: requestedItem.notes,
+      details,
+    }
+  })
+  const subtotal = receiptItems.reduce((sum, item) => sum + item.totalPrice, 0)
+  const deliveryFee = command.fulfillment === 'Delivery' ? mockAdministrativeOrderCatalog.defaultDeliveryFee : 0
+  const total = subtotal + deliveryFee - command.discountAmount
+  const receipt: OrderReceipt = {
+    id: command.requestId,
+    number,
+    customerName: customer?.name ?? 'Consumidor',
+    customerPhone: customer?.phone ?? '',
+    fulfillment: command.fulfillment,
+    deliveryAddress: command.deliveryAddress,
+    placedAt,
+    subtotal,
+    deliveryFee,
+    discount: command.discountAmount,
+    total,
+    notes: command.notes,
+    items: receiptItems,
+  }
+  mockReceiptStore.set(command.requestId, receipt)
+  mockOrders.unshift({
+    id: command.requestId,
+    number,
+    channel: command.fulfillment,
+    fulfillment: command.fulfillment,
+    status: 'Submitted',
+    customerId: customer?.id,
+    customerName: customer?.name,
+    deliveryAddress: command.deliveryAddress,
+    notes: command.notes,
+    total,
+    createdAt: placedAt,
+    placedAt,
+    items: receiptItems.map((item) => ({ ...item, status: 'Pending' })),
+  })
+  return { id: command.requestId, number, status: 'Submitted', total, receipt }
+}
 
 export const adminService = {
   login: async (email: string, password: string): Promise<AuthenticationResult> => {
@@ -95,6 +209,8 @@ export const adminService = {
   pizzaRules: (signal?: AbortSignal) => fromApiOrMock(() => getJson<PizzaRuleSettings>('/api/v1/admin/settings/pizza-rules', signal), mockPizzaRules),
   kitchenTickets: (signal?: AbortSignal) => fromApiOrMock(() => getJson<KitchenTicket[]>('/api/v1/admin/kitchen/tickets', signal), mockKitchenTickets),
   orders: (signal?: AbortSignal) => fromApiOrMock(() => getJson<ManagedOrder[]>('/api/v1/admin/orders', signal), mockOrders),
+  orderCatalog: (signal?: AbortSignal) => fromApiOrMock(() => getJson<AdministrativeOrderCatalog>('/api/v1/admin/orders/catalog', signal), mockAdministrativeOrderCatalog),
+  customers: (signal?: AbortSignal) => fromApiOrMock(() => getJson<Customer[]>('/api/v1/admin/customers', signal), mockCustomerStore),
   crusts: (signal?: AbortSignal) => fromApiOrMock(() => getJson<PizzaCrust[]>('/api/v1/admin/pizza-crusts', signal), mockCrusts),
   ingredients: (signal?: AbortSignal) => fromApiOrMock(() => getJson<Ingredient[]>('/api/v1/admin/ingredients', signal), []),
   unitSettings: (signal?: AbortSignal) => fromApiOrMock(() => getJson<UnitSettings>('/api/v1/admin/settings/unit', signal), mockUnitSettings),
@@ -151,6 +267,33 @@ export const adminService = {
     isApiConfigured && 'id' in command
       ? putJson(`/api/v1/admin/pizza-flavors/${command.id}`, command)
       : isApiConfigured ? postJson('/api/v1/admin/pizza-flavors', command) : Promise.resolve(demoResult),
+  saveCustomer: (command: Omit<Customer, 'id' | 'createdAt'> & { id?: string }) =>
+    isApiConfigured
+      ? command.id
+        ? putJson<Customer, typeof command>(`/api/v1/admin/customers/${command.id}`, command)
+        : postJson<Customer, typeof command>('/api/v1/admin/customers', command)
+      : Promise.resolve(saveMockCustomer(command)),
+  createOrder: (command: CreateAdministrativeOrder): Promise<CreatedOrder> =>
+    isApiConfigured
+      ? postJson<CreatedOrder, CreateAdministrativeOrder>('/api/v1/admin/orders', command)
+      : Promise.resolve(createMockAdministrativeOrder(command)),
+  orderReceipt: (id: string, signal?: AbortSignal) =>
+    fromApiOrMock(
+      () => getJson<OrderReceipt>(`/api/v1/admin/orders/${id}/receipt`, signal),
+      (mockReceiptStore.get(id) ?? {
+        id,
+        number: 0,
+        customerName: 'Consumidor',
+        customerPhone: '',
+        fulfillment: 'Pickup',
+        placedAt: new Date().toISOString(),
+        subtotal: 0,
+        deliveryFee: 0,
+        discount: 0,
+        total: 0,
+        items: [],
+      }),
+    ),
   openTable: (tableId: string, guestCount: number) =>
     isApiConfigured ? postJson(`/api/v1/admin/tables/${tableId}/open`, { tableId, guestCount }) : Promise.resolve(demoResult),
   requestBill: (tableSessionId: string) =>

@@ -1,10 +1,13 @@
+using System.Globalization;
 using ProjetoPizza.Application.Abstractions.Persistence;
+using ProjetoPizza.Application.Client;
 using ProjetoPizza.Application.Devices;
 using ProjetoPizza.Domain.Audit;
 using ProjetoPizza.Domain.Billing;
 using ProjetoPizza.Domain.Cashier;
 using ProjetoPizza.Domain.Catalog;
 using ProjetoPizza.Domain.Core;
+using ProjetoPizza.Domain.Customers;
 using ProjetoPizza.Domain.Devices;
 using ProjetoPizza.Domain.Dining;
 using ProjetoPizza.Domain.Identity;
@@ -44,12 +47,164 @@ public sealed class AdminManagementService(
                 order.SalesChannel.ToString(),
                 order.FulfillmentType.ToString(),
                 order.Status.ToString(),
+                order.CustomerId?.Value,
+                order.CustomerNameSnapshot,
+                order.DeliveryAddressSnapshot,
+                order.Notes,
                 order.Total.Amount,
                 order.CreatedAt,
                 order.PlacedAt,
                 lines.GetValueOrDefault(order.Id, [])))
             .ToArray();
         return Task.FromResult<IReadOnlyCollection<OrderManagementDto>>(result);
+    }
+
+    public Task<AdministrativeOrderCatalogDto> GetOrderCatalogAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var unit = GetUnit();
+        var catalog = new ClientService(context, numberGenerator).CreateAdministrativeCatalog(unit.Id);
+        var settings = context.OperationSettings.Single(candidate => candidate.UnitId == unit.Id);
+        return Task.FromResult(new AdministrativeOrderCatalogDto(catalog, settings.DefaultDeliveryFee.Amount));
+    }
+
+    public Task<IReadOnlyCollection<CustomerDto>> ListCustomersAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var result = context.Customers
+            .OrderBy(customer => customer.Name)
+            .ToArray()
+            .Select(ToCustomerDto)
+            .ToArray();
+        return Task.FromResult<IReadOnlyCollection<CustomerDto>>(result);
+    }
+
+    public Task<OrderReceiptDto?> GetOrderReceiptAsync(Guid id, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var order = context.Orders.SingleOrDefault(candidate => candidate.Id == new OrderId(id));
+        return Task.FromResult(order is null ? null : CreateOrderReceipt(order));
+    }
+
+    public async Task<CustomerDto> SaveCustomerAsync(
+        SaveCustomerCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var unit = GetUnit();
+        var normalizedPhone = Customer.NormalizePhone(command.Phone);
+        var customerId = command.Id.HasValue ? new CustomerId(command.Id.Value) : CustomerId.New();
+        if (context.Customers.Any(customer =>
+                customer.UnitId == unit.Id &&
+                customer.Phone == normalizedPhone &&
+                customer.Id != customerId))
+        {
+            throw new BusinessRuleException("customer.phone_duplicate", "A customer with this phone already exists.");
+        }
+
+        var customer = command.Id.HasValue
+            ? context.Customers.Single(candidate => candidate.Id == customerId && candidate.UnitId == unit.Id)
+            : new Customer(customerId, unit.Id, command.Name, command.Phone, command.BirthDate);
+        var action = command.Id.HasValue ? "Update" : "Create";
+        if (command.Id.HasValue)
+        {
+            customer.Update(command.Name, command.Phone, command.BirthDate, command.IsActive);
+        }
+        else
+        {
+            if (!command.IsActive)
+            {
+                customer.Update(command.Name, command.Phone, command.BirthDate, isActive: false);
+            }
+
+            context.Add(customer);
+        }
+
+        AddAudit(unit.Id, employee.Id, "Customers", action, nameof(Customer), customer.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return ToCustomerDto(customer);
+    }
+
+    public async Task<CreatedOrderDto> CreateOrderAsync(
+        CreateAdministrativeOrderCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        if (command.RequestId == Guid.Empty)
+        {
+            throw new BusinessRuleException("order.request_id", "Order request identifier is required.");
+        }
+
+        var requestedOrderId = new OrderId(command.RequestId);
+        var existing = context.Orders.SingleOrDefault(candidate => candidate.Id == requestedOrderId);
+        if (existing is not null)
+        {
+            return new CreatedOrderDto(existing.Id.Value, existing.OrderNumber, existing.Status.ToString(), existing.Total.Amount, CreateOrderReceipt(existing));
+        }
+
+        var requestedItems = command.Items?.ToArray() ?? [];
+        if (requestedItems.Length is < 1 or > 30)
+        {
+            throw new BusinessRuleException("order.items", "An order must contain between one and thirty items.");
+        }
+        if (command.DiscountAmount < 0)
+        {
+            throw new BusinessRuleException("order.discount", "Discount cannot be negative.");
+        }
+
+        var fulfillment = command.Fulfillment.Equals("Delivery", StringComparison.OrdinalIgnoreCase)
+            ? FulfillmentType.Delivery
+            : command.Fulfillment.Equals("Pickup", StringComparison.OrdinalIgnoreCase) ||
+              command.Fulfillment.Equals("Takeaway", StringComparison.OrdinalIgnoreCase)
+                ? FulfillmentType.Pickup
+                : throw new BusinessRuleException("order.fulfillment", "Administrative orders support pickup or delivery only.");
+        var employee = GetEmployee(identityUserId);
+        var unit = GetUnit();
+        var customerId = new CustomerId(command.CustomerId);
+        var customer = context.Customers.SingleOrDefault(candidate =>
+            candidate.Id == customerId && candidate.UnitId == unit.Id && candidate.IsActive)
+            ?? throw new BusinessRuleException("order.customer", "The selected customer is unavailable.");
+        var settings = context.OperationSettings.Single(candidate => candidate.UnitId == unit.Id);
+        if (!settings.AllowOrdersWithoutOpenCashShift &&
+            !context.CashShifts.Any(shift => shift.Status == CashShiftStatus.Open))
+        {
+            throw new BusinessRuleException("order.cash_shift", "Orders are unavailable while the cash register is closed.");
+        }
+
+        var orderNumber = numberGenerator is null
+            ? context.Orders.Any() ? context.Orders.Max(order => order.OrderNumber) + 1 : 1
+            : await numberGenerator.NextOrderNumberAsync(cancellationToken);
+        var order = new Order(
+            requestedOrderId,
+            unit.Id,
+            orderNumber,
+            fulfillment == FulfillmentType.Delivery ? SalesChannel.Delivery : SalesChannel.Pickup,
+            fulfillment,
+            createdByEmployeeId: employee.Id);
+        order.AssignCustomer(customer.Id, customer.Name);
+        if (fulfillment == FulfillmentType.Delivery)
+        {
+            order.ConfigureDeliveryAddress(command.DeliveryAddress ?? string.Empty);
+        }
+        order.SetNotes(command.Notes);
+
+        var stationItems = new Dictionary<string, List<OrderItem>>(StringComparer.OrdinalIgnoreCase);
+        var composition = new ClientService(context, numberGenerator);
+        foreach (var requestedItem in requestedItems)
+        {
+            composition.AddAdministrativeOrderItem(order, requestedItem, unit.Id, stationItems);
+        }
+
+        order.RecalculateTotals(
+            deliveryFee: fulfillment == FulfillmentType.Delivery ? settings.DefaultDeliveryFee : Money.Zero(),
+            discount: new Money(command.DiscountAmount));
+        order.Submit();
+        context.Add(order);
+        await composition.CreateAdministrativeKitchenTicketsAsync(order, stationItems, cancellationToken);
+        AddAudit(unit.Id, employee.Id, "Ordering", "CreateAdministrative", nameof(Order), order.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CreatedOrderDto(order.Id.Value, order.OrderNumber, order.Status.ToString(), order.Total.Amount, CreateOrderReceipt(order));
     }
 
     public Task<IReadOnlyCollection<PizzaCrustDto>> ListPizzaCrustsAsync(CancellationToken cancellationToken)
@@ -1424,6 +1579,98 @@ public sealed class AdminManagementService(
     }
 
     private RestaurantUnit GetUnit() => context.RestaurantUnits.Single();
+
+    private static CustomerDto ToCustomerDto(Customer customer) => new(
+        customer.Id.Value,
+        customer.Name,
+        customer.Phone,
+        customer.BirthDate,
+        customer.IsActive,
+        customer.CreatedAt);
+
+    private OrderReceiptDto CreateOrderReceipt(Order order)
+    {
+        var items = context.OrderItems.Where(item => item.OrderId == order.Id).ToArray();
+        if (items.Length == 0 && order.Items.Count > 0)
+        {
+            items = order.Items.ToArray();
+        }
+
+        var itemIds = items.Select(item => item.Id).ToHashSet();
+        var pizzas = context.OrderItemPizzas
+            .Where(pizza => itemIds.Contains(pizza.Id))
+            .ToArray()
+            .ToDictionary(pizza => pizza.Id);
+        var flavors = context.OrderItemPizzaFlavors
+            .Where(flavor => itemIds.Contains(flavor.OrderItemId))
+            .ToArray()
+            .GroupBy(flavor => flavor.OrderItemId)
+            .ToDictionary(group => group.Key, group => group.OrderBy(flavor => flavor.PartNumber).ToArray());
+        var modifiers = context.OrderItemModifiers
+            .Where(modifier => itemIds.Contains(modifier.OrderItemId))
+            .ToArray()
+            .GroupBy(modifier => modifier.OrderItemId)
+            .ToDictionary(group => group.Key, group => group.ToArray());
+        var customer = order.CustomerId.HasValue
+            ? context.Customers.SingleOrDefault(candidate => candidate.Id == order.CustomerId.Value)
+            : null;
+        var ptBr = CultureInfo.GetCultureInfo("pt-BR");
+
+        var receiptItems = items.Select(item =>
+        {
+            var details = new List<string>();
+            if (pizzas.TryGetValue(item.Id, out var pizza))
+            {
+                details.Add($"Tamanho: {pizza.SizeNameSnapshot}");
+                if (flavors.TryGetValue(item.Id, out var selectedFlavors))
+                {
+                    details.Add($"Sabores: {string.Join(" / ", selectedFlavors.Select(flavor => flavor.FlavorNameSnapshot))}");
+                }
+                if (pizza.CrustSelectionMode == CrustSelectionMode.Split)
+                {
+                    details.Add($"Borda: 1/2 {pizza.CrustNameSnapshot} + 1/2 {pizza.SecondCrustNameSnapshot}");
+                }
+                else if (pizza.CrustSelectionMode == CrustSelectionMode.Whole)
+                {
+                    details.Add($"Borda: {pizza.CrustNameSnapshot}");
+                }
+            }
+
+            if (modifiers.TryGetValue(item.Id, out var itemModifiers))
+            {
+                details.AddRange(itemModifiers.Select(modifier => modifier.ModifierType switch
+                {
+                    ModifierType.Remove => $"Sem {modifier.NameSnapshot}",
+                    ModifierType.Extra => $"Adicional: {modifier.Quantity:0.##}x {modifier.NameSnapshot} (+ {modifier.TotalPrice.Amount.ToString("C", ptBr)})",
+                    _ => $"{modifier.Quantity:0.##}x {modifier.NameSnapshot}"
+                }));
+            }
+
+            return new OrderReceiptItemDto(
+                item.Id.Value,
+                item.ProductNameSnapshot,
+                item.Quantity,
+                item.UnitPrice.Amount,
+                item.TotalPrice.Amount,
+                item.Notes,
+                details);
+        }).ToArray();
+
+        return new OrderReceiptDto(
+            order.Id.Value,
+            order.OrderNumber,
+            order.CustomerNameSnapshot ?? customer?.Name ?? "Consumidor",
+            customer?.Phone ?? string.Empty,
+            order.FulfillmentType.ToString(),
+            order.DeliveryAddressSnapshot,
+            order.PlacedAt ?? order.CreatedAt,
+            order.Subtotal.Amount,
+            order.DeliveryFee.Amount,
+            order.Discount.Amount,
+            order.Total.Amount,
+            order.Notes,
+            receiptItems);
+    }
 
     private Employee GetEmployee(Guid identityUserId) =>
         context.Employees.Single(employee => employee.IdentityUserId == identityUserId && employee.IsActive);

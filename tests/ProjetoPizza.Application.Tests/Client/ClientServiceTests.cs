@@ -8,6 +8,7 @@ using ProjetoPizza.Domain.Billing;
 using ProjetoPizza.Domain.Cashier;
 using ProjetoPizza.Domain.Catalog;
 using ProjetoPizza.Domain.Core;
+using ProjetoPizza.Domain.Customers;
 using ProjetoPizza.Domain.Devices;
 using ProjetoPizza.Domain.Dining;
 using ProjetoPizza.Domain.Identity;
@@ -650,6 +651,7 @@ public sealed class ClientServiceTests
         public IQueryable<OperationSettings> OperationSettings => OperationSettingItems.AsQueryable();
         public IQueryable<PizzaSettings> PizzaSettings => PizzaSettingItems.AsQueryable();
         public IQueryable<Employee> Employees => EmployeeItems.AsQueryable();
+        public IQueryable<Customer> Customers => Array.Empty<Customer>().AsQueryable();
         public IQueryable<Category> Categories => Array.Empty<Category>().AsQueryable();
         public IQueryable<Product> Products => ProductItems.AsQueryable();
         public List<ProductExtra> ProductExtraItems { get; } = [];

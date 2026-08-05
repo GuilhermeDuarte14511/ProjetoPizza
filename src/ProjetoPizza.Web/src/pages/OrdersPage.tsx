@@ -1,15 +1,17 @@
-import { CheckCircle2, Clock3, Search } from 'lucide-react'
+import { CheckCircle2, Clock3, Plus, Printer, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useAdminQuery } from '../hooks/useAdminQuery'
 import { usePdfTableExport } from '../hooks/usePdfTableExport'
 import { queryKeys } from '../lib/queryKeys'
 import { PageHeader } from '../components/ui/PageHeader'
+import { OrderReceiptDialog } from '../components/orders/OrderReceiptDialog'
 import { PdfExportButton } from '../components/ui/PdfExportButton'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { useToast } from '../components/ui/toast'
+import { ViewTransitionLink } from '../components/ui/ViewTransitionLink'
 import { adminService } from '../services/adminService'
 import { hasPermission } from '../services/authSession'
-import type { ManagedOrder } from '../types/admin'
+import type { ManagedOrder, OrderReceipt } from '../types/admin'
 import { getUserErrorMessage } from '../utils/errors'
 import { translateEnum } from '../utils/presentation'
 
@@ -26,12 +28,14 @@ export function OrdersPage() {
   const [channel, setChannel] = useState('Todos')
   const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get('search') ?? '')
   const [busy, setBusy] = useState<string>()
+  const [receipt, setReceipt] = useState<OrderReceipt>()
+  const [loadingReceipt, setLoadingReceipt] = useState<string>()
   const toast = useToast()
   const { exportPdf, exporting } = usePdfTableExport()
 
   const visible = useMemo(() => orders.filter((order) =>
     (channel === 'Todos' || order.channel === channel) &&
-    (`${order.number} ${order.items.map((item) => item.name).join(' ')}`.toLowerCase().includes(search.toLowerCase()))),
+    (`${order.number} ${order.customerName ?? ''} ${order.items.map((item) => item.name).join(' ')}`.toLowerCase().includes(search.toLowerCase()))),
   [channel, orders, search])
 
   async function advance(order: ManagedOrder) {
@@ -46,6 +50,17 @@ export function OrdersPage() {
       toast.error('Não foi possível atualizar o pedido', getUserErrorMessage(error))
     } finally {
       setBusy(undefined)
+    }
+  }
+
+  async function printReceipt(order: ManagedOrder) {
+    setLoadingReceipt(order.id)
+    try {
+      setReceipt(await adminService.orderReceipt(order.id))
+    } catch (error) {
+      toast.error('Não foi possível preparar a impressão', getUserErrorMessage(error))
+    } finally {
+      setLoadingReceipt(undefined)
     }
   }
 
@@ -80,9 +95,9 @@ export function OrdersPage() {
 
   return (
     <>
-      <PageHeader title="Gestão de pedidos" description="Acompanhe salão, delivery e retirada em uma única fila." actions={<PdfExportButton exporting={exporting} onClick={exportOrders} label="Exportar pedidos em PDF" />} />
+      <PageHeader title="Gestão de pedidos" description="Acompanhe salão, delivery e retirada em uma única fila." actions={<><PdfExportButton exporting={exporting} onClick={exportOrders} label="Exportar pedidos em PDF" />{hasPermission('admin:write') && <ViewTransitionLink className="primary-button" href="/admin/orders/new"><Plus size={16} /> Novo pedido</ViewTransitionLink>}</>} />
       <div className="toolbar">
-        <div className="filter-tabs" role="group" aria-label="Filtrar pedidos por canal">{['Todos', 'DineIn', 'Delivery', 'Takeaway'].map((item) => <button key={item} aria-pressed={channel === item} className={channel === item ? 'active' : ''} onClick={() => setChannel(item)}>{translateEnum(item)}</button>)}</div>
+        <div className="filter-tabs" role="group" aria-label="Filtrar pedidos por canal">{['Todos', 'DineIn', 'Delivery', 'Pickup'].map((item) => <button key={item} aria-pressed={channel === item} className={channel === item ? 'active' : ''} onClick={() => setChannel(item)}>{translateEnum(item)}</button>)}</div>
         <div className="toolbar-search"><Search size={17} /><input aria-label="Buscar pedido ou item" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar pedido ou item..." /></div>
       </div>
       <section className="orders-board">
@@ -95,12 +110,14 @@ export function OrdersPage() {
                 <StatusBadge status={order.status} />
               </header>
               <div className="order-time"><Clock3 size={15} /> {new Date(order.createdAt).toLocaleString('pt-BR')}</div>
+              {order.customerName && <div className="order-customer-summary"><strong>{order.customerName}</strong>{order.deliveryAddress && <span>{order.deliveryAddress}</span>}</div>}
               <div className="order-lines">{order.items.map((item) => <div key={item.id}><span>{item.quantity}× {item.name}</span><strong>{currency.format(item.totalPrice)}</strong></div>)}</div>
-              <footer><strong>{currency.format(order.total)}</strong>{transition && hasPermission('operations:write') ? <button className="primary-button" disabled={busy === order.id} onClick={() => void advance(order)}><CheckCircle2 size={16} /> {busy === order.id ? 'Atualizando...' : transition.label}</button> : <span className="completed-label">{transition ? 'Somente leitura' : 'Fluxo concluído'}</span>}</footer>
+              <footer><strong>{currency.format(order.total)}</strong><div className="order-card-actions"><button className="secondary-button" disabled={loadingReceipt === order.id} onClick={() => void printReceipt(order)}><Printer size={15} /> {loadingReceipt === order.id ? 'Preparando...' : 'Imprimir'}</button>{transition && hasPermission('operations:write') ? <button className="primary-button" disabled={busy === order.id} onClick={() => void advance(order)}><CheckCircle2 size={16} /> {busy === order.id ? 'Atualizando...' : transition.label}</button> : <span className="completed-label">{transition ? 'Somente leitura' : 'Fluxo concluído'}</span>}</div></footer>
             </article>
           )
         })}
       </section>
+      <OrderReceiptDialog receipt={receipt} onClose={() => setReceipt(undefined)} />
     </>
   )
 }

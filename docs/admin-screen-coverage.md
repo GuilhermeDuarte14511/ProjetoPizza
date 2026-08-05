@@ -8,7 +8,9 @@ Todas as referências administrativas inventariadas possuem rota e página concr
 | Visão geral | `/admin/dashboard` | indicadores, pedidos recentes e atualização |
 | Mapa de mesas | `/admin/tables` | busca, filtros, estado derivado, abertura de mesa e PDF tabular |
 | Detalhe da comanda | `/admin/tables/:id` | pedidos, solicitação de conta e pagamento |
-| Pedidos | `/admin/orders` | busca, canal, PDF tabular e transições de status |
+| Pedidos | `/admin/orders` | busca por número/cliente, canal, PDF tabular, transições de status e reimpressão da comanda não fiscal |
+| Novo pedido | `/admin/orders/new` | atendimento presencial ou por telefone, retirada/entrega, cardápio, montagem de pizza, adicionais, observações, desconto, taxa e impressão térmica |
+| Clientes | `/admin/customers` | busca por nome/telefone, cadastro e edição de nome, telefone, nascimento e situação |
 | Cozinha | `/admin/kitchen` | fila por etapa, atualização e transições de produção |
 | Produtos | `/admin/catalog/products` | consulta, busca, cadastro, edição e complementos específicos por pizza |
 | Categorias | `/admin/catalog/categories` | consulta, cadastro e edição |
@@ -28,8 +30,9 @@ Todas as referências administrativas inventariadas possuem rota e página concr
 
 ## Limites explícitos
 
-- Impressoras são dispositivos lógicos; teste de spooler e impressão física exigem o driver e o equipamento.
+- A comanda não fiscal possui folha de impressão de 80 mm e usa a caixa de impressão do navegador; impressão física e corte automático exigem driver e equipamento compatíveis.
 - O snapshot de sistema não substitui um backup físico do PostgreSQL com `pg_dump`.
 - Pix, TEF e cartões registram a referência da transação, mas a autorização depende do provedor escolhido.
-- Criação completa de um novo pedido, divisão de conta e troca de garçom são fluxos de negócio próprios e não aparecem como ações simuladas nesta entrega.
+- Divisão de conta e troca de garçom permanecem fluxos de negócio próprios fora desta entrega.
+- O cadastro de nascimento prepara a base de clientes, mas cashback e cupons de aniversário dependem de regras comerciais futuras (percentual, validade e elegibilidade).
 - A jornada do tablet do cliente está disponível separadamente em `/mesa`; consulte `docs/client-tablet-flow.md`.

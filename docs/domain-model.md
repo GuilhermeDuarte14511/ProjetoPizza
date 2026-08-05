@@ -11,6 +11,7 @@
 
 - Core: `RestaurantUnit`, `OperationSettings`, `PizzaSettings`.
 - Identity: `Employee`, desacoplado de `IdentityUser`.
+- Customers: `Customer`, perfil reutilizável por unidade.
 - Catalog: `Category`, `Product`, `PizzaSize`, `PizzaFlavor`, `PizzaCrust`, `Ingredient` e preços/composições.
 - Inventory: `InventoryItem`, `StockBalance`, `StockMovement`, `Recipe`.
 - Dining: `RestaurantTable`, `TableSession`, `ServiceCall`.
@@ -45,7 +46,11 @@ stateDiagram-v2
 
 ### Pedidos e cozinha
 
-Pedidos nascem em `Draft`; itens só são alterados nessa fase. Submeter exige item. O ciclo segue `Submitted -> Accepted -> InProduction -> Ready -> Completed`. Cancelamento bloqueia novas alterações. Tickets de cozinha separam a produção por estação.
+Pedidos nascem em `Draft`; itens só são alterados nessa fase. Submeter exige item. Retirada e entrega exigem um cliente ativo; entrega também exige o snapshot do endereço. O nome do cliente permanece no pedido para preservar seu histórico. Taxa de entrega e desconto participam do total, e o desconto nunca pode superar o valor bruto. O ciclo segue `Submitted -> Accepted -> InProduction -> Ready -> Completed`. Cancelamento bloqueia novas alterações. Tickets de cozinha separam a produção por estação.
+
+### Clientes
+
+`Customer` pertence a uma unidade, exige nome, telefone com 8 a 15 dígitos e data de nascimento válida de até 120 anos. O telefone é normalizado e sua unicidade por unidade é protegida na Application e no banco. A situação ativa controla a seleção em novos pedidos. O cadastro fornece a base para cashback e cupons de aniversário, sem antecipar regras comerciais ainda não definidas.
 
 ### Pagamentos
 

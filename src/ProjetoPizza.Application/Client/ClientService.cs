@@ -576,7 +576,7 @@ public sealed class ClientService(
             .Where(extra => extra.IsActive)
             .ToArray();
         var products = context.Products
-            .Where(product => product.UnitId == unitId && product.IsActive)
+            .Where(product => product.UnitId == unitId && product.IsActive && product.IsAvailable)
             .OrderBy(product => product.DisplayOrder)
             .ThenBy(product => product.Name)
             .ToArray()
@@ -743,6 +743,21 @@ public sealed class ClientService(
                     .ToArray()),
             operationSettings.ServiceFeePercentage.Value);
     }
+
+    internal ClientCatalogDto CreateAdministrativeCatalog(RestaurantUnitId unitId) => CreateCatalog(unitId);
+
+    internal void AddAdministrativeOrderItem(
+        Order order,
+        SubmitClientOrderItemCommand requestedItem,
+        RestaurantUnitId unitId,
+        IDictionary<string, List<OrderItem>> stationItems) =>
+        AddOrderItem(order, requestedItem, unitId, stationItems);
+
+    internal Task CreateAdministrativeKitchenTicketsAsync(
+        Order order,
+        IReadOnlyDictionary<string, List<OrderItem>> stationItems,
+        CancellationToken cancellationToken) =>
+        CreateKitchenTicketsAsync(order, stationItems, cancellationToken);
 
     private void AddOrderItem(
         Order order,

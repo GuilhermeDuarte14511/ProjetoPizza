@@ -95,7 +95,8 @@ public sealed class Order : AggregateRoot<OrderId>
     public RestaurantUnitId UnitId { get; private set; }
     public long OrderNumber { get; private set; }
     public TableSessionId? TableSessionId { get; private set; }
-    public Guid? CustomerId { get; private set; }
+    public CustomerId? CustomerId { get; private set; }
+    public string? CustomerNameSnapshot { get; private set; }
     public SalesChannel SalesChannel { get; private set; }
     public FulfillmentType FulfillmentType { get; private set; }
     public OrderStatus Status { get; private set; }
@@ -106,6 +107,7 @@ public sealed class Order : AggregateRoot<OrderId>
     public Money Discount { get; private set; }
     public Money Total { get; private set; }
     public string? Notes { get; private set; }
+    public string? DeliveryAddressSnapshot { get; private set; }
     public DateTimeOffset? PlacedAt { get; private set; }
     public EmployeeId? CreatedByEmployeeId { get; private set; }
     public DeviceId? CreatedByDeviceId { get; private set; }
@@ -114,6 +116,33 @@ public sealed class Order : AggregateRoot<OrderId>
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
+
+    public void AssignCustomer(CustomerId customerId, string customerName)
+    {
+        EnsureMutable();
+        CustomerId = customerId;
+        CustomerNameSnapshot = Guard.Required(customerName, nameof(customerName), 120);
+        Touch();
+    }
+
+    public void ConfigureDeliveryAddress(string address)
+    {
+        EnsureMutable();
+        if (FulfillmentType != FulfillmentType.Delivery)
+        {
+            throw new BusinessRuleException("order.delivery_address", "Only delivery orders accept a delivery address.");
+        }
+
+        DeliveryAddressSnapshot = Guard.Required(address, nameof(address), 500);
+        Touch();
+    }
+
+    public void SetNotes(string? notes)
+    {
+        EnsureMutable();
+        Notes = string.IsNullOrWhiteSpace(notes) ? null : Guard.Required(notes, nameof(notes), 1000);
+        Touch();
+    }
 
     public OrderItem AddItem(
         OrderItemId id,
@@ -156,6 +185,16 @@ public sealed class Order : AggregateRoot<OrderId>
         if (_items.Count == 0)
         {
             throw new BusinessRuleException("order.items_required", "An order must have at least one item.");
+        }
+
+        if (FulfillmentType != FulfillmentType.DineIn && (!CustomerId.HasValue || string.IsNullOrWhiteSpace(CustomerNameSnapshot)))
+        {
+            throw new BusinessRuleException("order.customer_required", "Pickup and delivery orders require a customer.");
+        }
+
+        if (FulfillmentType == FulfillmentType.Delivery && string.IsNullOrWhiteSpace(DeliveryAddressSnapshot))
+        {
+            throw new BusinessRuleException("order.delivery_address_required", "Delivery orders require a delivery address.");
         }
 
         Status = OrderStatus.Submitted;

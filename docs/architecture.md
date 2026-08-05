@@ -25,7 +25,7 @@ flowchart LR
 
 ## Módulos
 
-`Core`, `Identity`, `Catalog`, `Inventory`, `Dining`, `Ordering`, `Production`, `Billing`, `Cashier`, `Devices`, `Notifications` e `Audit` são namespaces/diretórios internos. Todos compartilham a mesma implantação e o mesmo PostgreSQL, mas cada um possui schema próprio.
+`Core`, `Identity`, `Customers`, `Catalog`, `Inventory`, `Dining`, `Ordering`, `Production`, `Billing`, `Cashier`, `Devices`, `Notifications` e `Audit` são namespaces/diretórios internos. Todos compartilham a mesma implantação e o mesmo PostgreSQL, mas cada um possui schema próprio.
 
 ## Fluxo administrativo
 
@@ -53,6 +53,8 @@ O Web ativa uma única vez um dispositivo previamente provisionado e vinculado a
 O mesmo token autentica `POST /api/v1/client/telemetry`. O tablet envia nível de bateria, carregamento, conectividade e versão a cada minuto e quando esses valores mudam; a API determina o IP observado e delega ao agregado `Device` a validação do percentual entre 0 e 100. Navegadores que não oferecem a Battery Status API enviam bateria desconhecida sem inventar um valor.
 
 Preço e disponibilidade são sempre recalculados no servidor. O cliente envia apenas identificadores, quantidades e personalizações; valores exibidos no navegador nunca são aceitos como autoridade. O identificador criado pelo cliente para o pedido funciona como chave de idempotência e evita duplicação em tentativas repetidas.
+
+O pedido administrativo reutiliza a mesma composição e precificação do cardápio. O Web envia cliente, atendimento, itens, personalizações, observações e desconto; a Application resolve catálogo e taxa padrão, aplica os invariantes do agregado, cria tickets por estação e devolve uma projeção autoritativa da comanda. A impressão é apenas uma apresentação dessa projeção e não altera o pedido.
 
 ## Implantação local no cliente
 

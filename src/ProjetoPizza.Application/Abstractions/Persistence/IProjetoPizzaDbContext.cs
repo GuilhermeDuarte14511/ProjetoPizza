@@ -3,6 +3,7 @@ using ProjetoPizza.Domain.Billing;
 using ProjetoPizza.Domain.Cashier;
 using ProjetoPizza.Domain.Catalog;
 using ProjetoPizza.Domain.Core;
+using ProjetoPizza.Domain.Customers;
 using ProjetoPizza.Domain.Devices;
 using ProjetoPizza.Domain.Dining;
 using ProjetoPizza.Domain.Identity;
@@ -18,6 +19,7 @@ public interface IProjetoPizzaDbContext
     IQueryable<OperationSettings> OperationSettings { get; }
     IQueryable<PizzaSettings> PizzaSettings { get; }
     IQueryable<Employee> Employees { get; }
+    IQueryable<Customer> Customers { get; }
     IQueryable<Category> Categories { get; }
     IQueryable<Product> Products { get; }
     IQueryable<ProductExtra> ProductExtras { get; }

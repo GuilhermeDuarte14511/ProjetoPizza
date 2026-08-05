@@ -134,6 +134,23 @@ export const roleSchema = z.object({
   userCount: z.number(),
 })
 
+export const customerSchema = z.object({
+  id: z.string().optional(),
+  name: requiredText('O nome').max(120, 'O nome deve ter no máximo 120 caracteres.'),
+  phone: requiredText('O telefone')
+    .refine((value) => {
+      const digits = value.replace(/\D/g, '')
+      return digits.length >= 8 && digits.length <= 15
+    }, 'Informe um telefone válido.'),
+  birthDate: requiredText('A data de nascimento')
+    .refine((value) => {
+      const date = new Date(`${value}T00:00:00`)
+      const now = new Date()
+      return !Number.isNaN(date.getTime()) && date <= now && date.getFullYear() >= now.getFullYear() - 120
+    }, 'Informe uma data de nascimento válida.'),
+  isActive: z.boolean(),
+})
+
 export type ProductFormData = z.infer<typeof productSchema>
 export type CategoryFormData = z.infer<typeof categorySchema>
 export type CrustFormData = z.infer<typeof crustSchema>
@@ -147,3 +164,4 @@ export type CashCloseFormData = z.infer<typeof cashCloseSchema>
 export type PaymentFormData = z.infer<typeof paymentSchema>
 export type UserFormData = z.infer<typeof userSchema>
 export type RoleFormData = z.infer<typeof roleSchema>
+export type CustomerFormData = z.infer<typeof customerSchema>

@@ -2,6 +2,7 @@ namespace ProjetoPizza.Domain.SharedKernel;
 
 public readonly record struct RestaurantUnitId(Guid Value) { public static RestaurantUnitId New() => new(Guid.NewGuid()); }
 public readonly record struct EmployeeId(Guid Value) { public static EmployeeId New() => new(Guid.NewGuid()); }
+public readonly record struct CustomerId(Guid Value) { public static CustomerId New() => new(Guid.NewGuid()); }
 public readonly record struct CategoryId(Guid Value) { public static CategoryId New() => new(Guid.NewGuid()); }
 public readonly record struct ProductId(Guid Value) { public static ProductId New() => new(Guid.NewGuid()); }
 public readonly record struct ProductVariantId(Guid Value) { public static ProductVariantId New() => new(Guid.NewGuid()); }

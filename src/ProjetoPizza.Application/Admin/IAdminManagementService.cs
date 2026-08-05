@@ -3,6 +3,9 @@ namespace ProjetoPizza.Application.Admin;
 public interface IAdminManagementService
 {
     Task<IReadOnlyCollection<OrderManagementDto>> ListOrdersAsync(CancellationToken cancellationToken);
+    Task<OrderReceiptDto?> GetOrderReceiptAsync(Guid id, CancellationToken cancellationToken);
+    Task<AdministrativeOrderCatalogDto> GetOrderCatalogAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<CustomerDto>> ListCustomersAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<PizzaCrustDto>> ListPizzaCrustsAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<IngredientDto>> ListIngredientsAsync(CancellationToken cancellationToken);
     Task<UnitSettingsDto> GetUnitSettingsAsync(CancellationToken cancellationToken);
@@ -26,6 +29,8 @@ public interface IAdminManagementService
     Task<CommandResultDto> SavePizzaCrustAsync(SavePizzaCrustCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SaveIngredientAsync(SaveIngredientCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SavePizzaFlavorAsync(SavePizzaFlavorCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CustomerDto> SaveCustomerAsync(SaveCustomerCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CreatedOrderDto> CreateOrderAsync(CreateAdministrativeOrderCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> OpenTableAsync(OpenTableCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RequestBillAsync(Guid tableSessionId, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> TransitionOrderAsync(Guid id, string transition, Guid identityUserId, CancellationToken cancellationToken);

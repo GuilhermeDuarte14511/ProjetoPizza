@@ -1,11 +1,13 @@
 using FluentAssertions;
 using ProjetoPizza.Application.Abstractions.Persistence;
 using ProjetoPizza.Application.Admin;
+using ProjetoPizza.Application.Client;
 using ProjetoPizza.Domain.Audit;
 using ProjetoPizza.Domain.Billing;
 using ProjetoPizza.Domain.Cashier;
 using ProjetoPizza.Domain.Catalog;
 using ProjetoPizza.Domain.Core;
+using ProjetoPizza.Domain.Customers;
 using ProjetoPizza.Domain.Devices;
 using ProjetoPizza.Domain.Dining;
 using ProjetoPizza.Domain.Identity;
@@ -76,6 +78,65 @@ public sealed class AdminCashierServiceTests
             .Which.Rule.Should().Be("cash_register.unavailable");
     }
 
+    [Fact]
+    public async Task CreateOrder_Delivery_ShouldUseServerPriceFeeDiscountAndCreateTicket()
+    {
+        var fixture = CreateFixture();
+        var settings = new OperationSettings(fixture.Context.RestaurantUnitItems.Single().Id);
+        settings.Update(false, true, true, new Percentage(10), new Money(8), true, true, 5);
+        var customer = new Customer(
+            CustomerId.New(),
+            fixture.Context.RestaurantUnitItems.Single().Id,
+            "Ana Souza",
+            "(11) 99999-8877",
+            new DateOnly(1992, 5, 18));
+        var product = new Product(
+            ProductId.New(),
+            fixture.Context.RestaurantUnitItems.Single().Id,
+            CategoryId.New(),
+            "REFRI-01",
+            "Refrigerante",
+            ProductType.Standard,
+            new Money(15));
+        var station = new ProductionStation(
+            ProductionStationId.New(),
+            fixture.Context.RestaurantUnitItems.Single().Id,
+            "Cozinha quente",
+            "HOT",
+            15);
+        fixture.Context.OperationSettingItems = [settings];
+        fixture.Context.CustomerItems = [customer];
+        fixture.Context.ProductItems = [product];
+        fixture.Context.ProductionStationItems = [station];
+        var service = new AdminManagementService(fixture.Context);
+        var requestId = Guid.NewGuid();
+
+        var result = await service.CreateOrderAsync(
+            new CreateAdministrativeOrderCommand(
+                requestId,
+                customer.Id.Value,
+                "Delivery",
+                "Rua das Flores, 27 - Centro",
+                3,
+                "Entregar na portaria.",
+                [new SubmitClientOrderItemCommand(product.Id.Value, 2, "Sem gelo.", null)]),
+            fixture.IdentityUserId,
+            CancellationToken.None);
+
+        result.Id.Should().Be(requestId);
+        result.Total.Should().Be(35);
+        result.Receipt.Subtotal.Should().Be(30);
+        result.Receipt.DeliveryFee.Should().Be(8);
+        result.Receipt.Discount.Should().Be(3);
+        result.Receipt.CustomerPhone.Should().Be("11999998877");
+        result.Receipt.DeliveryAddress.Should().Be("Rua das Flores, 27 - Centro");
+        result.Receipt.Items.Should().ContainSingle().Which.Notes.Should().Be("Sem gelo.");
+        fixture.Context.OrderEntities.Should().ContainSingle();
+        fixture.Context.KitchenTicketEntities.Should().ContainSingle();
+        fixture.Context.KitchenTicketItemEntities.Should().ContainSingle();
+        fixture.Context.AuditLogItems.Should().ContainSingle(log => log.Action == "CreateAdministrative");
+    }
+
     private static CashierFixture CreateFixture()
     {
         var identityUserId = Guid.NewGuid();
@@ -113,16 +174,24 @@ public sealed class AdminCashierServiceTests
         public RestaurantUnit[] RestaurantUnitItems { get; init; } = [];
         public Employee[] EmployeeItems { get; init; } = [];
         public CashRegister[] CashRegisterItems { get; init; } = [];
+        public OperationSettings[] OperationSettingItems { get; set; } = [];
+        public Customer[] CustomerItems { get; set; } = [];
+        public Product[] ProductItems { get; set; } = [];
+        public ProductionStation[] ProductionStationItems { get; set; } = [];
         public List<CashShift> CashShiftItems { get; } = [];
+        public List<Order> OrderEntities { get; } = [];
+        public List<KitchenTicket> KitchenTicketEntities { get; } = [];
+        public List<KitchenTicketItem> KitchenTicketItemEntities { get; } = [];
         public List<AuditLog> AuditLogItems { get; } = [];
         public int SaveChangesCalls { get; private set; }
 
         public IQueryable<RestaurantUnit> RestaurantUnits => RestaurantUnitItems.AsQueryable();
-        public IQueryable<OperationSettings> OperationSettings => Array.Empty<OperationSettings>().AsQueryable();
+        public IQueryable<OperationSettings> OperationSettings => OperationSettingItems.AsQueryable();
         public IQueryable<PizzaSettings> PizzaSettings => Array.Empty<PizzaSettings>().AsQueryable();
         public IQueryable<Employee> Employees => EmployeeItems.AsQueryable();
+        public IQueryable<Customer> Customers => CustomerItems.AsQueryable();
         public IQueryable<Category> Categories => Array.Empty<Category>().AsQueryable();
-        public IQueryable<Product> Products => Array.Empty<Product>().AsQueryable();
+        public IQueryable<Product> Products => ProductItems.AsQueryable();
         public IQueryable<ProductExtra> ProductExtras => Array.Empty<ProductExtra>().AsQueryable();
         public IQueryable<ProductImage> ProductImages => Array.Empty<ProductImage>().AsQueryable();
         public IQueryable<PizzaSize> PizzaSizes => Array.Empty<PizzaSize>().AsQueryable();
@@ -141,14 +210,14 @@ public sealed class AdminCashierServiceTests
         public IQueryable<TableSessionTable> TableSessionTables => Array.Empty<TableSessionTable>().AsQueryable();
         public IQueryable<ServiceCallType> ServiceCallTypes => Array.Empty<ServiceCallType>().AsQueryable();
         public IQueryable<ServiceCall> ServiceCalls => Array.Empty<ServiceCall>().AsQueryable();
-        public IQueryable<Order> Orders => Array.Empty<Order>().AsQueryable();
+        public IQueryable<Order> Orders => OrderEntities.AsQueryable();
         public IQueryable<OrderItem> OrderItems => Array.Empty<OrderItem>().AsQueryable();
         public IQueryable<OrderItemPizza> OrderItemPizzas => Array.Empty<OrderItemPizza>().AsQueryable();
         public IQueryable<OrderItemPizzaFlavor> OrderItemPizzaFlavors => Array.Empty<OrderItemPizzaFlavor>().AsQueryable();
         public IQueryable<OrderItemModifier> OrderItemModifiers => Array.Empty<OrderItemModifier>().AsQueryable();
-        public IQueryable<ProductionStation> ProductionStations => Array.Empty<ProductionStation>().AsQueryable();
-        public IQueryable<KitchenTicket> KitchenTickets => Array.Empty<KitchenTicket>().AsQueryable();
-        public IQueryable<KitchenTicketItem> KitchenTicketItems => Array.Empty<KitchenTicketItem>().AsQueryable();
+        public IQueryable<ProductionStation> ProductionStations => ProductionStationItems.AsQueryable();
+        public IQueryable<KitchenTicket> KitchenTickets => KitchenTicketEntities.AsQueryable();
+        public IQueryable<KitchenTicketItem> KitchenTicketItems => KitchenTicketItemEntities.AsQueryable();
         public IQueryable<Bill> Bills => Array.Empty<Bill>().AsQueryable();
         public IQueryable<BillSplit> BillSplits => Array.Empty<BillSplit>().AsQueryable();
         public IQueryable<PaymentMethod> PaymentMethods => Array.Empty<PaymentMethod>().AsQueryable();
@@ -164,6 +233,9 @@ public sealed class AdminCashierServiceTests
         public void Add<TEntity>(TEntity entity) where TEntity : class
         {
             if (entity is CashShift shift) CashShiftItems.Add(shift);
+            if (entity is Order order) OrderEntities.Add(order);
+            if (entity is KitchenTicket kitchenTicket) KitchenTicketEntities.Add(kitchenTicket);
+            if (entity is KitchenTicketItem kitchenTicketItem) KitchenTicketItemEntities.Add(kitchenTicketItem);
             if (entity is AuditLog auditLog) AuditLogItems.Add(auditLog);
         }
 

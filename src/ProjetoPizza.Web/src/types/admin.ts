@@ -169,10 +169,69 @@ export interface ManagedOrder {
   channel: string
   fulfillment: string
   status: string
+  customerId?: string
+  customerName?: string
+  deliveryAddress?: string
+  notes?: string
   total: number
   createdAt: string
   placedAt?: string
   items: OrderLine[]
+}
+
+export interface Customer {
+  id: string
+  name: string
+  phone: string
+  birthDate: string
+  isActive: boolean
+  createdAt: string
+}
+
+export interface AdministrativeOrderCatalog {
+  catalog: ClientCatalog
+  defaultDeliveryFee: number
+}
+
+export interface CreateAdministrativeOrder extends SubmitClientOrder {
+  customerId: string
+  fulfillment: 'Pickup' | 'Delivery'
+  deliveryAddress?: string
+  discountAmount: number
+}
+
+export interface CreatedOrder {
+  id: string
+  number: number
+  status: string
+  total: number
+  receipt: OrderReceipt
+}
+
+export interface OrderReceipt {
+  id: string
+  number: number
+  customerName: string
+  customerPhone: string
+  fulfillment: string
+  deliveryAddress?: string
+  placedAt: string
+  subtotal: number
+  deliveryFee: number
+  discount: number
+  total: number
+  notes?: string
+  items: OrderReceiptItem[]
+}
+
+export interface OrderReceiptItem {
+  id: string
+  name: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+  notes?: string
+  details: string[]
 }
 
 export interface PizzaCrust {
@@ -363,3 +422,4 @@ export interface AuthenticationResult {
   expiresAt: string
   user: AuthenticatedUser
 }
+import type { ClientCatalog, SubmitClientOrder } from './client'

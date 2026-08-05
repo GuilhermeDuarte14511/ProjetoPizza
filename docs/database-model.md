@@ -8,6 +8,7 @@ O PostgreSQL é compartilhado por todo o monólito, com um único `ProjetoPizzaD
 | --- | --- | --- |
 | `core` | Unidade e configurações | `restaurant_units`, `operation_settings`, `pizza_settings` |
 | `identity` | Usuários, papéis e colaboradores | `users`, `roles`, tabelas auxiliares do Identity, `employees` |
+| `customers` | Cadastro de clientes | `customers` |
 | `catalog` | Cardápio e composição de pizza | `categories`, `products`, `product_variants`, `product_images`, `pizza_sizes`, `pizza_flavors`, `pizza_flavor_prices`, `pizza_crusts`, `pizza_crust_prices`, `ingredients`, `pizza_flavor_ingredients` |
 | `inventory` | Estoque e fichas técnicas | `inventory_items`, `stock_balances`, `stock_movements`, `recipes`, `recipe_items` |
 | `dining` | Salão, mesas e atendimento | `dining_areas`, `restaurant_tables`, `table_sessions`, `table_session_tables`, `waiter_assignments`, `service_call_types`, `service_calls` |
@@ -28,6 +29,8 @@ erDiagram
     TABLE_SESSION ||--o{ TABLE_SESSION_TABLE : agrega
     RESTAURANT_TABLE ||--o{ TABLE_SESSION_TABLE : participa
     TABLE_SESSION ||--o{ ORDER : recebe
+    RESTAURANT_UNIT ||--o{ CUSTOMER : cadastra
+    CUSTOMER ||--o{ ORDER : realiza
     ORDER ||--|{ ORDER_ITEM : contem
     ORDER_ITEM ||--o| ORDER_ITEM_PIZZA : detalha
     ORDER_ITEM_PIZZA ||--|{ ORDER_ITEM_PIZZA_FLAVOR : compoe
@@ -55,6 +58,8 @@ Uma mesa não armazena o estado visual `Livre`, `Ocupada`, `Chamando`, `Conta so
 - `dining.table_sessions.opened_by_device_id` e `dining.table_session_tables.linked_by_device_id` registram comandas iniciadas pelo tablet. As colunas equivalentes de funcionário tornam-se opcionais, mas o Domain exige exatamente um ator de abertura/vínculo.
 - `catalog.pizza_crust_prices` mantém, por tamanho, o valor da borda inteira (`additional_price`) e de uma meia borda (`half_additional_price`).
 - `ordering.order_item_pizzas` preserva o modo da borda (`None`, `Whole` ou `Split`) e os snapshots das duas metades, garantindo que pedidos antigos não mudem quando o catálogo for alterado.
+- `customers.customers` normaliza o telefone em dígitos e possui índice único por unidade/telefone. Nome, telefone, nascimento e situação formam o perfil reutilizável para pedidos e futuras campanhas.
+- `ordering.orders.customer_id` referencia o cadastro, enquanto `customer_name_snapshot` e `delivery_address_snapshot` preservam os dados operacionais do pedido mesmo após uma edição do cliente.
 - Agregados operacionais usam a coluna de sistema PostgreSQL `xmin` como token de concorrência otimista.
 - A Application impõe regras que dependem de leitura, como impedir associação simultânea de uma mesa a duas sessões abertas; o banco preserva a estrutura e o caso de uso coordena a transação.
 - `cash_shifts.active_slot` é uma coluna calculada: vale `1` apenas para estados `Open` ou `Closing`. O índice único `ix_cash_shifts_single_active` impede duas aberturas simultâneas, inclusive em concorrência entre requisições.
@@ -68,7 +73,7 @@ Uma mesa não armazena o estado visual `Livre`, `Ocupada`, `Chamando`, `Conta so
 
 ## Migrations
 
-As migrations, incluindo `InitialCreate`, `AddCashShiftOpeningGuard`, `IntegrateClientOperations`, `AddPizzaIngredientExtras`, `AddPizzaFlavorExtrasAndDeviceProvisioning` e `AddProductComplements`, com seu snapshot, ficam em `src/ProjetoPizza.Infrastructure/Persistence/Migrations`. Para recriar um banco local:
+As migrations, incluindo `InitialCreate`, `AddCashShiftOpeningGuard`, `IntegrateClientOperations`, `AddPizzaIngredientExtras`, `AddPizzaFlavorExtrasAndDeviceProvisioning`, `AddProductComplements` e `AddCustomersAndAdministrativeOrdering`, com seu snapshot, ficam em `src/ProjetoPizza.Infrastructure/Persistence/Migrations`. Para recriar um banco local:
 
 ```powershell
 dotnet tool restore
@@ -81,4 +86,4 @@ Para aplicar a migration e carregar dados de demonstração idempotentes:
 dotnet run --project src/ProjetoPizza.Api -- --seed
 ```
 
-O seed é exclusivo para desenvolvimento e utiliza identificadores fixos. Ele inclui unidade, configurações, categorias, produtos, pizzas, ingredientes adicionais com preço, estoque, 32 mesas, estações, formas de pagamento, dispositivos e amostras operacionais identificadas com `[DEV]`.
+O seed é exclusivo para desenvolvimento e utiliza identificadores fixos. Ele inclui unidade, configurações, clientes, categorias, produtos, pizzas, ingredientes adicionais com preço, estoque, 32 mesas, estações, formas de pagamento, dispositivos e amostras operacionais identificadas com `[DEV]`.

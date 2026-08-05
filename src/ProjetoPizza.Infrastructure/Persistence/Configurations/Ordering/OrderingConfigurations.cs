@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProjetoPizza.Domain.Catalog;
 using ProjetoPizza.Domain.Core;
+using ProjetoPizza.Domain.Customers;
 using ProjetoPizza.Domain.Devices;
 using ProjetoPizza.Domain.Dining;
 using ProjetoPizza.Domain.Identity;
@@ -22,6 +23,8 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(entity => entity.TableSessionId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new TableSessionId(value.Value) : null);
         builder.Property(entity => entity.CreatedByEmployeeId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new EmployeeId(value.Value) : null);
         builder.Property(entity => entity.CreatedByDeviceId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new DeviceId(value.Value) : null);
+        builder.Property(entity => entity.CustomerId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new CustomerId(value.Value) : null);
+        builder.Property(entity => entity.CustomerNameSnapshot).HasMaxLength(120);
         builder.Property(entity => entity.SalesChannel).HasConversion<string>().HasMaxLength(30);
         builder.Property(entity => entity.FulfillmentType).HasConversion<string>().HasMaxLength(30);
         builder.Property(entity => entity.Status).HasConversion<string>().HasMaxLength(30);
@@ -32,6 +35,7 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(entity => entity.Discount).HasMoneyConversion();
         builder.Property(entity => entity.Total).HasMoneyConversion();
         builder.Property(entity => entity.Notes).HasMaxLength(1000);
+        builder.Property(entity => entity.DeliveryAddressSnapshot).HasMaxLength(500);
         builder.Property(entity => entity.CancellationReason).HasMaxLength(500);
         builder.HasIndex(entity => new { entity.UnitId, entity.Status, entity.PlacedAt });
         builder.HasIndex(entity => new { entity.UnitId, entity.OrderNumber }).IsUnique();
@@ -39,6 +43,7 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.HasOne<TableSession>().WithMany().HasForeignKey(entity => entity.TableSessionId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Employee>().WithMany().HasForeignKey(entity => entity.CreatedByEmployeeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Device>().WithMany().HasForeignKey(entity => entity.CreatedByDeviceId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Customer>().WithMany().HasForeignKey(entity => entity.CustomerId).OnDelete(DeleteBehavior.Restrict);
         builder.Navigation(entity => entity.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Property<uint>("xmin").IsRowVersion();
     }
