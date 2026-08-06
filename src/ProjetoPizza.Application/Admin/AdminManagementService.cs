@@ -64,7 +64,7 @@ public sealed class AdminManagementService(
         cancellationToken.ThrowIfCancellationRequested();
         var unit = GetUnit();
         var catalog = new ClientService(context, numberGenerator).CreateAdministrativeCatalog(unit.Id);
-        var settings = context.OperationSettings.Single(candidate => candidate.UnitId == unit.Id);
+        var settings = context.OperationSettings.Single();
         return Task.FromResult(new AdministrativeOrderCatalogDto(catalog, settings.DefaultDeliveryFee.Amount));
     }
 
@@ -165,7 +165,7 @@ public sealed class AdminManagementService(
         var customer = context.Customers.SingleOrDefault(candidate =>
             candidate.Id == customerId && candidate.UnitId == unit.Id && candidate.IsActive)
             ?? throw new BusinessRuleException("order.customer", "The selected customer is unavailable.");
-        var settings = context.OperationSettings.Single(candidate => candidate.UnitId == unit.Id);
+        var settings = context.OperationSettings.Single();
         if (!settings.AllowOrdersWithoutOpenCashShift &&
             !context.CashShifts.Any(shift => shift.Status == CashShiftStatus.Open))
         {
