@@ -1,6 +1,8 @@
 namespace ProjetoPizza.Api.Realtime;
 
-public sealed class AdminRealtimeFilter(IAdminEventPublisher publisher) : IEndpointFilter
+public sealed class AdminRealtimeFilter(
+    IAdminEventPublisher adminPublisher,
+    IClientEventPublisher clientPublisher) : IEndpointFilter
 {
     private static readonly HashSet<string> MutatingMethods =
         [HttpMethods.Post, HttpMethods.Put, HttpMethods.Patch, HttpMethods.Delete];
@@ -25,8 +27,12 @@ public sealed class AdminRealtimeFilter(IAdminEventPublisher publisher) : IEndpo
             ? segments[2]
             : "unknown";
 
-        await publisher.PublishAsync(
+        await adminPublisher.PublishAsync(
             new AdminResourceChanged(resource, request.Method, source, DateTimeOffset.UtcNow),
+            context.HttpContext.RequestAborted);
+
+        await clientPublisher.PublishAsync(
+            new ClientResourceChanged(resource, request.Method, DateTimeOffset.UtcNow),
             context.HttpContext.RequestAborted);
 
         return result;

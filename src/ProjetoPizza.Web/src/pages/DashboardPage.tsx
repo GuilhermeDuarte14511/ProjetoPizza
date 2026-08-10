@@ -1,4 +1,4 @@
-import { BellRing, CircleDollarSign, Clock3, RefreshCw, ShoppingCart, TableProperties } from 'lucide-react'
+import { AlertTriangle, BellRing, CircleDollarSign, Clock3, CreditCard, RefreshCw, ShoppingCart, TableProperties, Trophy } from 'lucide-react'
 import { MetricCard } from '../components/ui/MetricCard'
 import { PageHeader } from '../components/ui/PageHeader'
 import { StatusBadge } from '../components/ui/StatusBadge'
@@ -53,8 +53,44 @@ export function DashboardPage() {
           {!serviceCalls.length && <div className="empty-inline">Nenhum chamado ativo no momento.</div>}
         </article>
       </section>
+      <section className="dashboard-grid dashboard-insights">
+        <article className="surface-card">
+          <div className="card-heading"><div><h2>Status das mesas</h2><p>Distribuição atual do salão.</p></div><TableProperties size={22} /></div>
+          <div className="table-status-grid">
+            <StatusMetric label="Livres" value={dashboard.tableStatus.free} tone="success" />
+            <StatusMetric label="Ocupadas" value={dashboard.tableStatus.occupied} tone="neutral" />
+            <StatusMetric label="Chamando" value={dashboard.tableStatus.calling} tone="danger" />
+            <StatusMetric label="Aguardando pagamento" value={dashboard.tableStatus.awaitingPayment} tone="warning" />
+          </div>
+        </article>
+        <article className="surface-card">
+          <div className="card-heading"><div><h2>Top 5 mais vendidos</h2><p>Itens dos pedidos realizados hoje.</p></div><Trophy size={22} /></div>
+          <ol className="ranking-list">
+            {dashboard.topProducts.map((product, index) => <li key={product.name}><span className="ranking-position">{index + 1}</span><strong>{product.name}</strong><span>{product.quantity} un.</span></li>)}
+          </ol>
+          {!dashboard.topProducts.length && <div className="empty-inline">Nenhuma venda registrada hoje.</div>}
+        </article>
+        <article className="surface-card">
+          <div className="card-heading"><div><h2>Receitas por pagamento</h2><p>Pagamentos confirmados no dia.</p></div><CreditCard size={22} /></div>
+          <div className="payment-breakdown">
+            {dashboard.paymentMethods.map((method) => <div key={method.name}><span><strong>{method.name}</strong><small>{method.percentage.toLocaleString('pt-BR')}%</small></span><strong>{currency.format(method.total)}</strong><progress max="100" value={method.percentage} aria-label={`${method.name}: ${method.percentage}%`} /></div>)}
+          </div>
+          {!dashboard.paymentMethods.length && <div className="empty-inline">Nenhum pagamento confirmado hoje.</div>}
+        </article>
+        <article className="surface-card">
+          <div className="card-heading"><div><h2>Alertas de estoque</h2><p>Itens no mínimo ou abaixo dele.</p></div><AlertTriangle size={22} /></div>
+          <div className="stock-alert-list">
+            {dashboard.stockAlerts.map((item) => <a href="/admin/inventory" key={item.inventoryItemId}><AlertTriangle size={17} /><span><strong>{item.name}</strong><small>Disponível: {item.availableQuantity.toLocaleString('pt-BR')} {item.unitOfMeasure} · mínimo {item.minimumStock.toLocaleString('pt-BR')}</small></span></a>)}
+          </div>
+          {!dashboard.stockAlerts.length && <div className="empty-inline">Estoque dentro dos níveis mínimos.</div>}
+        </article>
+      </section>
     </>
   )
+}
+
+function StatusMetric({ label, value, tone }: { label: string; value: number; tone: string }) {
+  return <div className={`table-status-item ${tone}`}><strong>{value}</strong><span>{label}</span></div>
 }
 
 function formatCallTime(value: string) {

@@ -3,6 +3,7 @@ import {
   BellRing,
   BarChart3,
   BookOpen,
+  Boxes,
   ChefHat,
   ClipboardList,
   CreditCard,
@@ -21,6 +22,7 @@ import {
   WalletCards,
 } from 'lucide-react'
 import type { FormEvent, ReactNode } from 'react'
+import type { LucideIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useLocation } from 'wouter'
@@ -31,7 +33,8 @@ import { adminService } from '../../services/adminService'
 import { getAuthenticatedUser, hasPermission, logout } from '../../services/authSession'
 import { ViewTransitionLink } from '../ui/ViewTransitionLink'
 
-const navigation = [
+interface NavigationItem { to: string; label: string; icon: LucideIcon; permission?: string }
+const navigation: Array<{ label: string; items: NavigationItem[] }> = [
   {
     label: 'Operação',
     items: [
@@ -46,19 +49,20 @@ const navigation = [
     label: 'Financeiro',
     items: [
       { to: '/admin/cashier', label: 'Caixa', icon: WalletCards },
-      { to: '/admin/payments', label: 'Pagamentos', icon: CreditCard },
-      { to: '/admin/reports', label: 'Relatórios', icon: BarChart3 },
+      { to: '/admin/payments', label: 'Pagamentos', icon: CreditCard, permission: 'admin:read' },
+      { to: '/admin/reports', label: 'Relatórios', icon: BarChart3, permission: 'admin:read' },
     ],
   },
   {
     label: 'Gestão',
     items: [
-      { to: '/admin/catalog/products', label: 'Cardápio', icon: BookOpen },
-      { to: '/admin/devices', label: 'Tablets', icon: MonitorSmartphone },
+      { to: '/admin/catalog/products', label: 'Cardápio', icon: BookOpen, permission: 'admin:read' },
+      { to: '/admin/devices', label: 'Tablets', icon: MonitorSmartphone, permission: 'admin:read' },
       { to: '/admin/customers', label: 'Clientes', icon: UserRound },
-      { to: '/admin/users', label: 'Usuários', icon: Users },
-      { to: '/admin/audit', label: 'Auditoria', icon: History },
-      { to: '/admin/settings/general', label: 'Configurações', icon: Settings },
+      { to: '/admin/inventory', label: 'Estoque', icon: Boxes, permission: 'admin:read' },
+      { to: '/admin/users', label: 'Usuários', icon: Users, permission: 'admin:read' },
+      { to: '/admin/audit', label: 'Auditoria', icon: History, permission: 'admin:read' },
+      { to: '/admin/settings/general', label: 'Configurações', icon: Settings, permission: 'admin:read' },
     ],
   },
 ]
@@ -77,6 +81,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const { data: cashShift, isLoading: isCashShiftLoading } = useQuery({
     queryKey: queryKeys.cashShift,
     queryFn: ({ signal }) => adminService.cashShift(signal),
+    placeholderData: null,
   })
   const isCashShiftOpen = cashShift?.status === 'Open'
   const { data: serviceCalls = [] } = useQuery({
@@ -142,7 +147,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           {navigation.map((group) => (
             <section key={group.label}>
               <p className="nav-group">{group.label}</p>
-              {group.items.map(({ to, label, icon: Icon }) => (
+              {group.items.filter((item) => !item.permission || hasPermission(item.permission)).map(({ to, label, icon: Icon }) => (
                 <ViewTransitionLink
                   key={to}
                   href={to}

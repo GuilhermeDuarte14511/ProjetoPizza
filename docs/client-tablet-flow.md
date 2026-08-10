@@ -36,6 +36,7 @@ Os arquivos em `designs` são somente referência. As variantes `*_atualizada` o
 - O tablet abre a comanda quando o cliente informa de 1 a 50 pessoas. Só uma comanda ativa pode existir por mesa. Quando configurado, o turno de caixa continua sendo exigido para enviar pedidos.
 - Solicitações duplicadas de atendimento com o mesmo motivo são rejeitadas enquanto estiverem pendentes.
 - O carrinho é isolado pelo identificador da sessão da mesa e é limpo quando a operação determina a limpeza após o fechamento.
+- As mudanças chegam por SignalR autenticado pela sessão opaca do dispositivo. Uma reconciliação a cada 60 segundos substitui o polling de 8 segundos; durante falha de rede, o shell, o último catálogo e o carrinho continuam disponíveis e nenhuma resposta autenticada é gravada pelo service worker.
 - Após o bootstrap inicial, a atualização periódica usa `/api/v1/client/state`; o catálogo completo não é transferido a cada ciclo.
 - A telemetria usa `POST /api/v1/client/telemetry` com a mesma credencial do aparelho. O envio ocorre a cada minuto, ao recuperar visibilidade e em mudanças de bateria ou conectividade; a ausência da Battery Status API resulta em percentual desconhecido.
 

@@ -693,6 +693,7 @@ public sealed class ClientServiceTests
         public IQueryable<DeviceSession> DeviceSessions => DeviceSessionItems.AsQueryable();
         public List<DeviceProvisioning> DeviceProvisioningItems { get; } = [];
         public IQueryable<DeviceProvisioning> DeviceProvisionings => DeviceProvisioningItems.AsQueryable();
+        public IQueryable<PrintJob> PrintJobs => Array.Empty<PrintJob>().AsQueryable();
         public IQueryable<AuditLog> AuditLogs => AuditLogItems.AsQueryable();
 
         public void Add<TEntity>(TEntity entity) where TEntity : class

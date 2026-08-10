@@ -37,6 +37,13 @@ public sealed class CashRegister : AggregateRoot<CashRegisterId>
     public string Name { get; private set; } = string.Empty;
     public string Code { get; private set; } = string.Empty;
     public bool IsActive { get; private set; }
+
+    public void Update(string name, string code, bool isActive)
+    {
+        Name = Guard.Required(name, nameof(name), 100);
+        Code = Guard.Required(code, nameof(code), 30);
+        IsActive = isActive;
+    }
 }
 
 public sealed class CashShift : AggregateRoot<CashShiftId>

@@ -118,7 +118,7 @@ test('exporta a lista de pedidos como PDF tabular', async ({ page }) => {
   await expect(page.getByText('Relatório PDF gerado')).toBeVisible()
 })
 
-test('cria pedido de entrega e apresenta a comanda térmica', async ({ page }) => {
+test('cria pedido de entrega e apresenta o comprovante térmico', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
   await page.getByLabel('Senha', { exact: true }).fill('senha-local')
@@ -133,12 +133,37 @@ test('cria pedido de entrega e apresenta a comanda térmica', async ({ page }) =
   await page.getByLabel('Observações').fill('Entregar na portaria.')
   await page.getByRole('button', { name: 'Confirmar e enviar para produção' }).click()
 
-  const receipt = page.getByRole('dialog', { name: /Pedido #\d+ criado/ })
-  await expect(receipt.getByText('COMANDA NÃO FISCAL')).toBeVisible()
-  await expect(receipt.getByText('1x Batata Frita Especial')).toBeVisible()
+  const receipt = page.getByRole('dialog', { name: /Pedido #\d+ confirmado/ })
+  await expect(receipt.getByText('COMPROVANTE NÃO FISCAL')).toBeVisible()
+  await expect(receipt.getByText('1x Batata Frita Especial').first()).toBeVisible()
   await expect(receipt.getByText('Rua das Flores, 27 - Centro')).toBeVisible()
   await expect(receipt.getByText('Taxa de entrega')).toBeVisible()
-  await expect(receipt.getByRole('button', { name: 'Imprimir comanda' })).toBeVisible()
+  await expect(receipt.getByRole('button', { name: 'Imprimir comprovante' })).toBeVisible()
+})
+
+test('recebe pedido de balcão e separa comprovante e comanda da cozinha', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
+  await page.getByLabel('Senha', { exact: true }).fill('senha-local')
+  await page.getByRole('button', { name: 'Entrar no sistema' }).click()
+
+  await page.goto('/admin/orders/new')
+  await page.getByLabel('Buscar cliente').fill('Cliente Delivery')
+  await page.getByRole('button', { name: /Cliente Delivery/ }).click()
+  await page.locator('.admin-order-products article', { hasText: 'Batata Frita Especial' }).getByRole('button', { name: 'Adicionar' }).click()
+  await page.getByLabel('Observações').fill('Sem bacon e embalagem separada.')
+  await page.getByRole('button', { name: 'Revisar e receber pagamento' }).click()
+
+  const checkout = page.getByRole('dialog', { name: 'Revisar e receber pedido' })
+  await expect(checkout.getByRole('radio', { name: 'Dinheiro' })).toHaveAttribute('aria-checked', 'true')
+  await checkout.getByRole('button', { name: /Confirmar pagamento de/ }).click()
+
+  const printing = page.getByRole('dialog', { name: /Pedido #\d+ confirmado/ })
+  await expect(printing.getByText('*** DOCUMENTO SEM VALOR FISCAL ***')).toBeVisible()
+  await expect(printing.getByText('SEM VALORES · USO DA PRODUÇÃO')).toBeVisible()
+  await printing.getByRole('button', { name: 'Imprimir comprovante' }).click()
+  await printing.getByRole('button', { name: 'Imprimir comanda' }).click()
+  await expect(printing.getByText('Enfileirado')).toHaveCount(2)
 })
 
 test('fecha e abre um novo turno de caixa pelo fluxo completo', async ({ page }, testInfo) => {

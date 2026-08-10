@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using ProjetoPizza.Domain.Audit;
 using ProjetoPizza.Application.Identity;
 using ProjetoPizza.Domain.Identity;
 using ProjetoPizza.Domain.SharedKernel;
@@ -38,8 +39,10 @@ public sealed class IdentityAccessService(
 
         if (!await userManager.CheckPasswordAsync(user, command.Password))
         {
+            await userManager.AccessFailedAsync(user);
             return null;
         }
+        await userManager.ResetAccessFailedCountAsync(user);
 
         var employee = context.Employees.SingleOrDefault(item => item.IdentityUserId == user.Id && item.IsActive);
         if (employee is null)
@@ -77,6 +80,7 @@ public sealed class IdentityAccessService(
                 user.Email ?? employee.Email,
                 employee.DisplayName,
                 employee.EmployeeCode,
+                employee.Phone,
                 employee.IsActive,
                 employee.LastAccessAt,
                 (await userManager.GetRolesAsync(user)).ToArray()));
@@ -112,9 +116,22 @@ public sealed class IdentityAccessService(
         return result;
     }
 
-    public async Task<Guid> SaveUserAsync(SaveUserCommand command, CancellationToken cancellationToken)
+    public async Task<Guid> SaveUserAsync(
+        SaveUserCommand command,
+        Guid actorIdentityUserId,
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var actor = context.Employees.Single(item => item.IdentityUserId == actorIdentityUserId && item.IsActive);
+        var unitId = context.RestaurantUnits.Single().Id;
+        var employeeCode = command.EmployeeCode.Trim().ToUpperInvariant();
+        if (context.Employees.Any(employee =>
+                employee.UnitId == unitId &&
+                employee.EmployeeCode == employeeCode &&
+                (!command.Id.HasValue || employee.IdentityUserId != command.Id.Value)))
+        {
+            throw new BusinessRuleException("identity.employee_code", "Employee code is already in use.");
+        }
         var normalizedRoles = command.Roles.Select(role => role.Trim()).Where(role => role.Length > 0).Distinct().ToArray();
         foreach (var role in normalizedRoles)
         {
@@ -137,12 +154,21 @@ public sealed class IdentityAccessService(
             EnsureSucceeded(updateResult);
             if (!string.IsNullOrWhiteSpace(command.Password))
             {
-                if (await userManager.HasPasswordAsync(user))
+                var errors = new List<IdentityError>();
+                foreach (var validator in userManager.PasswordValidators)
                 {
-                    EnsureSucceeded(await userManager.RemovePasswordAsync(user));
+                    var validation = await validator.ValidateAsync(userManager, user, command.Password);
+                    errors.AddRange(validation.Errors);
                 }
 
-                EnsureSucceeded(await userManager.AddPasswordAsync(user, command.Password));
+                if (errors.Count > 0)
+                {
+                    EnsureSucceeded(IdentityResult.Failed(errors.ToArray()));
+                }
+
+                user.PasswordHash = userManager.PasswordHasher.HashPassword(user, command.Password);
+                user.SecurityStamp = Guid.NewGuid().ToString();
+                EnsureSucceeded(await userManager.UpdateAsync(user));
             }
         }
         else
@@ -161,18 +187,17 @@ public sealed class IdentityAccessService(
                 LockoutEnabled = true
             };
             EnsureSucceeded(await userManager.CreateAsync(user, command.Password));
-            var unitId = context.RestaurantUnits.Single().Id;
             employee = new Employee(
                 EmployeeId.New(),
                 unitId,
                 user.Id,
                 command.DisplayName,
                 command.Email,
-                command.EmployeeCode);
+                employeeCode);
             context.Employees.Add(employee);
         }
 
-        employee.UpdateProfile(command.DisplayName, command.DisplayName, command.Email, command.Phone);
+        employee.UpdateProfile(command.DisplayName, command.DisplayName, command.Email, employeeCode, command.Phone);
         if (command.IsActive)
         {
             employee.Activate();
@@ -193,13 +218,26 @@ public sealed class IdentityAccessService(
             EnsureSucceeded(await userManager.AddToRolesAsync(user, normalizedRoles));
         }
 
+        context.AuditLogs.Add(new AuditLog(
+            AuditLogId.New(),
+            unitId,
+            "Identity",
+            command.Id.HasValue ? "UpdateUser" : "CreateUser",
+            "IdentityUser",
+            user.Id.ToString(),
+            actor.Id));
         await context.SaveChangesAsync(cancellationToken);
         return user.Id;
     }
 
-    public async Task<Guid> SaveRoleAsync(SaveRoleCommand command, CancellationToken cancellationToken)
+    public async Task<Guid> SaveRoleAsync(
+        SaveRoleCommand command,
+        Guid actorIdentityUserId,
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var actor = context.Employees.Single(item => item.IdentityUserId == actorIdentityUserId && item.IsActive);
+        var unitId = context.RestaurantUnits.Single().Id;
         var permissions = command.Permissions.Distinct().ToArray();
         if (permissions.Any(permission => !AllowedPermissions.Contains(permission, StringComparer.Ordinal)))
         {
@@ -233,6 +271,15 @@ public sealed class IdentityAccessService(
             EnsureSucceeded(await roleManager.AddClaimAsync(role, new Claim("permission", permission)));
         }
 
+        context.AuditLogs.Add(new AuditLog(
+            AuditLogId.New(),
+            unitId,
+            "Identity",
+            command.Id.HasValue ? "UpdateRole" : "CreateRole",
+            "IdentityRole",
+            role.Id.ToString(),
+            actor.Id));
+        await context.SaveChangesAsync(cancellationToken);
         return role.Id;
     }
 

@@ -11,6 +11,22 @@ import type {
 } from '../types/client'
 
 const sessionTokenKey = 'projeto-pizza.client-session'
+const bootstrapCacheKey = 'projeto-pizza.client-bootstrap'
+
+export function getCachedClientBootstrap() {
+  const value = localStorage.getItem(bootstrapCacheKey)
+  if (!value) return undefined
+  try {
+    return JSON.parse(value) as ClientBootstrap
+  } catch {
+    localStorage.removeItem(bootstrapCacheKey)
+    return undefined
+  }
+}
+
+export function cacheClientBootstrap(bootstrap: ClientBootstrap) {
+  localStorage.setItem(bootstrapCacheKey, JSON.stringify(bootstrap))
+}
 
 export function getClientSessionToken() {
   const persistentToken = localStorage.getItem(sessionTokenKey)
@@ -31,6 +47,7 @@ export function setClientSessionToken(token: string) {
 
 export function clearClientSessionToken() {
   localStorage.removeItem(sessionTokenKey)
+  localStorage.removeItem(bootstrapCacheKey)
   sessionStorage.removeItem(sessionTokenKey)
 }
 
@@ -76,6 +93,7 @@ async function activateClient(credentials: { deviceCode?: string; provisioningTo
     body: JSON.stringify(credentials),
   })
   setClientSessionToken(activation.token)
+  cacheClientBootstrap(activation.bootstrap)
   return activation.bootstrap
 }
 
@@ -89,6 +107,10 @@ export function activateClientProvisioning(provisioningToken: string) {
 
 export function getClientBootstrap(signal?: AbortSignal) {
   return clientRequest<ClientBootstrap>('/api/v1/client/bootstrap', {}, signal)
+    .then((bootstrap) => {
+      cacheClientBootstrap(bootstrap)
+      return bootstrap
+    })
 }
 
 export function getClientState(signal?: AbortSignal) {

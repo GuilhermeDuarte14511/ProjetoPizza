@@ -18,9 +18,16 @@ RUN dotnet publish src/ProjetoPizza.Api/ProjetoPizza.Api.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
+    && apt-get install -y --no-install-recommends ca-certificates curl gnupg libgssapi-krb5-2 \
+    && curl --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+        | gpg --dearmor --output /usr/share/keyrings/postgresql.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+        > /etc/apt/sources.list.d/postgresql.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-17 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/publish .
+RUN mkdir -p /app/backups /app/media && chown -R $APP_UID:$APP_UID /app/backups /app/media
 
 ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080

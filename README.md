@@ -9,11 +9,11 @@ Fundação full stack de uma plataforma de gestão para pizzaria, construída co
 - Um `DbContext` PostgreSQL com schemas por módulo, migrations versionadas, índices, FKs e seed idempotente.
 - Agregados e invariantes para mesas, sessões, pedidos, pizzas, contas, pagamentos e caixa.
 - Endpoints administrativos de leitura e escrita, autenticação Identity/JWT, autorização por claims, rate limit, OpenAPI, health check, Problem Details e CORS.
-- Painel React responsivo com todas as telas administrativas inventariadas e jornada do tablet da mesa em `/mesa`.
+- Painel React responsivo, jornada do tablet em `/mesa` e pedido externo com rastreio em `/delivery`.
 - Cadastros administrativos em modais acessíveis, feedback por toast, erros HTTP tratados, enums localizados em português e transições com suporte a movimento reduzido.
 - Fluxos operacionais para mesas, clientes, pedidos presenciais/telefone, cozinha, catálogo, pagamentos, caixa, dispositivos, usuários, perfis e configurações.
-- Criação administrativa de pedidos para retirada ou entrega, com taxa configurável, desconto, produção e comanda não fiscal de 80 mm para impressão térmica.
-- Jornada do cliente com ativação segura do tablet, cardápio real, montagem de pizza com adicionais por sabor, carrinho, acompanhamento, chamado e solicitação de conta.
+- Pedidos administrativos e externos para retirada/entrega, checkout atômico de balcão, despacho com entregador, rastreio, comprovante sem valor fiscal e comanda de cozinha em filas ESC/POS TCP independentes.
+- Jornada do cliente com SignalR, fallback de 60 segundos, shell offline, cardápio com imagens, carrinho persistido, acompanhamento, chamado e solicitação de conta.
 - POC navegável do ciclo completo do tablet em `poc/tablet-flow-demo.html`, incluindo espera, pedido, acompanhamento e encerramento.
 - Testes unitários de Domain/Application e teste de integração PostgreSQL preparado com Testcontainers.
 - Inventário completo das referências visuais e documentação das decisões.
@@ -671,4 +671,4 @@ npm run test:e2e
 
 ## Limites desta entrega
 
-Integrações com adquirentes TEF/Pix, impressão física, `pg_dump`/armazenamento de backups e notificações externas dependem da escolha de provedores. A aplicação administrativa não simula sucesso dessas integrações. Consulte [a cobertura administrativa](docs/admin-screen-coverage.md) e as decisões pendentes em `docs/architecture.md`.
+Integrações com adquirentes TEF/Pix e notificações externas dependem da escolha de provedores. Impressoras ESC/POS de rede já usam fila física; USB/spooler dependem do equipamento. NFC-e só pode ser habilitada após UF, credenciamento, certificado, CSC e homologação, conforme [prontidão fiscal](docs/fiscal-readiness.md). A aplicação não simula autorização fiscal nem de pagamento. O backup PostgreSQL por `pg_dump` está disponível no painel e deve ser complementado por cópia externa e teste periódico de restauração.

@@ -19,6 +19,7 @@ public sealed record UserAdminDto(
     string Email,
     string DisplayName,
     string EmployeeCode,
+    string? Phone,
     bool IsActive,
     DateTimeOffset? LastAccessAt,
     IReadOnlyCollection<string> Roles);
@@ -49,6 +50,6 @@ public interface IIdentityAccessService
     Task<AuthenticationResultDto?> AuthenticateAsync(LoginCommand command, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<UserAdminDto>> ListUsersAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<RoleAdminDto>> ListRolesAsync(CancellationToken cancellationToken);
-    Task<Guid> SaveUserAsync(SaveUserCommand command, CancellationToken cancellationToken);
-    Task<Guid> SaveRoleAsync(SaveRoleCommand command, CancellationToken cancellationToken);
+    Task<Guid> SaveUserAsync(SaveUserCommand command, Guid actorIdentityUserId, CancellationToken cancellationToken);
+    Task<Guid> SaveRoleAsync(SaveRoleCommand command, Guid actorIdentityUserId, CancellationToken cancellationToken);
 }

@@ -55,7 +55,7 @@ O histórico administrativo traduz ação, módulo e entidade para português. P
 
 A rota `/admin/orders/new` conduz o atendimento em três blocos: seleção ou cadastro rápido do cliente, escolha entre retirada e entrega e montagem dos itens com o mesmo catálogo/compositor de pizzas do tablet. Em entrega, o endereço é obrigatório e a prévia usa `DefaultDeliveryFee`; preço, disponibilidade, taxa e desconto são confirmados novamente pela API. O identificador da tentativa é mantido durante o envio para impedir pedido duplicado em uma repetição da requisição.
 
-Após a confirmação, a interface abre uma comanda não fiscal com largura de 80 mm. Ela contém cliente, telefone, tipo de atendimento, endereço, quantidades, valores unitários, sabores, bordas, remoções, adicionais, observações, subtotal, taxa, desconto e total. A mesma comanda pode ser reaberta na listagem de pedidos. O botão usa `window.print()`, e o CSS de impressão oculta o painel para enviar somente a comanda ao driver térmico.
+Após a confirmação, a interface mantém a prévia não fiscal de 80 mm. Na listagem, o botão de impressão cria um trabalho durável e o worker envia ESC/POS pela rede local, com tentativas, erro visível e corte automático quando suportado pelo equipamento.
 
 ## Relatórios
 
@@ -63,11 +63,13 @@ A área financeira exporta um arquivo Excel (`.xlsx`) em vez de imprimir a pági
 
 As listas operacionais de pedidos, mesas, pagamentos e auditoria são exportadas em PDF tabular, sem capturar a página web. O componente compartilhado inclui identidade da unidade, resumo dos filtros e indicadores, cabeçalho repetido, quebra automática de páginas, rodapé com autoria/data e numeração. A geração utiliza `jsPDF` e `jspdf-autotable`, carregados sob demanda para não aumentar o carregamento inicial das telas.
 
-O indicador de caixa do cabeçalho consome a mesma consulta e a mesma chave de cache da tela de caixa. Assim, ele mostra aberto somente quando existe um turno com status `Open` e permanece sincronizado após fechamento ou atualização em tempo real.
+O indicador de caixa do cabeçalho consome a mesma consulta e a mesma chave de cache da tela de caixa. Assim, ele mostra aberto somente quando existe um turno com status `Open` e permanece sincronizado após fechamento ou atualização em tempo real. A tela também lista fechamentos anteriores, operador de abertura/fechamento, valores contado/esperado, diferença, observações e movimentos do turno.
 
 O cabeçalho também oferece um teste local do som de notificações. Pedidos criados pelo tablet são distinguidos de transições administrativas pelo campo de origem do evento e disparam um alerta de dois tons em qualquer rota; a primeira interação ou o próprio botão de volume libera o `AudioContext` conforme a política do navegador.
 
 A tela de caixa apresenta a abertura quando não existe turno corrente. O modal acessível seleciona um caixa ativo, recebe o fundo inicial com máscara monetária e mostra sucesso ou erro tratado. A resposta da abertura e o fechamento atualizam imediatamente a chave compartilhada, mantendo página e cabeçalho consistentes sem recarregar o navegador.
+
+O dashboard segue os blocos gerenciais do Stitch: situação detalhada das mesas, Top 5 do dia, receitas por forma de pagamento e alertas vindos dos saldos reais de estoque. O período diário é calculado pela API no fuso configurado na unidade. A rota `/admin/inventory` cadastra itens e estoque mínimo e registra entradas/baixas por ajustes auditados.
 
 ## Tablet do cliente
 
@@ -77,7 +79,11 @@ O layout preserva os tokens creme e terracota, alvos de toque de pelo menos 52 p
 
 Em tablets com largura de até 900 px, as categorias usam uma barra lateral compacta de ícones. O botão `Categorias` expande a navegação sobre o conteúdo sem alterar a grade, e ela volta ao estado compacto ao selecionar uma categoria, tocar fora ou pressionar `Esc`. Em celulares, a mesma navegação funciona como gaveta lateral, preservando toda a largura do cardápio.
 
-O carrinho fica no navegador, separado pelo `tableSessionId`, e não atravessa atendimentos. Ao confirmar, a API recalcula preço e disponibilidade. O acompanhamento consulta somente o estado dinâmico a cada ciclo, inclusive na espera para detectar abertura administrativa. A espera segue `designs/telaIdle`: fotografia do forno em tela cheia, identificação da mesa e conexão, chamada central e sugestão do chef; o toque abre a escolha de pessoas. Ao concluir o pagamento, limpa o carrinho, apresenta confetes/check animados, QR Code de avaliação, Instagram e contador de 20 segundos antes de voltar à espera sem apagar a credencial do aparelho. Todas as animações respeitam `prefers-reduced-motion`.
+O carrinho fica no navegador, separado pelo `tableSessionId`, e não atravessa atendimentos. Ao confirmar, a API recalcula preço e disponibilidade. SignalR atualiza o estado imediatamente e uma reconciliação a cada 60 segundos cobre reconexões; o service worker preserva o shell e o último catálogo sem armazenar respostas autenticadas da API. A espera segue `designs/telaIdle`: fotografia do forno em tela cheia, identificação da mesa e conexão, chamada central e sugestão do chef; o toque abre a escolha de pessoas. Ao concluir o pagamento, limpa o carrinho, apresenta confetes/check animados, QR Code de avaliação, Instagram e contador de 20 segundos antes de voltar à espera sem apagar a credencial do aparelho. Todas as animações respeitam `prefers-reduced-motion`.
+
+## Delivery externo
+
+`/delivery` oferece cardápio, montagem de pizza, checkout sem adquirência, endereço, taxa calculada pelo servidor e rastreio. O admin despacha somente pedidos prontos, informa o entregador e confirma a entrega. O token público é aleatório/idempotente no cliente e somente seu hash é gravado no banco.
 
 Enquanto autenticado, o tablet publica telemetria a cada minuto e em mudanças relevantes. A leitura de bateria usa a Battery Status API quando disponível; em navegadores ou contextos que não a expõem, a API mantém o percentual como desconhecido e ainda registra presença, conectividade, versão e último contato.
 

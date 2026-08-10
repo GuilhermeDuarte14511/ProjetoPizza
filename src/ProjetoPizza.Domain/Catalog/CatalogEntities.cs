@@ -180,6 +180,14 @@ public sealed class ProductImage : Entity<ProductImageId>
     public string AltText { get; private set; } = string.Empty;
     public int DisplayOrder { get; private set; }
     public bool IsPrimary { get; private set; }
+
+    public void Update(string url, string altText, int displayOrder = 0, bool isPrimary = true)
+    {
+        Url = Guard.Required(url, nameof(url), 1000);
+        AltText = Guard.Required(altText, nameof(altText), 160);
+        DisplayOrder = (int)Guard.NonNegative(displayOrder, nameof(displayOrder));
+        IsPrimary = isPrimary;
+    }
 }
 
 public sealed class PizzaSize : AggregateRoot<PizzaSizeId>
@@ -298,6 +306,13 @@ public sealed class PizzaFlavor : AggregateRoot<PizzaFlavorId>
     {
         SoldOutReason = null;
         IsAvailable = true;
+    }
+
+    public void SetImage(string? imageUrl)
+    {
+        ImageUrl = string.IsNullOrWhiteSpace(imageUrl)
+            ? null
+            : Guard.Required(imageUrl, nameof(imageUrl), 1000);
     }
 
     public void Update(

@@ -9,6 +9,10 @@ export interface Dashboard {
   ordersInProduction: number
   pendingServiceCalls: number
   recentOrders: DashboardOrder[]
+  tableStatus: { free: number; occupied: number; calling: number; awaitingPayment: number }
+  topProducts: Array<{ name: string; quantity: number }>
+  paymentMethods: Array<{ name: string; total: number; percentage: number }>
+  stockAlerts: Array<{ inventoryItemId: string; name: string; availableQuantity: number; minimumStock: number; unitOfMeasure: string }>
 }
 
 export interface DashboardOrder {
@@ -76,8 +80,11 @@ export interface Product {
   categoryId: string
   sku: string
   name: string
+  description?: string
   type: string
   basePrice: number
+  preparationTimeMinutes: number
+  imageUrl?: string
   isActive: boolean
   isAvailable: boolean
   isFeatured: boolean
@@ -120,6 +127,7 @@ export interface PizzaFlavor {
   isActive: boolean
   isAvailable: boolean
   soldOutReason?: string
+  imageUrl?: string
   extras: PizzaFlavorExtra[]
 }
 
@@ -172,6 +180,10 @@ export interface ManagedOrder {
   customerId?: string
   customerName?: string
   deliveryAddress?: string
+  deliveryStatus?: string
+  deliveryDriverName?: string
+  dispatchedAt?: string
+  deliveredAt?: string
   notes?: string
   total: number
   createdAt: string
@@ -208,6 +220,17 @@ export interface CreatedOrder {
   receipt: OrderReceipt
 }
 
+export interface CounterPaymentDraft {
+  paymentMethodId: string
+  receivedAmount: number
+  externalReference?: string
+}
+
+export interface CheckoutCounterOrder {
+  order: CreateAdministrativeOrder
+  payment: CounterPaymentDraft
+}
+
 export interface OrderReceipt {
   id: string
   number: number
@@ -220,8 +243,19 @@ export interface OrderReceipt {
   deliveryFee: number
   discount: number
   total: number
+  paidAmount: number
+  changeAmount: number
   notes?: string
   items: OrderReceiptItem[]
+  payments: OrderReceiptPayment[]
+}
+
+export interface OrderReceiptPayment {
+  method: string
+  amount: number
+  receivedAmount: number
+  changeAmount: number
+  paidAt: string
 }
 
 export interface OrderReceiptItem {
@@ -299,6 +333,7 @@ export interface CashRegister {
   id: string
   name: string
   code: string
+  isActive: boolean
 }
 
 export interface CashShift {
@@ -314,14 +349,39 @@ export interface CashShift {
   movements: CashMovement[]
 }
 
+export interface CashShiftHistory extends CashShift {
+  closedBy?: string
+  closedAt?: string
+  closingNotes?: string
+}
+
 export interface PaymentMethod {
   id: string
   code: string
   name: string
   requiresExternalReference: boolean
   allowsChange: boolean
+  displayOrder: number
   isActive: boolean
 }
+
+export interface DiningAreaSetting { id: string; name: string; displayOrder: number; isActive: boolean }
+export interface RestaurantTableSetting { id: string; diningAreaId: string; areaName: string; number: number; name: string; capacity: number; displayOrder: number; isActive: boolean }
+export interface ProductionStationSetting { id: string; name: string; code: string; targetPreparationMinutes: number; displayOrder: number; isActive: boolean }
+export interface ServiceCallTypeSetting { id: string; code: string; name: string; isActive: boolean }
+export interface InventoryItem {
+  id: string
+  name: string
+  sku: string
+  unitOfMeasure: string
+  minimumStock: number
+  currentQuantity: number
+  reservedQuantity: number
+  availableQuantity: number
+  isLowStock: boolean
+  isActive: boolean
+}
+export interface DatabaseBackup { fileName: string; createdAt: string; sizeBytes: number; type: string }
 
 export interface Payment {
   id: string
@@ -362,6 +422,23 @@ export interface Device {
   lastSeenAt?: string
   linkedTableId?: string
   isLocked: boolean
+  printerPort?: number
+  paperWidthMm?: number
+  autoPrintKitchenTickets?: boolean
+  autoPrintCustomerReceipts?: boolean
+  autoPrintFiscalDocuments?: boolean
+}
+
+export interface PrintJob {
+  id: string
+  printerId: string
+  printerName: string
+  documentType: string
+  status: string
+  attempts: number
+  lastError?: string
+  createdAt: string
+  completedAt?: string
 }
 
 export interface DeviceProvisioning {
@@ -397,6 +474,7 @@ export interface AdminUser {
   email: string
   displayName: string
   employeeCode: string
+  phone?: string
   isActive: boolean
   lastAccessAt?: string
   roles: string[]

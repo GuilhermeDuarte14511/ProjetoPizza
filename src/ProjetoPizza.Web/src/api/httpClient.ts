@@ -79,3 +79,39 @@ export function postJson<TResponse, TBody>(path: string, body: TBody, signal?: A
 export function putJson<TResponse, TBody>(path: string, body: TBody, signal?: AbortSignal) {
   return requestJson<TResponse>(path, { method: 'PUT', body: JSON.stringify(body) }, signal)
 }
+
+export async function getBlob(path: string, signal?: AbortSignal) {
+  const token = getAccessToken()
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    signal,
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  })
+  if (!response.ok) throw new ApiError(response.status, 'Não foi possível baixar o arquivo solicitado.')
+  return response.blob()
+}
+
+export async function postForm<T>(path: string, form: FormData, signal?: AbortSignal): Promise<T> {
+  const token = getAccessToken()
+  let response: Response
+  try {
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      method: 'POST',
+      body: form,
+      signal,
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
+  } catch {
+    throw new ApiError(0, 'Network request failed.')
+  }
+  if (!response.ok) {
+    const problem = await response.json().catch(() => undefined) as { detail?: string; title?: string } | undefined
+    throw new ApiError(response.status, problem?.detail ?? problem?.title ?? 'Não foi possível enviar o arquivo.')
+  }
+  return response.json() as Promise<T>
+}
+
+export function resolveApiMediaUrl(url?: string) {
+  if (!url) return undefined
+  if (/^https?:\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:')) return url
+  return `${apiBaseUrl}${url.startsWith('/') ? '' : '/'}${url}`
+}

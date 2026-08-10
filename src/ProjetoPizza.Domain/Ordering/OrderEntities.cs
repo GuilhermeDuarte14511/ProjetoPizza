@@ -39,6 +39,16 @@ public enum FulfillmentType
     Pickup
 }
 
+public enum DeliveryStatus
+{
+    AwaitingPreparation,
+    ReadyForDispatch,
+    Dispatched,
+    Delivered,
+    Failed,
+    Cancelled
+}
+
 public enum OrderItemStatus
 {
     Pending,
@@ -108,6 +118,12 @@ public sealed class Order : AggregateRoot<OrderId>
     public Money Total { get; private set; }
     public string? Notes { get; private set; }
     public string? DeliveryAddressSnapshot { get; private set; }
+    public DeliveryStatus? DeliveryStatus { get; private set; }
+    public string? DeliveryDriverName { get; private set; }
+    public string? DeliveryTrackingTokenHash { get; private set; }
+    public DateTimeOffset? DispatchedAt { get; private set; }
+    public DateTimeOffset? DeliveredAt { get; private set; }
+    public string? DeliveryFailureReason { get; private set; }
     public DateTimeOffset? PlacedAt { get; private set; }
     public EmployeeId? CreatedByEmployeeId { get; private set; }
     public DeviceId? CreatedByDeviceId { get; private set; }
@@ -134,6 +150,18 @@ public sealed class Order : AggregateRoot<OrderId>
         }
 
         DeliveryAddressSnapshot = Guard.Required(address, nameof(address), 500);
+        Touch();
+    }
+
+    public void ConfigureDeliveryTracking(string trackingTokenHash)
+    {
+        EnsureMutable();
+        if (FulfillmentType != FulfillmentType.Delivery)
+        {
+            throw new BusinessRuleException("order.delivery_tracking", "Only delivery orders accept tracking tokens.");
+        }
+        DeliveryTrackingTokenHash = Guard.Required(trackingTokenHash, nameof(trackingTokenHash), 128);
+        DeliveryStatus = Ordering.DeliveryStatus.AwaitingPreparation;
         Touch();
     }
 
@@ -204,8 +232,50 @@ public sealed class Order : AggregateRoot<OrderId>
 
     public void Accept() => Transition(OrderStatus.Submitted, OrderStatus.Accepted);
     public void StartProduction() => Transition(OrderStatus.Accepted, OrderStatus.InProduction);
-    public void MarkReady() => Transition(OrderStatus.InProduction, OrderStatus.Ready);
+    public void MarkReady()
+    {
+        Transition(OrderStatus.InProduction, OrderStatus.Ready);
+        if (FulfillmentType == FulfillmentType.Delivery)
+        {
+            DeliveryStatus = Ordering.DeliveryStatus.ReadyForDispatch;
+        }
+    }
     public void Complete() => Transition(OrderStatus.Ready, OrderStatus.Completed);
+
+    public void DispatchDelivery(string driverName)
+    {
+        if (FulfillmentType != FulfillmentType.Delivery || Status != OrderStatus.Ready ||
+            DeliveryStatus != Ordering.DeliveryStatus.ReadyForDispatch)
+        {
+            throw new BusinessRuleException("order.delivery_dispatch", "Only a ready delivery order can be dispatched.");
+        }
+        DeliveryDriverName = Guard.Required(driverName, nameof(driverName), 120);
+        DeliveryStatus = Ordering.DeliveryStatus.Dispatched;
+        DispatchedAt = DateTimeOffset.UtcNow;
+        Touch();
+    }
+
+    public void CompleteDelivery()
+    {
+        if (FulfillmentType != FulfillmentType.Delivery || DeliveryStatus != Ordering.DeliveryStatus.Dispatched)
+        {
+            throw new BusinessRuleException("order.delivery_complete", "Only a dispatched delivery can be completed.");
+        }
+        DeliveryStatus = Ordering.DeliveryStatus.Delivered;
+        DeliveredAt = DateTimeOffset.UtcNow;
+        Complete();
+    }
+
+    public void FailDelivery(string reason)
+    {
+        if (FulfillmentType != FulfillmentType.Delivery || DeliveryStatus != Ordering.DeliveryStatus.Dispatched)
+        {
+            throw new BusinessRuleException("order.delivery_fail", "Only a dispatched delivery can fail.");
+        }
+        DeliveryFailureReason = Guard.Required(reason, nameof(reason), 500);
+        DeliveryStatus = Ordering.DeliveryStatus.Failed;
+        Touch();
+    }
 
     public void Cancel(string reason)
     {
@@ -216,6 +286,10 @@ public sealed class Order : AggregateRoot<OrderId>
 
         CancellationReason = Guard.Required(reason, nameof(reason), 500);
         Status = OrderStatus.Cancelled;
+        if (FulfillmentType == FulfillmentType.Delivery)
+        {
+            DeliveryStatus = Ordering.DeliveryStatus.Cancelled;
+        }
         CancelledAt = DateTimeOffset.UtcNow;
         Touch();
     }

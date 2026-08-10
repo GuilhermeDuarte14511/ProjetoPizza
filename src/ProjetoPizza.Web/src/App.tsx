@@ -17,13 +17,16 @@ const CategoriesPage = lazy(() => import('./pages/CategoriesPage').then((module)
 const CrustsPage = lazy(() => import('./pages/CrustsPage').then((module) => ({ default: module.CrustsPage })))
 const CustomersPage = lazy(() => import('./pages/CustomersPage').then((module) => ({ default: module.CustomersPage })))
 const IngredientsPage = lazy(() => import('./pages/IngredientsPage').then((module) => ({ default: module.IngredientsPage })))
+const InventoryPage = lazy(() => import('./pages/InventoryPage').then((module) => ({ default: module.InventoryPage })))
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((module) => ({ default: module.DashboardPage })))
 const DevicesPage = lazy(() => import('./pages/DevicesPage').then((module) => ({ default: module.DevicesPage })))
+const DeliveryPage = lazy(() => import('./pages/DeliveryPage').then((module) => ({ default: module.DeliveryPage })))
 const FinancialReportsPage = lazy(() => import('./pages/FinancialReportsPage').then((module) => ({ default: module.FinancialReportsPage })))
 const KitchenPage = lazy(() => import('./pages/KitchenPage').then((module) => ({ default: module.KitchenPage })))
 const LoginPage = lazy(() => import('./pages/LoginPage').then((module) => ({ default: module.LoginPage })))
 const NewOrderPage = lazy(() => import('./pages/NewOrderPage').then((module) => ({ default: module.NewOrderPage })))
 const OrdersPage = lazy(() => import('./pages/OrdersPage').then((module) => ({ default: module.OrdersPage })))
+const OperationalStructurePage = lazy(() => import('./pages/OperationalStructurePage').then((module) => ({ default: module.OperationalStructurePage })))
 const PaymentsPage = lazy(() => import('./pages/PaymentsPage').then((module) => ({ default: module.PaymentsPage })))
 const PizzaSettingsPage = lazy(() => import('./pages/PizzaSettingsPage').then((module) => ({ default: module.PizzaSettingsPage })))
 const PizzaFlavorsPage = lazy(() => import('./pages/PizzaFlavorsPage').then((module) => ({ default: module.PizzaFlavorsPage })))
@@ -66,6 +69,7 @@ export function App() {
         <Suspense fallback={<PageSkeleton />}>
           <Switch>
             <Route path="/mesa"><ClientTabletPage /></Route>
+            <Route path="/delivery"><DeliveryPage /></Route>
             <Route path="/login"><LoginPage /></Route>
             <Route path="/admin"><Redirect to="/admin/dashboard" /></Route>
             <Route path="/admin/dashboard"><AdminPage><DashboardPage /></AdminPage></Route>
@@ -87,6 +91,7 @@ export function App() {
             <Route path="/admin/reports"><AdminPage><FinancialReportsPage /></AdminPage></Route>
             <Route path="/admin/devices"><AdminPage><DevicesPage /></AdminPage></Route>
             <Route path="/admin/customers"><AdminPage><CustomersPage /></AdminPage></Route>
+            <Route path="/admin/inventory"><AdminPage><InventoryPage /></AdminPage></Route>
             <Route path="/admin/users"><AdminPage><UsersPage tab="users" /></AdminPage></Route>
             <Route path="/admin/roles"><AdminPage><UsersPage tab="roles" /></AdminPage></Route>
             <Route path="/admin/audit"><AdminPage><AuditPage /></AdminPage></Route>
@@ -96,6 +101,7 @@ export function App() {
             <Route path="/admin/settings/pizza-rules"><AdminPage><PizzaSettingsPage initialTab="rules" /></AdminPage></Route>
             <Route path="/admin/settings/printers"><AdminPage><SettingsPage section="printers" /></AdminPage></Route>
             <Route path="/admin/settings/backup"><AdminPage><SettingsPage section="backup" /></AdminPage></Route>
+            <Route path="/admin/settings/structure"><AdminPage><OperationalStructurePage /></AdminPage></Route>
             <Route><Redirect to="/login" /></Route>
           </Switch>
         </Suspense>

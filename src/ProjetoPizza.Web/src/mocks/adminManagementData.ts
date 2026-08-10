@@ -89,13 +89,13 @@ export const mockCashShift: CashShift = {
 }
 
 export const mockCashRegisters: CashRegister[] = [
-  { id: '50000000-0000-0000-0000-000000000001', name: 'Caixa Principal', code: 'CX-01' },
+  { id: '50000000-0000-0000-0000-000000000001', name: 'Caixa Principal', code: 'CX-01', isActive: true },
 ]
 
 export const mockPaymentMethods: PaymentMethod[] = [
-  { id: '70000000-0000-0000-0000-000000000001', code: 'CASH', name: 'Dinheiro', requiresExternalReference: false, allowsChange: true, isActive: true },
-  { id: '70000000-0000-0000-0000-000000000002', code: 'PIX', name: 'Pix', requiresExternalReference: true, allowsChange: false, isActive: true },
-  { id: '70000000-0000-0000-0000-000000000003', code: 'CREDIT', name: 'Cartão de Crédito', requiresExternalReference: true, allowsChange: false, isActive: true },
+  { id: '70000000-0000-0000-0000-000000000001', code: 'CASH', name: 'Dinheiro', requiresExternalReference: false, allowsChange: true, displayOrder: 1, isActive: true },
+  { id: '70000000-0000-0000-0000-000000000002', code: 'PIX', name: 'Pix', requiresExternalReference: true, allowsChange: false, displayOrder: 2, isActive: true },
+  { id: '70000000-0000-0000-0000-000000000003', code: 'CREDIT', name: 'Cartão de Crédito', requiresExternalReference: true, allowsChange: false, displayOrder: 3, isActive: true },
 ]
 
 export const mockPayments: Payment[] = [
@@ -129,7 +129,7 @@ export const mockDevices: Device[] = [
 ]
 
 export const mockUsers: AdminUser[] = [
-  { id: '20000000-0000-0000-0000-000000000002', email: 'admin@projetopizza.local', displayName: 'Administrador', employeeCode: 'DEV-ADMIN', isActive: true, lastAccessAt: new Date().toISOString(), roles: ['Administrator'] },
+  { id: '20000000-0000-0000-0000-000000000002', email: 'admin@projetopizza.local', displayName: 'Administrador', employeeCode: 'DEV-ADMIN', phone: '11999999999', isActive: true, lastAccessAt: new Date().toISOString(), roles: ['Administrator'] },
 ]
 
 export const mockRoles: AdminRole[] = [

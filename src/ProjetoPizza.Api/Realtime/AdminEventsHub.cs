@@ -3,5 +3,5 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace ProjetoPizza.Api.Realtime;
 
-[Authorize(Policy = "AdminAccess")]
+[Authorize(Policy = "AdminOrOperationsAccess")]
 public sealed class AdminEventsHub : Hub;

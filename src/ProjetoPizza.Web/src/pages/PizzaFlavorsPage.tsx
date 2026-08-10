@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Edit3, Plus, Save, Search } from 'lucide-react'
+import { Edit3, ImagePlus, Plus, Save, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { CurrencyInput } from '../components/ui/CurrencyInput'
@@ -16,6 +16,7 @@ import { adminService } from '../services/adminService'
 import { hasPermission } from '../services/authSession'
 import type { PizzaFlavor } from '../types/admin'
 import { getUserErrorMessage } from '../utils/errors'
+import { resolveApiMediaUrl } from '../api/httpClient'
 
 const emptyFlavor: PizzaFlavorFormData = {
   categoryId: '',
@@ -35,6 +36,8 @@ export function PizzaFlavorsPage() {
   const [editingId, setEditingId] = useState<string>()
   const [search, setSearch] = useState('')
   const [saving, setSaving] = useState(false)
+  const [imageFile, setImageFile] = useState<File>()
+  const [imagePreview, setImagePreview] = useState<string>()
   const toast = useToast()
   const form = useForm<PizzaFlavorFormData>({
     resolver: zodResolver(pizzaFlavorSchema),
@@ -60,6 +63,8 @@ export function PizzaFlavorsPage() {
         maxQuantity: extra.maxQuantity,
       })),
     } : emptyFlavor)
+    setImageFile(undefined)
+    setImagePreview(resolveApiMediaUrl(flavor?.imageUrl))
     setEditingId(flavor?.id ?? 'new')
   }
 
@@ -83,9 +88,12 @@ export function PizzaFlavorsPage() {
     setSaving(true)
     try {
       const result = await adminService.savePizzaFlavor(draft) as { id: string }
+      const flavorId = draft.id ?? result.id
+      const uploaded = imageFile ? await adminService.uploadPizzaFlavorImage(flavorId, imageFile) : undefined
       const savedFlavor = {
         ...draft,
-        id: draft.id ?? result.id,
+        id: flavorId,
+        imageUrl: uploaded?.status ?? flavors.find((item) => item.id === flavorId)?.imageUrl,
         extras: draft.extras.map((extra) => ({
           ...extra,
           ingredientName: ingredients.find((ingredient) => ingredient.id === extra.ingredientId)?.name ?? 'Ingrediente',
@@ -114,6 +122,16 @@ export function PizzaFlavorsPage() {
             <label className="field-label">Categoria<select aria-invalid={Boolean(form.formState.errors.categoryId)} {...form.register('categoryId')}><option value="">Selecione</option>{categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select><FieldError message={form.formState.errors.categoryId?.message} /></label>
             <label className="field-label">Tipo<select {...form.register('type')}><option value="Savory">Salgado</option><option value="Sweet">Doce</option></select></label>
             <label className="field-label wide">Descrição<input {...form.register('description')} /><FieldError message={form.formState.errors.description?.message} /></label>
+            <label className="menu-image-field">
+              <span>Imagem do sabor</span>
+              <span className="menu-image-preview">{imagePreview ? <img src={imagePreview} alt="Prévia do sabor" /> : <ImagePlus aria-hidden="true" />}</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => {
+                const file = event.target.files?.[0]
+                setImageFile(file)
+                if (file) setImagePreview(URL.createObjectURL(file))
+              }} />
+              <small>JPEG, PNG ou WebP · até 5 MB</small>
+            </label>
             <div className="check-stack"><label className="check-label"><input type="checkbox" {...form.register('isPremium')} /> Premium</label><label className="check-label"><input type="checkbox" {...form.register('isVegetarian')} /> Vegetariano</label></div>
             <div className="check-stack"><label className="check-label"><input type="checkbox" {...form.register('isActive')} /> Ativo</label><label className="check-label"><input type="checkbox" {...form.register('isAvailable')} /> Disponível</label></div>
             {!isAvailable && <label className="field-label wide">Motivo da indisponibilidade<input {...form.register('soldOutReason')} /><FieldError message={form.formState.errors.soldOutReason?.message} /></label>}
@@ -191,7 +209,7 @@ export function PizzaFlavorsPage() {
         <div className="responsive-table">
           <table>
             <thead><tr><th>Sabor</th><th>Categoria</th><th>Tipo</th><th>Características</th><th>Status</th><th aria-label="Ações" /></tr></thead>
-            <tbody>{visible.map((flavor) => <tr key={flavor.id}><td><strong>{flavor.name}</strong><small className="table-description">{flavor.description}</small></td><td>{categoryName(flavor.categoryId)}</td><td>{flavor.type === 'Sweet' ? 'Doce' : 'Salgado'}</td><td>{[flavor.isPremium && 'Premium', flavor.isVegetarian && 'Vegetariano', `${flavor.extras.length} adicionais`].filter(Boolean).join(' · ') || 'Tradicional'}</td><td><StatusBadge status={flavor.isAvailable ? 'Disponível' : 'Fora de estoque'} /></td><td>{hasPermission('admin:write') && <button className="icon-button" aria-label={`Editar ${flavor.name}`} onClick={() => edit(flavor)}><Edit3 size={17} /></button>}</td></tr>)}</tbody>
+            <tbody>{visible.map((flavor) => <tr key={flavor.id}><td><div className="product-cell"><span className="product-thumb">{flavor.imageUrl ? <img src={resolveApiMediaUrl(flavor.imageUrl)} alt="" /> : flavor.name.slice(0, 1)}</span><span><strong>{flavor.name}</strong><small className="table-description">{flavor.description}</small></span></div></td><td>{categoryName(flavor.categoryId)}</td><td>{flavor.type === 'Sweet' ? 'Doce' : 'Salgado'}</td><td>{[flavor.isPremium && 'Premium', flavor.isVegetarian && 'Vegetariano', `${flavor.extras.length} adicionais`].filter(Boolean).join(' · ') || 'Tradicional'}</td><td><StatusBadge status={flavor.isAvailable ? 'Disponível' : 'Fora de estoque'} /></td><td>{hasPermission('admin:write') && <button className="icon-button" aria-label={`Editar ${flavor.name}`} onClick={() => edit(flavor)}><Edit3 size={17} /></button>}</td></tr>)}</tbody>
           </table>
         </div>
       </article>

@@ -73,6 +73,7 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     public DbSet<Device> Devices => Set<Device>();
     public DbSet<DeviceSession> DeviceSessions => Set<DeviceSession>();
     public DbSet<DeviceProvisioning> DeviceProvisionings => Set<DeviceProvisioning>();
+    public DbSet<PrintJob> PrintJobs => Set<PrintJob>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
@@ -119,6 +120,7 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     IQueryable<Device> IProjetoPizzaDbContext.Devices => Devices;
     IQueryable<DeviceSession> IProjetoPizzaDbContext.DeviceSessions => DeviceSessions;
     IQueryable<DeviceProvisioning> IProjetoPizzaDbContext.DeviceProvisionings => DeviceProvisionings;
+    IQueryable<PrintJob> IProjetoPizzaDbContext.PrintJobs => PrintJobs;
     IQueryable<AuditLog> IProjetoPizzaDbContext.AuditLogs => AuditLogs;
 
     void IProjetoPizzaDbContext.Add<TEntity>(TEntity entity) => Add(entity);

@@ -54,7 +54,7 @@ O mesmo token autentica `POST /api/v1/client/telemetry`. O tablet envia nível d
 
 Preço e disponibilidade são sempre recalculados no servidor. O cliente envia apenas identificadores, quantidades e personalizações; valores exibidos no navegador nunca são aceitos como autoridade. O identificador criado pelo cliente para o pedido funciona como chave de idempotência e evita duplicação em tentativas repetidas.
 
-O pedido administrativo reutiliza a mesma composição e precificação do cardápio. O Web envia cliente, atendimento, itens, personalizações, observações e desconto; a Application resolve catálogo e taxa padrão, aplica os invariantes do agregado, cria tickets por estação e devolve uma projeção autoritativa da comanda. A impressão é apenas uma apresentação dessa projeção e não altera o pedido.
+O pedido administrativo reutiliza a mesma composição e precificação do cardápio. O Web envia cliente, atendimento, itens, personalizações, observações e desconto; a Application resolve catálogo e taxa padrão, aplica os invariantes do agregado, cria tickets por estação e devolve uma projeção autoritativa. Para retirada no balcão, o checkout persiste pedido, `Bill` vinculada ao `Order`, pagamento, movimento de caixa e tickets em uma única transação. A impressão do comprovante não altera o pedido; o envio da comanda confirma tickets novos e libera o pedido para produção.
 
 ## Implantação local no cliente
 
@@ -89,7 +89,7 @@ O empacotamento não move regras de negócio para Nginx, scripts ou containers. 
 - Estratégias de preço de pizza implementam `IPizzaPricingPolicy` no Domain. A Application seleciona a política configurada e recebe um `Money` já calculado pelo domínio.
 - Queries administrativas diretas e específicas; não há abstração de repositório genérico.
 - Mocks do Web são centralizados, tipados e usados somente como fallback de desenvolvimento.
-- Identity emite JWT local assinado, com roles e claims de permissão; políticas distintas protegem leitura e escrita administrativa/operacional.
+- Identity emite JWT local assinado, aplica bloqueio após falhas, preserva o telefone na edição e audita alterações de usuários/perfis; políticas distintas protegem leitura e escrita administrativa/operacional.
 - O frontend armazena apenas a sessão necessária e envia o bearer token pelo cliente HTTP centralizado.
 - O cache assíncrono do Web é centralizado no TanStack Query; SignalR apenas sinaliza mudanças e não transporta regras de domínio.
 - Eventos SignalR identificam o recurso, método e origem da mutação. O Web usa essa informação somente para revalidar o cache e tocar o aviso de pedido recebido, sem transportar nem decidir estado de domínio no Hub.
@@ -98,19 +98,26 @@ O empacotamento não move regras de negócio para Nginx, scripts ou containers. 
 - Pedidos do tablet obedecem ao estado da mesa e às configurações operacionais de caixa antes de criar tickets por estação.
 - Ingredientes adicionais são configurados no agregado `Ingredient`; a Application resolve disponibilidade e preço do catálogo, valida o sabor de destino e persiste snapshots em `OrderItemModifier`. O Web calcula apenas uma prévia para interação.
 - Números de pedido, ticket de cozinha e comanda são obtidos por `IOperationNumberGenerator`; a Infrastructure usa sequências PostgreSQL atômicas, sem `MAX + 1` em produção.
-- O bootstrap entrega catálogo e estado uma vez; o polling subsequente consulta apenas sessão, pedidos e conta em `/api/v1/client/state`.
+- O bootstrap entrega catálogo e estado uma vez; SignalR invalida o estado do tablet em tempo real e uma consulta a cada 60 segundos funciona como reconciliação de segurança. O shell, catálogo recente e carrinho permanecem locais durante quedas de rede.
+- Imagens do cardápio são validadas por assinatura (JPEG, PNG ou WebP), persistidas pela Infrastructure no volume `projeto-pizza-media` e publicadas em `/media`; a Application persiste somente a URL.
+- Delivery externo usa `/delivery` e `/api/v1/delivery`: preço e disponibilidade são recalculados no servidor, o `RequestId` garante idempotência e o token de rastreio é persistido somente como SHA-256.
+- A fila `devices.print_jobs` é durável. Um `BackgroundService` cria escopo próprio, envia ESC/POS TCP, registra falhas e repete com espera exponencial; o Hub não executa impressão.
 
 ## Riscos
 
-- Queries do dashboard ainda são adequadas ao volume inicial; métricas maiores podem exigir projeções específicas.
+- Queries do dashboard respeitam o fuso da unidade e ainda são adequadas ao volume inicial; métricas maiores podem exigir projeções específicas.
 - A assinatura JWT local atende desenvolvimento e implantação simples; produção deve usar uma chave em cofre ou um provedor de identidade externo.
 - O primeiro seed é voltado ao desenvolvimento, não a dados mestres de produção.
-- Impressão, adquirência de pagamentos e backup físico continuam dependentes de provedores externos.
+- USB/spooler Windows, emissão NFC-e autorizada e adquirência de pagamentos continuam dependentes dos equipamentos, UF e provedores escolhidos.
+
+## Backup físico
+
+`ISystemBackupService` mantém o contrato na Application e a Infrastructure executa `pg_dump` sem colocar a senha na linha de comando. O arquivo custom é concluído primeiro com extensão parcial, movido atomicamente após sucesso, limitado por retenção e disponibilizado ao administrador para download. No Compose, o cliente PostgreSQL 17 acompanha a API e os arquivos ficam no volume `projeto-pizza-backups`; a execução automática é configurada por `Backup__AutomaticEnabled`, `Backup__IntervalHours` e `Backup__RetentionCount`.
 
 ## Decisões pendentes
 
 - Provedor de identidade definitivo e ciclo de rotação das chaves.
 - Política de preço padrão após validação com o negócio.
-- Estratégia de imagens de produtos e armazenamento.
-- Integração com TEF/Pix, impressoras e notificações.
+- Integração fiscal NFC-e homologada para a UF e política segura de certificado/CSC.
+- Integração com TEF/Pix e suporte a impressoras USB/spooler Windows.
 - Requisitos de retenção e anonimização da auditoria.

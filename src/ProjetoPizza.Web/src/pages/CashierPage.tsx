@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowDownToLine, ArrowUpFromLine, Calculator, LockKeyhole, Plus, WalletCards } from 'lucide-react'
+import { ArrowDownToLine, ArrowUpFromLine, Calculator, History, LockKeyhole, Plus, WalletCards } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { CurrencyInput } from '../components/ui/CurrencyInput'
@@ -16,12 +16,15 @@ import { adminService } from '../services/adminService'
 import { hasPermission } from '../services/authSession'
 import { getUserErrorMessage } from '../utils/errors'
 import { translateEnum } from '../utils/presentation'
+import type { CashShiftHistory } from '../types/admin'
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export function CashierPage() {
   const { data: shift, setData: setShift } = useAdminQuery(queryKeys.cashShift, adminService.cashShift)
   const { data: cashRegisters } = useAdminQuery(queryKeys.cashRegisters, adminService.cashRegisters)
+  const { data: history, refresh: refreshHistory } = useAdminQuery(queryKeys.cashShiftHistory, adminService.cashShiftHistory)
+  const activeCashRegisters = cashRegisters.filter((register) => register.isActive)
   const [isOpenDialogOpen, setOpenDialogOpen] = useState(false)
   const [isMovementOpen, setMovementOpen] = useState(false)
   const [isCloseConfirmationOpen, setCloseConfirmationOpen] = useState(false)
@@ -31,7 +34,7 @@ export function CashierPage() {
   const toast = useToast()
   const openForm = useForm<CashOpenFormData>({
     resolver: zodResolver(cashOpenSchema),
-    defaultValues: { cashRegisterId: cashRegisters[0]?.id ?? '', openingAmount: 0 },
+    defaultValues: { cashRegisterId: activeCashRegisters[0]?.id ?? '', openingAmount: 0 },
   })
   const movementForm = useForm<CashMovementFormData>({
     resolver: zodResolver(cashMovementSchema),
@@ -86,6 +89,7 @@ export function CashierPage() {
     try {
       await adminService.closeCashShift(draft.countedCashAmount, draft.notes)
       setShift(null)
+      await refreshHistory()
       setCloseConfirmationOpen(false)
       toast.success('Caixa fechado', 'A conferência final foi registrada com sucesso.')
     } catch (error) {
@@ -101,7 +105,7 @@ export function CashierPage() {
         title="Caixa"
         description="Nenhum turno de caixa está aberto."
         actions={hasPermission('operations:write') &&
-          <button className="primary-button" disabled={!cashRegisters.length} onClick={() => setOpenDialogOpen(true)}>
+          <button className="primary-button" disabled={!activeCashRegisters.length} onClick={() => setOpenDialogOpen(true)}>
             <Plus size={16} /> Abrir caixa
           </button>
         }
@@ -109,15 +113,16 @@ export function CashierPage() {
       <div className="empty-state">
         <WalletCards size={34} />
         <h2>Caixa fechado</h2>
-        <p>{cashRegisters.length ? 'Abra um novo turno e informe o fundo inicial disponível para troco.' : 'Nenhum caixa ativo está disponível. Revise o cadastro da unidade.'}</p>
+        <p>{activeCashRegisters.length ? 'Abra um novo turno e informe o fundo inicial disponível para troco.' : 'Nenhum caixa ativo está disponível. Revise o cadastro da unidade.'}</p>
       </div>
+      <CashHistory history={history} />
       {isOpenDialogOpen && <Modal open title="Abrir caixa" description="Inicie um novo turno com o fundo disponível na gaveta." isBusy={opening} onClose={() => setOpenDialogOpen(false)}>
         <form onSubmit={openForm.handleSubmit(openShift)} noValidate>
           <div className="modal-body">
             <div className="form-grid two-columns">
               <label className="field-label">Caixa
                 <select aria-invalid={Boolean(openForm.formState.errors.cashRegisterId)} {...openForm.register('cashRegisterId')}>
-                  {cashRegisters.map((register) => <option value={register.id} key={register.id}>{register.name} · {register.code}</option>)}
+                  {activeCashRegisters.map((register) => <option value={register.id} key={register.id}>{register.name} · {register.code}</option>)}
                 </select>
                 <FieldError message={openForm.formState.errors.cashRegisterId?.message} />
               </label>
@@ -146,6 +151,7 @@ export function CashierPage() {
         <article><span>Movimentações</span><strong>{shift.movements.length}</strong></article>
         <article><span>Diferença</span><strong>{currency.format((shift.countedCashAmount ?? counted) - shift.expectedCashAmount)}</strong></article>
       </section>
+      <CashHistory history={history} />
       <section className="detail-layout">
         <div className="detail-main">
           <article className="surface-card">
@@ -180,4 +186,14 @@ export function CashierPage() {
       <ConfirmDialog open={isCloseConfirmationOpen} title="Confirmar fechamento do caixa?" description={`O saldo contado é ${currency.format(counted)}. Esta ação encerra o turno e não pode ser desfeita pela interface.`} confirmLabel="Fechar caixa" tone="danger" busy={closing} onOpenChange={setCloseConfirmationOpen} onConfirm={() => void closeShift()} />
     </>
   )
+}
+
+function CashHistory({ history }: { history: CashShiftHistory[] }) {
+  return <section className="surface-card cash-history">
+    <div className="card-heading"><div><h2>Histórico de fechamentos</h2><p>Últimos turnos encerrados, operadores e diferenças.</p></div><History size={22} /></div>
+    <div className="responsive-table"><table><thead><tr><th>Caixa</th><th>Operador</th><th>Abertura</th><th>Fechamento</th><th>Esperado</th><th>Contado</th><th>Diferença</th></tr></thead>
+      <tbody>{history.map((item) => <tr key={item.id}><td><strong>{item.register}</strong><small>{translateEnum(item.status)}</small></td><td>{item.operator}<small>{item.closedBy ? `Fechado por ${item.closedBy}` : ''}</small></td><td>{new Date(item.openedAt).toLocaleString('pt-BR')}</td><td>{item.closedAt ? new Date(item.closedAt).toLocaleString('pt-BR') : '-'}</td><td>{currency.format(item.expectedCashAmount)}</td><td>{item.countedCashAmount === undefined ? '-' : currency.format(item.countedCashAmount)}</td><td className={(item.differenceAmount ?? 0) === 0 ? '' : 'danger-text'}>{item.differenceAmount === undefined ? '-' : currency.format(item.differenceAmount)}</td></tr>)}</tbody>
+    </table></div>
+    {!history.length && <div className="empty-inline">Nenhum fechamento anterior registrado.</div>}
+  </section>
 }

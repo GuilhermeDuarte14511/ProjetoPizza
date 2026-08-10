@@ -23,6 +23,7 @@ describe('schemas dos formulários administrativos', () => {
       sku: 'PIZ-CASA',
       type: 'Pizza',
       basePrice: 59.9,
+      preparationTimeMinutes: 25,
       isActive: true,
       isAvailable: true,
       isFeatured: false,

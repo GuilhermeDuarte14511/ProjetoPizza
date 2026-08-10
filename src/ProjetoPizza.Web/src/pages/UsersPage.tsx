@@ -42,7 +42,7 @@ export function UsersPage({ tab }: { tab: 'users' | 'roles' }) {
   const selectedPermissions = useWatch({ control: roleForm.control, name: 'permissions' }) ?? []
 
   function editUser(user?: AdminUser) {
-    userForm.reset(user ? { ...user, password: '', phone: '' } : { displayName: '', email: '', employeeCode: '', password: '', phone: '', isActive: true, roles: [] })
+    userForm.reset(user ? { ...user, password: '', phone: user.phone ?? '' } : { displayName: '', email: '', employeeCode: '', password: '', phone: '', isActive: true, roles: [] })
     setEditingUserId(user?.id ?? 'new')
   }
 
@@ -59,7 +59,7 @@ export function UsersPage({ tab }: { tab: 'users' | 'roles' }) {
     setSaving(true)
     try {
       const id = await adminService.saveUser(draft)
-      const saved = { id: draft.id ?? id, email: draft.email!, displayName: draft.displayName!, employeeCode: draft.employeeCode!, isActive: draft.isActive ?? true, roles: draft.roles ?? [] }
+      const saved = { id: draft.id ?? id, email: draft.email!, displayName: draft.displayName!, employeeCode: draft.employeeCode!, phone: draft.phone, isActive: draft.isActive ?? true, roles: draft.roles ?? [] }
       setUsers((current) => draft.id ? current.map((item) => item.id === draft.id ? saved : item) : [...current, saved])
       setEditingUserId(undefined)
       toast.success(draft.id ? 'Usuário atualizado' : 'Usuário adicionado', `${draft.displayName} foi salvo com sucesso.`)

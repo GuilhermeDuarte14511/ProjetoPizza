@@ -23,11 +23,31 @@ internal sealed class DeviceConfiguration : IEntityTypeConfiguration<Device>
         builder.Property(entity => entity.AppVersion).HasMaxLength(30);
         builder.Property(entity => entity.Status).HasConversion<string>().HasMaxLength(30);
         builder.Property(entity => entity.NetworkStatus).HasMaxLength(40);
-        builder.Property(entity => entity.IpAddress).HasMaxLength(64);
+        builder.Property(entity => entity.IpAddress).HasMaxLength(255);
         builder.HasIndex(entity => new { entity.UnitId, entity.Status });
         builder.HasIndex(entity => entity.SerialNumber).IsUnique();
         builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<RestaurantTable>().WithMany().HasForeignKey(entity => entity.LinkedTableId).OnDelete(DeleteBehavior.Restrict);
+        builder.Property<uint>("xmin").IsRowVersion();
+    }
+}
+
+internal sealed class PrintJobConfiguration : IEntityTypeConfiguration<PrintJob>
+{
+    public void Configure(EntityTypeBuilder<PrintJob> builder)
+    {
+        builder.ToTable("print_jobs", "devices");
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.Id).HasConversion(id => id.Value, value => new PrintJobId(value));
+        builder.Property(entity => entity.UnitId).HasConversion(id => id.Value, value => new RestaurantUnitId(value));
+        builder.Property(entity => entity.PrinterId).HasConversion(id => id.Value, value => new DeviceId(value));
+        builder.Property(entity => entity.DocumentType).HasConversion<string>().HasMaxLength(40);
+        builder.Property(entity => entity.Status).HasConversion<string>().HasMaxLength(30);
+        builder.Property(entity => entity.Payload).HasMaxLength(20000);
+        builder.Property(entity => entity.LastError).HasMaxLength(1000);
+        builder.HasIndex(entity => new { entity.Status, entity.NextAttemptAt });
+        builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Device>().WithMany().HasForeignKey(entity => entity.PrinterId).OnDelete(DeleteBehavior.Restrict);
         builder.Property<uint>("xmin").IsRowVersion();
     }
 }

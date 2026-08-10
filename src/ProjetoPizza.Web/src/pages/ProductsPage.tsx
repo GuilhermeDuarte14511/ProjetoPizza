@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { MoreHorizontal, PackagePlus, Plus, Save, Search, Trash2 } from 'lucide-react'
+import { ImagePlus, MoreHorizontal, PackagePlus, Plus, Save, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { CurrencyInput } from '../components/ui/CurrencyInput'
@@ -17,6 +17,7 @@ import { adminService } from '../services/adminService'
 import { hasPermission } from '../services/authSession'
 import type { Product } from '../types/admin'
 import { getUserErrorMessage } from '../utils/errors'
+import { resolveApiMediaUrl } from '../api/httpClient'
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -31,6 +32,8 @@ export function ProductsPage() {
   const [activeModalTab, setActiveModalTab] = useState<'details' | 'complements'>('details')
   const [complementsTouched, setComplementsTouched] = useState(false)
   const [newComplement, setNewComplement] = useState({ name: '', price: 0, maxQuantity: 3 })
+  const [imageFile, setImageFile] = useState<File>()
+  const [imagePreview, setImagePreview] = useState<string>()
   const toast = useToast()
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -38,8 +41,10 @@ export function ProductsPage() {
       categoryId: '',
       sku: '',
       name: '',
+      description: '',
       type: 'Standard',
       basePrice: 0,
+      preparationTimeMinutes: 15,
       isActive: true,
       isAvailable: true,
       isFeatured: false,
@@ -58,8 +63,10 @@ export function ProductsPage() {
       categoryId: '',
       sku: '',
       name: '',
+      description: '',
       type: 'Standard',
       basePrice: 0,
+      preparationTimeMinutes: 15,
       isActive: true,
       isAvailable: true,
       isFeatured: false,
@@ -67,6 +74,8 @@ export function ProductsPage() {
       complements: [],
     }
     form.reset(draft)
+    setImageFile(undefined)
+    setImagePreview(resolveApiMediaUrl(product?.imageUrl))
     setActiveModalTab('details')
     setComplementsTouched(false)
     setNewComplement({ name: '', price: 0, maxQuantity: 3 })
@@ -92,9 +101,14 @@ export function ProductsPage() {
         complements: savesCustomComplements ? draft.complements : undefined,
       }
       const result = await adminService.saveProduct(command) as { id: string }
+      const productId = draft.id ?? result.id
+      const uploaded = imageFile
+        ? await adminService.uploadProductImage(productId, imageFile, `Foto de ${draft.name}`)
+        : undefined
       const saved = {
         ...draft,
-        id: draft.id ?? result.id,
+        id: productId,
+        imageUrl: uploaded?.status ?? products.find((item) => item.id === productId)?.imageUrl,
         usesCustomExtras: savesCustomComplements,
         complements: savesCustomComplements ? draft.complements : [],
       } as Product
@@ -165,6 +179,18 @@ export function ProductsPage() {
                 <label className="field-label">Categoria<select aria-invalid={Boolean(form.formState.errors.categoryId)} {...form.register('categoryId')}><option value="">Selecione</option>{categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select><FieldError message={form.formState.errors.categoryId?.message} /></label>
                 <label className="field-label">Tipo<select {...form.register('type')}><option value="Pizza">Pizza</option><option value="Beverage">Bebida</option><option value="Portion">Porção</option><option value="Dessert">Sobremesa</option><option value="Standard">Padrão</option></select></label>
                 <label className="field-label">Preço base<Controller control={form.control} name="basePrice" render={({ field }) => <CurrencyInput name={field.name} value={field.value} onBlur={field.onBlur} getInputRef={field.ref} aria-invalid={Boolean(form.formState.errors.basePrice)} onCurrencyValueChange={field.onChange} />} /><FieldError message={form.formState.errors.basePrice?.message} /></label>
+                <label className="field-label">Tempo de preparo (min)<input type="number" min={0} max={240} {...form.register('preparationTimeMinutes', { valueAsNumber: true })} /><FieldError message={form.formState.errors.preparationTimeMinutes?.message} /></label>
+                <label className="field-label span-2">Descrição<textarea rows={3} {...form.register('description')} placeholder="Ingredientes, características e informações comerciais" /><FieldError message={form.formState.errors.description?.message} /></label>
+                <label className="menu-image-field">
+                  <span>Imagem do cardápio</span>
+                  <span className="menu-image-preview">{imagePreview ? <img src={imagePreview} alt="Prévia do produto" /> : <ImagePlus aria-hidden="true" />}</span>
+                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    setImageFile(file)
+                    if (file) setImagePreview(URL.createObjectURL(file))
+                  }} />
+                  <small>JPEG, PNG ou WebP · até 5 MB</small>
+                </label>
                 <div className="check-stack"><label className="check-label"><input type="checkbox" {...form.register('isAvailable')} /> Disponível</label><label className="check-label"><input type="checkbox" {...form.register('isFeatured')} /> Destaque</label></div>
               </div>
             ) : productType !== 'Pizza' ? (
@@ -223,7 +249,7 @@ export function ProductsPage() {
         <div className="responsive-table">
           <table>
             <thead><tr><th>Produto</th><th>Categoria</th><th>Preço base</th><th>Status</th><th aria-label="Ações" /></tr></thead>
-            <tbody>{visibleProducts.map((product) => <tr key={product.id}><td><div className="product-cell"><span className="product-thumb">{product.name.slice(0, 1)}</span><span><strong>{product.name}</strong><small>{product.sku}</small></span></div></td><td>{categoryName(product.categoryId)}</td><td><strong>{currency.format(product.basePrice)}</strong></td><td><StatusBadge status={product.isAvailable ? 'Disponível' : 'Fora de estoque'} /></td><td>{hasPermission('admin:write') && <button className="icon-button" aria-label={`Editar ${product.name}`} onClick={() => edit(product)}><MoreHorizontal size={18} /></button>}</td></tr>)}</tbody>
+            <tbody>{visibleProducts.map((product) => <tr key={product.id}><td><div className="product-cell"><span className="product-thumb">{product.imageUrl ? <img src={resolveApiMediaUrl(product.imageUrl)} alt="" /> : product.name.slice(0, 1)}</span><span><strong>{product.name}</strong><small>{product.sku}</small></span></div></td><td>{categoryName(product.categoryId)}</td><td><strong>{currency.format(product.basePrice)}</strong></td><td><StatusBadge status={product.isAvailable ? 'Disponível' : 'Fora de estoque'} /></td><td>{hasPermission('admin:write') && <button className="icon-button" aria-label={`Editar ${product.name}`} onClick={() => edit(product)}><MoreHorizontal size={18} /></button>}</td></tr>)}</tbody>
           </table>
         </div>
       </article>

@@ -32,11 +32,12 @@ public sealed class Employee : AggregateRoot<EmployeeId>
     public void Activate() => ChangeActive(true);
     public void Deactivate() => ChangeActive(false);
 
-    public void UpdateProfile(string name, string displayName, string email, string? phone)
+    public void UpdateProfile(string name, string displayName, string email, string employeeCode, string? phone)
     {
         Name = Guard.Required(name, nameof(name), 120);
         DisplayName = Guard.Required(displayName, nameof(displayName), 80);
         Email = Guard.Required(email, nameof(email), 254);
+        EmployeeCode = Guard.Required(employeeCode, nameof(employeeCode), 30);
         Phone = string.IsNullOrWhiteSpace(phone) ? null : Guard.Required(phone, nameof(phone), 24);
         UpdatedAt = DateTimeOffset.UtcNow;
     }

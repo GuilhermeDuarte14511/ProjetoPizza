@@ -12,17 +12,82 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
     public Task<DashboardDto> GetDashboardAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var today = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
-        var orders = context.Orders.Where(order => order.CreatedAt >= today && order.Status != OrderStatus.Cancelled).ToArray();
+        var (dayStart, dayEnd) = GetCurrentBusinessDayUtc();
+        var orders = context.Orders
+            .Where(order =>
+                (order.PlacedAt ?? order.CreatedAt) >= dayStart &&
+                (order.PlacedAt ?? order.CreatedAt) < dayEnd &&
+                order.Status != OrderStatus.Cancelled)
+            .ToArray();
         var tables = ListTablesCore();
         var recentOrders = orders
-            .OrderByDescending(order => order.PlacedAt)
+            .OrderByDescending(order => order.PlacedAt ?? order.CreatedAt)
             .Take(5)
             .Select(order => new DashboardOrderDto(order.OrderNumber, order.SalesChannel.ToString(), order.Status.ToString(), order.Total.Amount, order.PlacedAt))
             .ToArray();
 
-        var sales = orders.Where(order => order.Status == OrderStatus.Completed).Sum(order => order.Total.Amount);
-        var completedCount = orders.Count(order => order.Status == OrderStatus.Completed);
+        var completedOrders = context.Orders
+            .Where(order =>
+                order.Status == OrderStatus.Completed &&
+                order.UpdatedAt >= dayStart &&
+                order.UpdatedAt < dayEnd)
+            .ToArray();
+        var sales = completedOrders.Sum(order => order.Total.Amount);
+        var completedCount = completedOrders.Length;
+        var orderIds = orders.Select(order => order.Id).ToHashSet();
+        var topProducts = context.OrderItems
+            .Where(item => orderIds.Contains(item.OrderId) && item.Status != OrderItemStatus.Cancelled)
+            .ToArray()
+            .GroupBy(item => item.ProductNameSnapshot)
+            .Select(group => new DashboardProductDto(group.Key, group.Sum(item => item.Quantity)))
+            .OrderByDescending(product => product.Quantity)
+            .ThenBy(product => product.Name)
+            .Take(5)
+            .ToArray();
+        var paidPayments = context.Payments
+            .Where(payment =>
+                payment.Status == PaymentStatus.Paid &&
+                payment.PaidAt >= dayStart &&
+                payment.PaidAt < dayEnd)
+            .ToArray();
+        var paymentMethodNames = context.PaymentMethods.ToDictionary(method => method.Id, method => method.Name);
+        var totalPaid = paidPayments.Sum(payment => payment.Amount.Amount);
+        var paymentMethods = paidPayments
+            .GroupBy(payment => payment.PaymentMethodId)
+            .Select(group =>
+            {
+                var total = group.Sum(payment => payment.Amount.Amount);
+                return new DashboardPaymentMethodDto(
+                    paymentMethodNames.GetValueOrDefault(group.Key, "Desconhecido"),
+                    total,
+                    totalPaid == 0 ? 0 : decimal.Round(total / totalPaid * 100m, 2));
+            })
+            .OrderByDescending(method => method.Total)
+            .ToArray();
+        var balances = context.StockBalances.ToDictionary(balance => balance.InventoryItemId);
+        var stockAlerts = context.InventoryItems
+            .Where(item => item.IsActive)
+            .ToArray()
+            .Select(item =>
+            {
+                var available = balances.TryGetValue(item.Id, out var balance) ? balance.AvailableQuantity : 0m;
+                return new DashboardStockAlertDto(
+                    item.Id.Value,
+                    item.Name,
+                    available,
+                    item.MinimumStock,
+                    item.UnitOfMeasure);
+            })
+            .Where(item => item.AvailableQuantity <= item.MinimumStock)
+            .OrderBy(item => item.AvailableQuantity - item.MinimumStock)
+            .ThenBy(item => item.Name)
+            .Take(5)
+            .ToArray();
+        var tableStatus = new DashboardTableStatusDto(
+            tables.Count(table => table.Status == "Livre"),
+            tables.Count(table => table.Status == "Ocupada"),
+            tables.Count(table => table.Status == "Chamando"),
+            tables.Count(table => table.Status is "Conta solicitada" or "Pagamento pendente"));
         var result = new DashboardDto(
             sales,
             orders.Length,
@@ -31,7 +96,11 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
             tables.Count,
             orders.Count(order => order.Status == OrderStatus.InProduction),
             context.ServiceCalls.Count(call => call.Status == ServiceCallStatus.Pending),
-            recentOrders);
+            recentOrders,
+            tableStatus,
+            topProducts,
+            paymentMethods,
+            stockAlerts);
         return Task.FromResult(result);
     }
 
@@ -123,6 +192,12 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
                         extra.Price.Amount,
                         extra.MaxQuantity))
                     .ToArray());
+        var images = context.ProductImages
+            .OrderByDescending(image => image.IsPrimary)
+            .ThenBy(image => image.DisplayOrder)
+            .ToArray()
+            .GroupBy(image => image.ProductId)
+            .ToDictionary(group => group.Key, group => group.First().Url);
         var result = context.Products
             .OrderBy(product => product.DisplayOrder)
             .ThenBy(product => product.Name)
@@ -132,8 +207,11 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
                 product.CategoryId.Value,
                 product.Sku,
                 product.Name,
+                product.Description,
                 product.ProductType.ToString(),
                 product.BasePrice.Amount,
+                product.PreparationTimeMinutes,
+                images.GetValueOrDefault(product.Id),
                 product.IsActive,
                 product.IsAvailable,
                 product.IsFeatured,
@@ -188,6 +266,7 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
                 flavor.IsActive,
                 flavor.IsAvailable,
                 flavor.SoldOutReason,
+                flavor.ImageUrl,
                 extras.GetValueOrDefault(flavor.Id, [])))
             .ToArray();
         return Task.FromResult<IReadOnlyCollection<PizzaFlavorDto>>(result);
@@ -319,9 +398,9 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
             .Select(call => call.TableSessionId)
             .ToHashSet();
         var bills = context.Bills
-            .Where(bill => bill.Status != BillStatus.Paid && bill.Status != BillStatus.Cancelled)
+            .Where(bill => bill.TableSessionId != null && bill.Status != BillStatus.Paid && bill.Status != BillStatus.Cancelled)
             .ToArray()
-            .GroupBy(bill => bill.TableSessionId)
+            .GroupBy(bill => bill.TableSessionId!.Value)
             .ToDictionary(group => group.Key, group => group.OrderByDescending(bill => bill.RequestedAt).First());
         var orders = context.Orders
             .Where(order => order.TableSessionId != null && order.Status != OrderStatus.Cancelled)
@@ -330,6 +409,7 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
             .ToDictionary(group => group.Key, group => group.Sum(order => order.Total.Amount));
 
         return context.RestaurantTables
+            .Where(table => table.IsActive)
             .OrderBy(table => table.DisplayOrder)
             .ThenBy(table => table.Number)
             .ToArray()
@@ -377,5 +457,30 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
         }
 
         return calls.Contains(session.Id) ? "Chamando" : "Ocupada";
+    }
+
+    private (DateTimeOffset Start, DateTimeOffset End) GetCurrentBusinessDayUtc()
+    {
+        var timezoneId = context.RestaurantUnits.Single().Timezone;
+        TimeZoneInfo timezone;
+        try
+        {
+            timezone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            throw new BusinessRuleException("restaurant_unit.timezone", "The configured restaurant timezone is invalid.");
+        }
+        catch (InvalidTimeZoneException)
+        {
+            throw new BusinessRuleException("restaurant_unit.timezone", "The configured restaurant timezone is invalid.");
+        }
+
+        var localNow = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, timezone);
+        var localStart = DateTime.SpecifyKind(localNow.Date, DateTimeKind.Unspecified);
+        var localEnd = localStart.AddDays(1);
+        return (
+            new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(localStart, timezone), TimeSpan.Zero),
+            new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(localEnd, timezone), TimeSpan.Zero));
     }
 }

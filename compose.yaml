@@ -37,11 +37,19 @@ services:
       Cors__AllowedOrigins__0: ${APP_ORIGIN:-http://localhost:8080}
       Cors__AllowedOrigins__1: ${LOCAL_APP_ORIGIN:-http://localhost:8080}
       Cors__AllowedOrigins__2: ${LOOPBACK_APP_ORIGIN:-http://127.0.0.1:8080}
+      Backup__Directory: /app/backups
+      Backup__AutomaticEnabled: "true"
+      Backup__IntervalHours: ${BACKUP_INTERVAL_HOURS:-24}
+      Backup__RetentionCount: ${BACKUP_RETENTION_COUNT:-30}
+      MenuMedia__Directory: /app/media
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - projeto-pizza
+    volumes:
+      - projeto_pizza_backups:/app/backups
+      - projeto_pizza_media:/app/media
 
   web:
     profiles: ["client"]
@@ -63,6 +71,10 @@ services:
 volumes:
   projeto_pizza_postgres_data:
     name: projeto-pizza-postgres-data
+  projeto_pizza_backups:
+    name: projeto-pizza-backups
+  projeto_pizza_media:
+    name: projeto-pizza-media
 
 networks:
   projeto-pizza:

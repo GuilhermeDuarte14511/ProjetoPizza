@@ -42,5 +42,6 @@ public readonly record struct CashMovementId(Guid Value) { public static CashMov
 public readonly record struct DeviceId(Guid Value) { public static DeviceId New() => new(Guid.NewGuid()); }
 public readonly record struct DeviceSessionId(Guid Value) { public static DeviceSessionId New() => new(Guid.NewGuid()); }
 public readonly record struct DeviceProvisioningId(Guid Value) { public static DeviceProvisioningId New() => new(Guid.NewGuid()); }
+public readonly record struct PrintJobId(Guid Value) { public static PrintJobId New() => new(Guid.NewGuid()); }
 public readonly record struct NotificationId(Guid Value) { public static NotificationId New() => new(Guid.NewGuid()); }
 public readonly record struct AuditLogId(Guid Value) { public static AuditLogId New() => new(Guid.NewGuid()); }

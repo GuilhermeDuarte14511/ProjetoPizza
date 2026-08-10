@@ -18,7 +18,12 @@ internal sealed class BillConfiguration : IEntityTypeConfiguration<Bill>
         builder.HasKey(entity => entity.Id);
         builder.Property(entity => entity.Id).HasConversion(id => id.Value, value => new BillId(value));
         builder.Property(entity => entity.UnitId).HasConversion(id => id.Value, value => new RestaurantUnitId(value));
-        builder.Property(entity => entity.TableSessionId).HasConversion(id => id.Value, value => new TableSessionId(value));
+        builder.Property(entity => entity.TableSessionId).HasConversion<Guid?>(
+            id => id.HasValue ? id.Value.Value : null,
+            value => value.HasValue ? new TableSessionId(value.Value) : null);
+        builder.Property(entity => entity.OrderId).HasConversion<Guid?>(
+            id => id.HasValue ? id.Value.Value : null,
+            value => value.HasValue ? new OrderId(value.Value) : null);
         builder.Property(entity => entity.Status).HasConversion<string>().HasMaxLength(30);
         builder.Property(entity => entity.Subtotal).HasMoneyConversion();
         builder.Property(entity => entity.ServiceFeePercentage).HasPercentageConversion();
@@ -29,8 +34,10 @@ internal sealed class BillConfiguration : IEntityTypeConfiguration<Bill>
         builder.Property(entity => entity.RemainingAmount).HasMoneyConversion();
         builder.Property(entity => entity.RequestedSplitCount);
         builder.HasIndex(entity => new { entity.TableSessionId, entity.Status });
+        builder.HasIndex(entity => entity.OrderId).IsUnique();
         builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<TableSession>().WithMany().HasForeignKey(entity => entity.TableSessionId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Order>().WithMany().HasForeignKey(entity => entity.OrderId).OnDelete(DeleteBehavior.Restrict);
         builder.Property<uint>("xmin").IsRowVersion();
     }
 }

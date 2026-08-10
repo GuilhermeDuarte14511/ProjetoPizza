@@ -11,7 +11,7 @@ public static class AdminEndpoints
     {
         var group = endpoints.MapGroup("/api/v1/admin")
             .WithTags("Admin")
-            .RequireAuthorization("AdminAccess")
+            .RequireAuthorization("AdminOrOperationsAccess")
             .AddEndpointFilter<AdminRealtimeFilter>();
 
         MapReadEndpoints(group);
@@ -35,13 +35,13 @@ public static class AdminEndpoints
             return table is null ? Results.NotFound() : Results.Ok(table);
         });
         group.MapGet("/categories", (IAdminQueryService service, CancellationToken cancellationToken) =>
-            service.ListCategoriesAsync(cancellationToken));
+            service.ListCategoriesAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/products", (IAdminQueryService service, CancellationToken cancellationToken) =>
-            service.ListProductsAsync(cancellationToken));
+            service.ListProductsAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/pizza-sizes", (IAdminQueryService service, CancellationToken cancellationToken) =>
-            service.ListPizzaSizesAsync(cancellationToken));
+            service.ListPizzaSizesAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/pizza-flavors", (IAdminQueryService service, CancellationToken cancellationToken) =>
-            service.ListPizzaFlavorsAsync(cancellationToken));
+            service.ListPizzaFlavorsAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/service-calls", (IAdminQueryService service, CancellationToken cancellationToken) =>
             service.ListPendingServiceCallsAsync(cancellationToken));
         group.MapGet("/kitchen/tickets", (IAdminQueryService service, CancellationToken cancellationToken) =>
@@ -62,23 +62,25 @@ public static class AdminEndpoints
         group.MapGet("/customers", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.ListCustomersAsync(cancellationToken));
         group.MapGet("/pizza-crusts", (IAdminManagementService service, CancellationToken cancellationToken) =>
-            service.ListPizzaCrustsAsync(cancellationToken));
+            service.ListPizzaCrustsAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/ingredients", (IAdminManagementService service, CancellationToken cancellationToken) =>
-            service.ListIngredientsAsync(cancellationToken));
+            service.ListIngredientsAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/settings/unit", (IAdminManagementService service, CancellationToken cancellationToken) =>
-            service.GetUnitSettingsAsync(cancellationToken));
+            service.GetUnitSettingsAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/settings/operation", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.GetOperationSettingsAsync(cancellationToken));
         group.MapGet("/settings/pizza-rules", (IAdminManagementService service, CancellationToken cancellationToken) =>
-            service.GetPizzaRulesAsync(cancellationToken));
+            service.GetPizzaRulesAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/cashier/registers", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.ListCashRegistersAsync(cancellationToken));
         group.MapGet("/cashier/current", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.GetCurrentCashShiftAsync(cancellationToken));
+        group.MapGet("/cashier/history", (IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.ListCashShiftHistoryAsync(cancellationToken));
         group.MapGet("/payment-methods", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.ListPaymentMethodsAsync(cancellationToken));
         group.MapGet("/payments", (IAdminManagementService service, CancellationToken cancellationToken) =>
-            service.ListPaymentsAsync(cancellationToken));
+            service.ListPaymentsAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/reports/financial", (
             DateTimeOffset? from,
             DateTimeOffset? to,
@@ -88,13 +90,38 @@ public static class AdminEndpoints
             var end = to ?? DateTimeOffset.UtcNow;
             var start = from ?? end.AddDays(-30);
             return service.GetFinancialReportAsync(start, end, cancellationToken);
-        });
+        }).RequireAuthorization("AdminAccess");
         group.MapGet("/devices", (IAdminManagementService service, CancellationToken cancellationToken) =>
-            service.ListDevicesAsync(cancellationToken));
+            service.ListDevicesAsync(cancellationToken)).RequireAuthorization("AdminAccess");
+        group.MapGet("/print-jobs", (IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.ListPrintJobsAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/audit", (IAdminManagementService service, CancellationToken cancellationToken) =>
-            service.ListAuditLogsAsync(cancellationToken));
+            service.ListAuditLogsAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/system/snapshot", (IAdminManagementService service, CancellationToken cancellationToken) =>
-            service.CreateSystemSnapshotAsync(cancellationToken));
+            service.CreateSystemSnapshotAsync(cancellationToken))
+            .RequireAuthorization("AdminAccess");
+        group.MapGet("/settings/dining-areas", (IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.ListDiningAreasAsync(cancellationToken)).RequireAuthorization("AdminAccess");
+        group.MapGet("/settings/tables", (IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.ListRestaurantTableSettingsAsync(cancellationToken)).RequireAuthorization("AdminAccess");
+        group.MapGet("/settings/production-stations", (IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.ListProductionStationsAsync(cancellationToken)).RequireAuthorization("AdminAccess");
+        group.MapGet("/settings/service-call-types", (IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.ListServiceCallTypesAsync(cancellationToken)).RequireAuthorization("AdminAccess");
+        group.MapGet("/inventory/items", (IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.ListInventoryItemsAsync(cancellationToken)).RequireAuthorization("AdminAccess");
+        group.MapGet("/system/backups", (ISystemBackupService service, CancellationToken cancellationToken) =>
+            service.ListAsync(cancellationToken)).RequireAuthorization("AdminAccess");
+        group.MapGet("/system/backups/{fileName}", async (
+            string fileName,
+            ISystemBackupService service,
+            CancellationToken cancellationToken) =>
+        {
+            var backup = await service.OpenReadAsync(fileName, cancellationToken);
+            return backup is null
+                ? Results.NotFound()
+                : Results.File(backup.Stream, backup.ContentType, backup.FileName);
+        }).RequireAuthorization("AdminAccess");
     }
 
     private static void MapWriteEndpoints(RouteGroupBuilder group)
@@ -105,6 +132,14 @@ public static class AdminEndpoints
             IAdminManagementService service,
             CancellationToken cancellationToken) =>
             service.CreateOrderAsync(command, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+
+        group.MapPost("/counter-orders/checkout", (
+            CheckoutCounterOrderCommand command,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.CheckoutCounterOrderAsync(command, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
 
         group.MapPost("/customers", (
@@ -184,6 +219,27 @@ public static class AdminEndpoints
             CancellationToken cancellationToken) =>
             service.SaveProductAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
+        group.MapPost("/products/{id:guid}/image", async (
+            Guid id,
+            HttpRequest request,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+        {
+            if (!request.HasFormContentType) return Results.BadRequest("Envie a imagem como multipart/form-data.");
+            var form = await request.ReadFormAsync(cancellationToken);
+            var image = form.Files.GetFile("image");
+            if (image is null || image.Length == 0) return Results.BadRequest("Selecione uma imagem.");
+            var altText = form["altText"].ToString();
+            if (string.IsNullOrWhiteSpace(altText)) altText = "Foto do produto";
+            await using var stream = image.OpenReadStream();
+            var result = await service.SaveProductImageAsync(
+                id, stream, image.ContentType, image.FileName, altText,
+                GetIdentityUserId(user), cancellationToken);
+            return Results.Ok(result);
+        })
+            .DisableAntiforgery()
+            .RequireAuthorization("AdminWrite");
 
         group.MapPost("/pizza-sizes", (
             SavePizzaSizeCommand command,
@@ -248,6 +304,90 @@ public static class AdminEndpoints
             CancellationToken cancellationToken) =>
             service.SavePizzaFlavorAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
+        group.MapPost("/pizza-flavors/{id:guid}/image", async (
+            Guid id,
+            HttpRequest request,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+        {
+            if (!request.HasFormContentType) return Results.BadRequest("Envie a imagem como multipart/form-data.");
+            var form = await request.ReadFormAsync(cancellationToken);
+            var image = form.Files.GetFile("image");
+            if (image is null || image.Length == 0) return Results.BadRequest("Selecione uma imagem.");
+            await using var stream = image.OpenReadStream();
+            var result = await service.SavePizzaFlavorImageAsync(
+                id, stream, image.ContentType, image.FileName,
+                GetIdentityUserId(user), cancellationToken);
+            return Results.Ok(result);
+        })
+            .DisableAntiforgery()
+            .RequireAuthorization("AdminWrite");
+
+        group.MapPost("/settings/dining-areas", (
+            SaveDiningAreaCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveDiningAreaAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPut("/settings/dining-areas/{id:guid}", (
+            Guid id, SaveDiningAreaCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveDiningAreaAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPost("/settings/tables", (
+            SaveRestaurantTableCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveRestaurantTableAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPut("/settings/tables/{id:guid}", (
+            Guid id, SaveRestaurantTableCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveRestaurantTableAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPost("/cashier/registers", (
+            SaveCashRegisterCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveCashRegisterAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPut("/cashier/registers/{id:guid}", (
+            Guid id, SaveCashRegisterCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveCashRegisterAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPost("/payment-methods", (
+            SavePaymentMethodCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SavePaymentMethodAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPut("/payment-methods/{id:guid}", (
+            Guid id, SavePaymentMethodCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SavePaymentMethodAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPost("/settings/production-stations", (
+            SaveProductionStationCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveProductionStationAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPut("/settings/production-stations/{id:guid}", (
+            Guid id, SaveProductionStationCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveProductionStationAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPost("/settings/service-call-types", (
+            SaveServiceCallTypeCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveServiceCallTypeAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPut("/settings/service-call-types/{id:guid}", (
+            Guid id, SaveServiceCallTypeCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveServiceCallTypeAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPost("/inventory/items", (
+            SaveInventoryItemCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveInventoryItemAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPut("/inventory/items/{id:guid}", (
+            Guid id, SaveInventoryItemCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveInventoryItemAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPost("/inventory/items/{id:guid}/adjustments", (
+            Guid id, AdjustInventoryCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.AdjustInventoryAsync(id, command, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPost("/system/backups", (
+            ISystemBackupService service, CancellationToken cancellationToken) =>
+            service.CreateAsync("manual", cancellationToken))
+            .RequireAuthorization("AdminWrite");
 
         group.MapPost("/tables/{id:guid}/open", (
             Guid id,
@@ -271,6 +411,33 @@ public static class AdminEndpoints
             IAdminManagementService service,
             CancellationToken cancellationToken) =>
             service.TransitionOrderAsync(id, transition, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("OperationsWrite");
+        group.MapPost("/orders/{id:guid}/print", (
+            Guid id, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.QueueOrderReceiptAsync(id, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("OperationsWrite");
+        group.MapPost("/orders/{id:guid}/print/customer-receipt", (
+            Guid id, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.QueueOrderReceiptAsync(id, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("OperationsWrite");
+        group.MapPost("/orders/{id:guid}/print/kitchen-command", (
+            Guid id, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.QueueKitchenCommandAsync(id, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("OperationsWrite");
+        group.MapPost("/deliveries/{id:guid}/dispatch", (
+            Guid id, DispatchDeliveryCommand command, ClaimsPrincipal user,
+            IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.DispatchDeliveryAsync(id, command.DriverName, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("OperationsWrite");
+        group.MapPost("/deliveries/{id:guid}/complete", (
+            Guid id, ClaimsPrincipal user,
+            IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.CompleteDeliveryAsync(id, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("OperationsWrite");
+        group.MapPost("/deliveries/{id:guid}/fail", (
+            Guid id, FailDeliveryCommand command, ClaimsPrincipal user,
+            IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.FailDeliveryAsync(id, command.Reason, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("OperationsWrite");
         group.MapPost("/kitchen/tickets/{id:guid}/transitions/{transition}", (
             Guid id,
@@ -337,6 +504,21 @@ public static class AdminEndpoints
             CancellationToken cancellationToken) =>
             service.UpdateDeviceAsync(id, command, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
+        group.MapPost("/printers", (
+            SaveNetworkPrinterCommand command, ClaimsPrincipal user,
+            IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveNetworkPrinterAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPut("/printers/{id:guid}", (
+            Guid id, SaveNetworkPrinterCommand command, ClaimsPrincipal user,
+            IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SaveNetworkPrinterAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPost("/printers/{id:guid}/test", (
+            Guid id, ClaimsPrincipal user,
+            IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.QueuePrinterTestAsync(id, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
         group.MapPost("/devices/tablets", (
             CreateCustomerTabletCommand command,
             ClaimsPrincipal user,
@@ -357,34 +539,38 @@ public static class AdminEndpoints
     private static void MapIdentityEndpoints(RouteGroupBuilder group)
     {
         group.MapGet("/users", (IIdentityAccessService service, CancellationToken cancellationToken) =>
-            service.ListUsersAsync(cancellationToken));
+            service.ListUsersAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/roles", (IIdentityAccessService service, CancellationToken cancellationToken) =>
-            service.ListRolesAsync(cancellationToken));
+            service.ListRolesAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapPost("/users", (
             SaveUserCommand command,
+            ClaimsPrincipal user,
             IIdentityAccessService service,
             CancellationToken cancellationToken) =>
-            service.SaveUserAsync(command with { Id = null }, cancellationToken))
+            service.SaveUserAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
         group.MapPut("/users/{id:guid}", (
             Guid id,
             SaveUserCommand command,
+            ClaimsPrincipal user,
             IIdentityAccessService service,
             CancellationToken cancellationToken) =>
-            service.SaveUserAsync(command with { Id = id }, cancellationToken))
+            service.SaveUserAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
         group.MapPost("/roles", (
             SaveRoleCommand command,
+            ClaimsPrincipal user,
             IIdentityAccessService service,
             CancellationToken cancellationToken) =>
-            service.SaveRoleAsync(command with { Id = null }, cancellationToken))
+            service.SaveRoleAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
         group.MapPut("/roles/{id:guid}", (
             Guid id,
             SaveRoleCommand command,
+            ClaimsPrincipal user,
             IIdentityAccessService service,
             CancellationToken cancellationToken) =>
-            service.SaveRoleAsync(command with { Id = id }, cancellationToken))
+            service.SaveRoleAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
     }
 

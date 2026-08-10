@@ -37,6 +37,38 @@ public sealed class AdminQueryServiceTests
         result.Should().ContainSingle().Which.Status.Should().Be("Livre");
     }
 
+    [Fact]
+    public async Task GetDashboard_WithStockAtMinimum_ShouldReturnRealAlertAndTableBreakdown()
+    {
+        var unit = new RestaurantUnit(
+            RestaurantUnitId.New(),
+            "Unidade Principal",
+            "Projeto Pizza LTDA",
+            "Forno 27",
+            "00.000.000/0001-00");
+        var area = new DiningArea(DiningAreaId.New(), unit.Id, "Salão Principal");
+        var table = new RestaurantTable(RestaurantTableId.New(), unit.Id, area.Id, 1, 4);
+        var inventoryItem = new InventoryItem(InventoryItemId.New(), unit.Id, "Mussarela", "INS-MUS", "kg", 5m);
+        var balance = new StockBalance(StockBalanceId.New(), inventoryItem.Id);
+        balance.ApplyAdjustment(2.5m);
+        var context = new FakeContext
+        {
+            RestaurantUnitItems = [unit],
+            DiningAreaItems = [area],
+            RestaurantTableItems = [table],
+            InventoryItemItems = [inventoryItem],
+            StockBalanceItems = [balance]
+        };
+        var service = new AdminQueryService(context);
+
+        var result = await service.GetDashboardAsync(CancellationToken.None);
+
+        result.TableStatus.Free.Should().Be(1);
+        result.TableStatus.Occupied.Should().Be(0);
+        result.StockAlerts.Should().ContainSingle().Which.Name.Should().Be("Mussarela");
+        result.StockAlerts.Single().AvailableQuantity.Should().Be(2.5m);
+    }
+
     private sealed class FakeContext : IProjetoPizzaDbContext
     {
         public Category[] CategoryItems { get; init; } = [];
@@ -52,8 +84,11 @@ public sealed class AdminQueryServiceTests
         public KitchenTicket[] KitchenTicketItemsData { get; init; } = [];
         public KitchenTicketItem[] KitchenTicketLineItems { get; init; } = [];
         public Bill[] BillItemsData { get; init; } = [];
+        public RestaurantUnit[] RestaurantUnitItems { get; init; } = [];
+        public InventoryItem[] InventoryItemItems { get; init; } = [];
+        public StockBalance[] StockBalanceItems { get; init; } = [];
 
-        public IQueryable<RestaurantUnit> RestaurantUnits => Array.Empty<RestaurantUnit>().AsQueryable();
+        public IQueryable<RestaurantUnit> RestaurantUnits => RestaurantUnitItems.AsQueryable();
         public IQueryable<OperationSettings> OperationSettings => Array.Empty<OperationSettings>().AsQueryable();
         public IQueryable<PizzaSettings> PizzaSettings => Array.Empty<PizzaSettings>().AsQueryable();
         public IQueryable<Employee> Employees => Array.Empty<Employee>().AsQueryable();
@@ -70,8 +105,8 @@ public sealed class AdminQueryServiceTests
         public IQueryable<Ingredient> Ingredients => Array.Empty<Ingredient>().AsQueryable();
         public IQueryable<PizzaFlavorIngredient> PizzaFlavorIngredients => Array.Empty<PizzaFlavorIngredient>().AsQueryable();
         public IQueryable<PizzaFlavorExtra> PizzaFlavorExtras => Array.Empty<PizzaFlavorExtra>().AsQueryable();
-        public IQueryable<InventoryItem> InventoryItems => Array.Empty<InventoryItem>().AsQueryable();
-        public IQueryable<StockBalance> StockBalances => Array.Empty<StockBalance>().AsQueryable();
+        public IQueryable<InventoryItem> InventoryItems => InventoryItemItems.AsQueryable();
+        public IQueryable<StockBalance> StockBalances => StockBalanceItems.AsQueryable();
         public IQueryable<DiningArea> DiningAreas => DiningAreaItems.AsQueryable();
         public IQueryable<RestaurantTable> RestaurantTables => RestaurantTableItems.AsQueryable();
         public IQueryable<TableSession> TableSessions => TableSessionItems.AsQueryable();
@@ -96,6 +131,7 @@ public sealed class AdminQueryServiceTests
         public IQueryable<Device> Devices => Array.Empty<Device>().AsQueryable();
         public IQueryable<DeviceSession> DeviceSessions => Array.Empty<DeviceSession>().AsQueryable();
         public IQueryable<DeviceProvisioning> DeviceProvisionings => Array.Empty<DeviceProvisioning>().AsQueryable();
+        public IQueryable<PrintJob> PrintJobs => Array.Empty<PrintJob>().AsQueryable();
         public IQueryable<AuditLog> AuditLogs => Array.Empty<AuditLog>().AsQueryable();
 
         public void Add<TEntity>(TEntity entity) where TEntity : class { }

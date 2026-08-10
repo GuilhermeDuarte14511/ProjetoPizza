@@ -344,6 +344,10 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("discount_amount");
 
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
                     b.Property<decimal>("PaidAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
@@ -383,7 +387,7 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("subtotal");
 
-                    b.Property<Guid>("TableSessionId")
+                    b.Property<Guid?>("TableSessionId")
                         .HasColumnType("uuid")
                         .HasColumnName("table_session_id");
 
@@ -404,6 +408,10 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_bills");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bills_order_id");
 
                     b.HasIndex("UnitId")
                         .HasDatabaseName("ix_bills_unit_id");
@@ -1803,6 +1811,18 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(30)")
                         .HasColumnName("app_version");
 
+                    b.Property<bool>("AutoPrintCustomerReceipts")
+                        .HasColumnType("boolean")
+                        .HasColumnName("auto_print_customer_receipts");
+
+                    b.Property<bool>("AutoPrintFiscalDocuments")
+                        .HasColumnType("boolean")
+                        .HasColumnName("auto_print_fiscal_documents");
+
+                    b.Property<bool>("AutoPrintKitchenTickets")
+                        .HasColumnType("boolean")
+                        .HasColumnName("auto_print_kitchen_tickets");
+
                     b.Property<int?>("BatteryPercentage")
                         .HasColumnType("integer")
                         .HasColumnName("battery_percentage");
@@ -1818,8 +1838,8 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnName("device_type");
 
                     b.Property<string>("IpAddress")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("ip_address");
 
                     b.Property<bool>("IsCharging")
@@ -1849,11 +1869,19 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("network_status");
 
+                    b.Property<int?>("PaperWidthMm")
+                        .HasColumnType("integer")
+                        .HasColumnName("paper_width_mm");
+
                     b.Property<string>("Platform")
                         .IsRequired()
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)")
                         .HasColumnName("platform");
+
+                    b.Property<int?>("PrinterPort")
+                        .HasColumnType("integer")
+                        .HasColumnName("printer_port");
 
                     b.Property<string>("SerialNumber")
                         .IsRequired()
@@ -1993,6 +2021,84 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_device_sessions_device_id_ended_at_expires_at");
 
                     b.ToTable("device_sessions", "devices");
+                });
+
+            modelBuilder.Entity("ProjetoPizza.Domain.Devices.PrintJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<int>("Copies")
+                        .HasColumnType("integer")
+                        .HasColumnName("copies");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("document_type");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_attempt_at");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)")
+                        .HasColumnName("payload");
+
+                    b.Property<Guid>("PrinterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("printer_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("unit_id");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_print_jobs");
+
+                    b.HasIndex("PrinterId")
+                        .HasDatabaseName("ix_print_jobs_printer_id");
+
+                    b.HasIndex("UnitId")
+                        .HasDatabaseName("ix_print_jobs_unit_id");
+
+                    b.HasIndex("Status", "NextAttemptAt")
+                        .HasDatabaseName("ix_print_jobs_status_next_attempt_at");
+
+                    b.ToTable("print_jobs", "devices");
                 });
 
             modelBuilder.Entity("ProjetoPizza.Domain.Dining.DiningArea", b =>
@@ -2760,20 +2866,48 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(120)")
                         .HasColumnName("customer_name_snapshot");
 
+                    b.Property<DateTimeOffset?>("DeliveredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("delivered_at");
+
                     b.Property<string>("DeliveryAddressSnapshot")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("delivery_address_snapshot");
+
+                    b.Property<string>("DeliveryDriverName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("delivery_driver_name");
+
+                    b.Property<string>("DeliveryFailureReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("delivery_failure_reason");
 
                     b.Property<decimal>("DeliveryFee")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("delivery_fee");
 
+                    b.Property<string>("DeliveryStatus")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("delivery_status");
+
+                    b.Property<string>("DeliveryTrackingTokenHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("delivery_tracking_token_hash");
+
                     b.Property<decimal>("Discount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("discount");
+
+                    b.Property<DateTimeOffset?>("DispatchedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dispatched_at");
 
                     b.Property<string>("FulfillmentType")
                         .IsRequired()
@@ -2856,6 +2990,10 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CustomerId")
                         .HasDatabaseName("ix_orders_customer_id");
+
+                    b.HasIndex("DeliveryTrackingTokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_orders_delivery_tracking_token_hash");
 
                     b.HasIndex("TableSessionId")
                         .HasDatabaseName("ix_orders_table_session_id");
@@ -3393,11 +3531,16 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ProjetoPizza.Domain.Billing.Bill", b =>
                 {
+                    b.HasOne("ProjetoPizza.Domain.Ordering.Order", null)
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_bills_orders_order_id");
+
                     b.HasOne("ProjetoPizza.Domain.Dining.TableSession", null)
                         .WithMany()
                         .HasForeignKey("TableSessionId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
                         .HasConstraintName("fk_bills_table_sessions_table_session_id");
 
                     b.HasOne("ProjetoPizza.Domain.Core.RestaurantUnit", null)
@@ -3828,6 +3971,23 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TableSessionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_device_sessions_table_sessions_table_session_id");
+                });
+
+            modelBuilder.Entity("ProjetoPizza.Domain.Devices.PrintJob", b =>
+                {
+                    b.HasOne("ProjetoPizza.Domain.Devices.Device", null)
+                        .WithMany()
+                        .HasForeignKey("PrinterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_print_jobs_devices_printer_id");
+
+                    b.HasOne("ProjetoPizza.Domain.Core.RestaurantUnit", null)
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_print_jobs_restaurant_units_unit_id");
                 });
 
             modelBuilder.Entity("ProjetoPizza.Domain.Dining.DiningArea", b =>

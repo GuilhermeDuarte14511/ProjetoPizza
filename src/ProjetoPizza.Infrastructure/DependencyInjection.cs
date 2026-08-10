@@ -4,8 +4,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProjetoPizza.Application.Abstractions.Persistence;
 using ProjetoPizza.Application.Identity;
+using ProjetoPizza.Application.Catalog;
+using ProjetoPizza.Application.Admin;
+using ProjetoPizza.Infrastructure.Backup;
 using ProjetoPizza.Infrastructure.Identity;
+using ProjetoPizza.Infrastructure.Media;
 using ProjetoPizza.Infrastructure.Persistence;
+using ProjetoPizza.Infrastructure.Printing;
 
 namespace ProjetoPizza.Infrastructure;
 
@@ -36,6 +41,12 @@ public static class DependencyInjection
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<ProjetoPizzaDbContext>();
         services.AddScoped<IIdentityAccessService, IdentityAccessService>();
+        services.Configure<MenuMediaOptions>(configuration.GetSection(MenuMediaOptions.SectionName));
+        services.AddScoped<IMenuImageStorage, LocalMenuImageStorage>();
+        services.Configure<DatabaseBackupOptions>(configuration.GetSection(DatabaseBackupOptions.SectionName));
+        services.AddSingleton<ISystemBackupService, PostgreSqlBackupService>();
+        services.AddHostedService<DatabaseBackupWorker>();
+        services.AddHostedService<PrintQueueWorker>();
         services.AddScoped<DevelopmentDataSeeder>();
         return services;
     }

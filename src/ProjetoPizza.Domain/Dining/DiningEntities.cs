@@ -28,7 +28,7 @@ public sealed class DiningArea : AggregateRoot<DiningAreaId>
     {
         UnitId = unitId;
         Name = Guard.Required(name, nameof(name), 100);
-        DisplayOrder = displayOrder;
+        DisplayOrder = (int)Guard.NonNegative(displayOrder, nameof(displayOrder));
         IsActive = true;
     }
 
@@ -37,6 +37,13 @@ public sealed class DiningArea : AggregateRoot<DiningAreaId>
     public string? Description { get; private set; }
     public int DisplayOrder { get; private set; }
     public bool IsActive { get; private set; }
+
+    public void Update(string name, int displayOrder, bool isActive)
+    {
+        Name = Guard.Required(name, nameof(name), 100);
+        DisplayOrder = (int)Guard.NonNegative(displayOrder, nameof(displayOrder));
+        IsActive = isActive;
+    }
 }
 
 public sealed class RestaurantTable : AggregateRoot<RestaurantTableId>
@@ -76,6 +83,23 @@ public sealed class RestaurantTable : AggregateRoot<RestaurantTableId>
     public void Rename(string name)
     {
         Name = Guard.Required(name, nameof(name), 80);
+        Touch();
+    }
+
+    public void Update(
+        DiningAreaId diningAreaId,
+        int number,
+        string name,
+        int capacity,
+        int displayOrder,
+        bool isActive)
+    {
+        DiningAreaId = diningAreaId;
+        Number = Guard.Positive(number, nameof(number));
+        Name = Guard.Required(name, nameof(name), 80);
+        Capacity = Guard.Positive(capacity, nameof(capacity));
+        DisplayOrder = (int)Guard.NonNegative(displayOrder, nameof(displayOrder));
+        IsActive = isActive;
         Touch();
     }
 
@@ -317,6 +341,13 @@ public sealed class ServiceCallType : AggregateRoot<ServiceCallTypeId>
     public string Code { get; private set; } = string.Empty;
     public string Name { get; private set; } = string.Empty;
     public bool IsActive { get; private set; }
+
+    public void Update(string code, string name, bool isActive)
+    {
+        Code = Guard.Required(code, nameof(code), 50);
+        Name = Guard.Required(name, nameof(name), 100);
+        IsActive = isActive;
+    }
 }
 
 public sealed class ServiceCall : AggregateRoot<ServiceCallId>

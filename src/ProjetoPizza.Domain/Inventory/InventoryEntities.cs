@@ -33,6 +33,15 @@ public sealed class InventoryItem : AggregateRoot<InventoryItemId>
     public string UnitOfMeasure { get; private set; } = string.Empty;
     public decimal MinimumStock { get; private set; }
     public bool IsActive { get; private set; }
+
+    public void Update(string name, string sku, string unitOfMeasure, decimal minimumStock, bool isActive)
+    {
+        Name = Guard.Required(name, nameof(name), 120);
+        Sku = Guard.Required(sku, nameof(sku), 50);
+        UnitOfMeasure = Guard.Required(unitOfMeasure, nameof(unitOfMeasure), 20);
+        MinimumStock = Guard.NonNegative(minimumStock, nameof(minimumStock));
+        IsActive = isActive;
+    }
 }
 
 public sealed class StockBalance : AggregateRoot<StockBalanceId>
@@ -51,6 +60,18 @@ public sealed class StockBalance : AggregateRoot<StockBalanceId>
     public DateTimeOffset UpdatedAt { get; private set; }
 
     public decimal AvailableQuantity => CurrentQuantity - ReservedQuantity;
+
+    public void ApplyAdjustment(decimal quantityDelta)
+    {
+        var next = CurrentQuantity + quantityDelta;
+        if (next < ReservedQuantity)
+        {
+            throw new BusinessRuleException("stock_balance.insufficient", "Available stock balance cannot become negative.");
+        }
+
+        CurrentQuantity = next;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
 }
 
 public sealed class StockMovement : Entity<StockMovementId>

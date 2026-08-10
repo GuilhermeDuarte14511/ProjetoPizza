@@ -20,6 +20,23 @@ public enum DeviceStatus
     Maintenance
 }
 
+public enum PrintDocumentType
+{
+    TestPage,
+    KitchenTicket,
+    CustomerReceipt,
+    CashClosing,
+    FiscalDocument
+}
+
+public enum PrintJobStatus
+{
+    Pending,
+    Processing,
+    Completed,
+    Failed
+}
+
 public sealed class Device : AggregateRoot<DeviceId>
 {
     private Device() : base(default) { }
@@ -49,6 +66,11 @@ public sealed class Device : AggregateRoot<DeviceId>
     public DateTimeOffset? LastSeenAt { get; private set; }
     public RestaurantTableId? LinkedTableId { get; private set; }
     public bool IsLocked { get; private set; }
+    public int? PrinterPort { get; private set; }
+    public int? PaperWidthMm { get; private set; }
+    public bool AutoPrintKitchenTickets { get; private set; }
+    public bool AutoPrintCustomerReceipts { get; private set; }
+    public bool AutoPrintFiscalDocuments { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -69,7 +91,7 @@ public sealed class Device : AggregateRoot<DeviceId>
         BatteryPercentage = batteryPercentage;
         IsCharging = isCharging;
         NetworkStatus = string.IsNullOrWhiteSpace(networkStatus) ? null : Guard.Required(networkStatus, nameof(networkStatus), 60);
-        IpAddress = string.IsNullOrWhiteSpace(ipAddress) ? null : Guard.Required(ipAddress, nameof(ipAddress), 64);
+        IpAddress = string.IsNullOrWhiteSpace(ipAddress) ? null : Guard.Required(ipAddress, nameof(ipAddress), 255);
         AppVersion = string.IsNullOrWhiteSpace(appVersion) ? null : Guard.Required(appVersion, nameof(appVersion), 40);
         LastSeenAt = DateTimeOffset.UtcNow;
         UpdatedAt = LastSeenAt.Value;
@@ -86,6 +108,95 @@ public sealed class Device : AggregateRoot<DeviceId>
         IsLocked = value;
         Status = value ? DeviceStatus.Blocked : DeviceStatus.Offline;
         UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void ConfigureNetworkPrinter(
+        string name,
+        string host,
+        int port,
+        int paperWidthMm,
+        bool autoPrintKitchenTickets,
+        bool autoPrintCustomerReceipts,
+        bool autoPrintFiscalDocuments)
+    {
+        if (DeviceType != DeviceType.Printer)
+            throw new BusinessRuleException("device.printer_type", "Only printer devices accept printer configuration.");
+        if (port is < 1 or > 65535)
+            throw new BusinessRuleException("device.printer_port", "Printer port must be between 1 and 65535.");
+        if (paperWidthMm is not (58 or 80))
+            throw new BusinessRuleException("device.printer_paper", "Printer paper width must be 58 or 80 mm.");
+
+        Name = Guard.Required(name, nameof(name), 100);
+        IpAddress = Guard.Required(host, nameof(host), 255);
+        PrinterPort = port;
+        PaperWidthMm = paperWidthMm;
+        AutoPrintKitchenTickets = autoPrintKitchenTickets;
+        AutoPrintCustomerReceipts = autoPrintCustomerReceipts;
+        AutoPrintFiscalDocuments = autoPrintFiscalDocuments;
+        Platform = "ESC/POS TCP";
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+}
+
+public sealed class PrintJob : AggregateRoot<PrintJobId>
+{
+    private PrintJob() : base(default) { }
+
+    public PrintJob(
+        PrintJobId id,
+        RestaurantUnitId unitId,
+        DeviceId printerId,
+        PrintDocumentType documentType,
+        string payload,
+        int copies = 1) : base(id)
+    {
+        if (copies is < 1 or > 5)
+            throw new BusinessRuleException("print_job.copies", "Print copies must be between one and five.");
+        UnitId = unitId;
+        PrinterId = printerId;
+        DocumentType = documentType;
+        Payload = Guard.Required(payload, nameof(payload), 20000);
+        Copies = copies;
+        Status = PrintJobStatus.Pending;
+        NextAttemptAt = CreatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public RestaurantUnitId UnitId { get; private set; }
+    public DeviceId PrinterId { get; private set; }
+    public PrintDocumentType DocumentType { get; private set; }
+    public string Payload { get; private set; } = string.Empty;
+    public int Copies { get; private set; }
+    public PrintJobStatus Status { get; private set; }
+    public int Attempts { get; private set; }
+    public DateTimeOffset NextAttemptAt { get; private set; }
+    public string? LastError { get; private set; }
+    public DateTimeOffset CreatedAt { get; private set; }
+    public DateTimeOffset? CompletedAt { get; private set; }
+
+    public void Start()
+    {
+        if (Status is not (PrintJobStatus.Pending or PrintJobStatus.Failed))
+            throw new BusinessRuleException("print_job.status", "Only pending or failed print jobs can start.");
+        Status = PrintJobStatus.Processing;
+        Attempts++;
+    }
+
+    public void Complete()
+    {
+        if (Status != PrintJobStatus.Processing)
+            throw new BusinessRuleException("print_job.status", "Only processing print jobs can complete.");
+        Status = PrintJobStatus.Completed;
+        CompletedAt = DateTimeOffset.UtcNow;
+        LastError = null;
+    }
+
+    public void Fail(string error)
+    {
+        if (Status != PrintJobStatus.Processing)
+            throw new BusinessRuleException("print_job.status", "Only processing print jobs can fail.");
+        LastError = Guard.Required(error, nameof(error), 1000);
+        Status = PrintJobStatus.Failed;
+        NextAttemptAt = DateTimeOffset.UtcNow.AddSeconds(Math.Min(300, Math.Pow(2, Attempts) * 5));
     }
 }
 

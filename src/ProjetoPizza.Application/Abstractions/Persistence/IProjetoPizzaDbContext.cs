@@ -58,6 +58,7 @@ public interface IProjetoPizzaDbContext
     IQueryable<Device> Devices { get; }
     IQueryable<DeviceSession> DeviceSessions { get; }
     IQueryable<DeviceProvisioning> DeviceProvisionings { get; }
+    IQueryable<PrintJob> PrintJobs { get; }
     IQueryable<AuditLog> AuditLogs { get; }
 
     void Add<TEntity>(TEntity entity) where TEntity : class;

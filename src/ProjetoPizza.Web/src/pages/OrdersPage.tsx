@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock3, Plus, Printer, Search } from 'lucide-react'
+import { CheckCircle2, Clock3, Plus, Printer, Search, Truck } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useAdminQuery } from '../hooks/useAdminQuery'
 import { usePdfTableExport } from '../hooks/usePdfTableExport'
@@ -30,6 +30,7 @@ export function OrdersPage() {
   const [busy, setBusy] = useState<string>()
   const [receipt, setReceipt] = useState<OrderReceipt>()
   const [loadingReceipt, setLoadingReceipt] = useState<string>()
+  const [driverNames, setDriverNames] = useState<Record<string, string>>({})
   const toast = useToast()
   const { exportPdf, exporting } = usePdfTableExport()
 
@@ -56,12 +57,33 @@ export function OrdersPage() {
   async function printReceipt(order: ManagedOrder) {
     setLoadingReceipt(order.id)
     try {
-      setReceipt(await adminService.orderReceipt(order.id))
+      await adminService.printOrder(order.id)
+      toast.success('Impressão enfileirada', `O comprovante do pedido #${order.number} será enviado à impressora configurada.`)
     } catch (error) {
       toast.error('Não foi possível preparar a impressão', getUserErrorMessage(error))
     } finally {
       setLoadingReceipt(undefined)
     }
+  }
+
+  async function dispatch(order: ManagedOrder) {
+    const driverName = driverNames[order.id]?.trim()
+    if (!driverName) { toast.error('Informe o entregador', 'Digite o nome de quem sairá com o pedido.'); return }
+    setBusy(order.id)
+    try {
+      await adminService.dispatchDelivery(order.id, driverName)
+      setOrders((current) => current.map((item) => item.id === order.id ? { ...item, deliveryStatus: 'Dispatched', deliveryDriverName: driverName, dispatchedAt: new Date().toISOString() } : item))
+      toast.success('Entrega despachada', `${driverName} saiu com o pedido #${order.number}.`)
+    } catch (error) { toast.error('Não foi possível despachar', getUserErrorMessage(error)) } finally { setBusy(undefined) }
+  }
+
+  async function completeDelivery(order: ManagedOrder) {
+    setBusy(order.id)
+    try {
+      await adminService.completeDelivery(order.id)
+      setOrders((current) => current.map((item) => item.id === order.id ? { ...item, status: 'Completed', deliveryStatus: 'Delivered', deliveredAt: new Date().toISOString() } : item))
+      toast.success('Entrega concluída', `O pedido #${order.number} foi entregue.`)
+    } catch (error) { toast.error('Não foi possível concluir a entrega', getUserErrorMessage(error)) } finally { setBusy(undefined) }
   }
 
   function exportOrders() {
@@ -110,9 +132,9 @@ export function OrdersPage() {
                 <StatusBadge status={order.status} />
               </header>
               <div className="order-time"><Clock3 size={15} /> {new Date(order.createdAt).toLocaleString('pt-BR')}</div>
-              {order.customerName && <div className="order-customer-summary"><strong>{order.customerName}</strong>{order.deliveryAddress && <span>{order.deliveryAddress}</span>}</div>}
+              {order.customerName && <div className="order-customer-summary"><strong>{order.customerName}</strong>{order.deliveryAddress && <span>{order.deliveryAddress}</span>}{order.deliveryStatus && <span><Truck size={14} /> {translateEnum(order.deliveryStatus)}{order.deliveryDriverName ? ` · ${order.deliveryDriverName}` : ''}</span>}</div>}
               <div className="order-lines">{order.items.map((item) => <div key={item.id}><span>{item.quantity}× {item.name}</span><strong>{currency.format(item.totalPrice)}</strong></div>)}</div>
-              <footer><strong>{currency.format(order.total)}</strong><div className="order-card-actions"><button className="secondary-button" disabled={loadingReceipt === order.id} onClick={() => void printReceipt(order)}><Printer size={15} /> {loadingReceipt === order.id ? 'Preparando...' : 'Imprimir'}</button>{transition && hasPermission('operations:write') ? <button className="primary-button" disabled={busy === order.id} onClick={() => void advance(order)}><CheckCircle2 size={16} /> {busy === order.id ? 'Atualizando...' : transition.label}</button> : <span className="completed-label">{transition ? 'Somente leitura' : 'Fluxo concluído'}</span>}</div></footer>
+              <footer><strong>{currency.format(order.total)}</strong><div className="order-card-actions"><button className="secondary-button" disabled={loadingReceipt === order.id} onClick={() => void printReceipt(order)}><Printer size={15} /> {loadingReceipt === order.id ? 'Preparando...' : 'Imprimir'}</button>{order.fulfillment === 'Delivery' && order.deliveryStatus === 'ReadyForDispatch' && hasPermission('operations:write') ? <><input className="driver-name-input" aria-label={`Entregador do pedido ${order.number}`} value={driverNames[order.id] ?? ''} onChange={(event) => setDriverNames((current) => ({ ...current, [order.id]: event.target.value }))} placeholder="Nome do entregador" /><button className="primary-button" disabled={busy === order.id} onClick={() => void dispatch(order)}><Truck size={16} /> Entregador saiu</button></> : order.fulfillment === 'Delivery' && order.deliveryStatus === 'Dispatched' && hasPermission('operations:write') ? <button className="primary-button" disabled={busy === order.id} onClick={() => void completeDelivery(order)}><CheckCircle2 size={16} /> Confirmar entrega</button> : transition && !(order.fulfillment === 'Delivery' && order.status === 'Ready') && hasPermission('operations:write') ? <button className="primary-button" disabled={busy === order.id} onClick={() => void advance(order)}><CheckCircle2 size={16} /> {busy === order.id ? 'Atualizando...' : transition.label}</button> : <span className="completed-label">{order.deliveryStatus === 'Delivered' ? 'Entrega concluída' : transition ? 'Somente leitura' : 'Fluxo concluído'}</span>}</div></footer>
             </article>
           )
         })}

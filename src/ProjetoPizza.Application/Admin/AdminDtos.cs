@@ -8,9 +8,17 @@ public sealed record DashboardDto(
     int TotalTables,
     int OrdersInProduction,
     int PendingServiceCalls,
-    IReadOnlyCollection<DashboardOrderDto> RecentOrders);
+    IReadOnlyCollection<DashboardOrderDto> RecentOrders,
+    DashboardTableStatusDto TableStatus,
+    IReadOnlyCollection<DashboardProductDto> TopProducts,
+    IReadOnlyCollection<DashboardPaymentMethodDto> PaymentMethods,
+    IReadOnlyCollection<DashboardStockAlertDto> StockAlerts);
 
 public sealed record DashboardOrderDto(long Number, string Channel, string Status, decimal Total, DateTimeOffset? PlacedAt);
+public sealed record DashboardTableStatusDto(int Free, int Occupied, int Calling, int AwaitingPayment);
+public sealed record DashboardProductDto(string Name, int Quantity);
+public sealed record DashboardPaymentMethodDto(string Name, decimal Total, decimal Percentage);
+public sealed record DashboardStockAlertDto(Guid InventoryItemId, string Name, decimal AvailableQuantity, decimal MinimumStock, string UnitOfMeasure);
 
 public sealed record TableSummaryDto(
     Guid Id,
@@ -45,8 +53,11 @@ public sealed record ProductDto(
     Guid CategoryId,
     string Sku,
     string Name,
+    string? Description,
     string Type,
     decimal BasePrice,
+    int PreparationTimeMinutes,
+    string? ImageUrl,
     bool IsActive,
     bool IsAvailable,
     bool IsFeatured,
@@ -69,6 +80,7 @@ public sealed record PizzaFlavorDto(
     bool IsActive,
     bool IsAvailable,
     string? SoldOutReason,
+    string? ImageUrl,
     IReadOnlyCollection<PizzaFlavorExtraDto> Extras);
 public sealed record PizzaFlavorExtraDto(
     Guid IngredientId,

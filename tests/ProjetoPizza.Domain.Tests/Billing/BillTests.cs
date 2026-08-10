@@ -45,6 +45,38 @@ public sealed class BillTests
         bill.RequestedAt.Should().Be(requestedAt);
     }
 
+    [Fact]
+    public void CounterBill_ShouldBeLinkedToOrderAndApplyDiscount()
+    {
+        var orderId = OrderId.New();
+
+        var bill = new Bill(
+            BillId.New(),
+            RestaurantUnitId.New(),
+            orderId,
+            new Money(100m),
+            new Money(10m));
+
+        bill.OrderId.Should().Be(orderId);
+        bill.TableSessionId.Should().BeNull();
+        bill.TotalAmount.Amount.Should().Be(90m);
+        bill.RemainingAmount.Amount.Should().Be(90m);
+    }
+
+    [Fact]
+    public void CounterBill_WithDiscountAboveSubtotal_ShouldBeRejected()
+    {
+        var action = () => new Bill(
+            BillId.New(),
+            RestaurantUnitId.New(),
+            OrderId.New(),
+            new Money(100m),
+            new Money(100.01m));
+
+        action.Should().Throw<BusinessRuleException>()
+            .Which.Rule.Should().Be("bill.discount");
+    }
+
     private static Bill CreateBill() => new(
         BillId.New(),
         RestaurantUnitId.New(),

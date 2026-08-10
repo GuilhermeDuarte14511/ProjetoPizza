@@ -44,6 +44,10 @@ export const mockDashboard: Dashboard = {
     { number: 1023, channel: 'Delivery', status: 'Aceito', total: 142, placedAt: new Date().toISOString() },
     { number: 1022, channel: 'Retirada', status: 'Pronto', total: 150.8, placedAt: new Date().toISOString() },
   ],
+  tableStatus: { free: 12, occupied: 16, calling: 2, awaitingPayment: 2 },
+  topProducts: [{ name: 'Pizza Calabresa', quantity: 32 }, { name: 'Margherita', quantity: 26 }, { name: 'Coca-Cola 2L', quantity: 20 }],
+  paymentMethods: [{ name: 'Cartão de crédito', total: 2420, percentage: 52.84 }, { name: 'Pix', total: 1460, percentage: 31.88 }, { name: 'Dinheiro', total: 700, percentage: 15.28 }],
+  stockAlerts: [{ inventoryItemId: 'stock-1', name: 'Mussarela', availableQuantity: 2.5, minimumStock: 5, unitOfMeasure: 'kg' }],
 }
 
 export const mockServiceCalls: ServiceCall[] = [
@@ -70,10 +74,10 @@ export const mockCategories: Category[] = [
 ]
 
 export const mockProducts: Product[] = [
-  { id: 'prod-1', categoryId: 'cat-1', sku: 'PIZ-MARG', name: 'Margherita Tradicional', type: 'Pizza', basePrice: 49.9, isActive: true, isAvailable: true, isFeatured: true, usesCustomExtras: false, complements: [] },
-  { id: 'prod-2', categoryId: 'cat-1', sku: 'PIZ-CALA', name: 'Pizza Calabresa', type: 'Pizza', basePrice: 54.9, isActive: true, isAvailable: true, isFeatured: false, usesCustomExtras: false, complements: [] },
-  { id: 'prod-3', categoryId: 'cat-5', sku: 'BEB-COCA2', name: 'Coca-Cola 2L', type: 'Beverage', basePrice: 14, isActive: true, isAvailable: false, isFeatured: false, usesCustomExtras: false, complements: [] },
-  { id: 'prod-4', categoryId: 'cat-4', sku: 'POR-FRIT', name: 'Batata Frita Especial', type: 'Portion', basePrice: 32, isActive: true, isAvailable: true, isFeatured: false, usesCustomExtras: false, complements: [] },
+  { id: 'prod-1', categoryId: 'cat-1', sku: 'PIZ-MARG', name: 'Margherita Tradicional', type: 'Pizza', basePrice: 49.9, preparationTimeMinutes: 25, isActive: true, isAvailable: true, isFeatured: true, usesCustomExtras: false, complements: [] },
+  { id: 'prod-2', categoryId: 'cat-1', sku: 'PIZ-CALA', name: 'Pizza Calabresa', type: 'Pizza', basePrice: 54.9, preparationTimeMinutes: 25, isActive: true, isAvailable: true, isFeatured: false, usesCustomExtras: false, complements: [] },
+  { id: 'prod-3', categoryId: 'cat-5', sku: 'BEB-COCA2', name: 'Coca-Cola 2L', type: 'Beverage', basePrice: 14, preparationTimeMinutes: 0, isActive: true, isAvailable: false, isFeatured: false, usesCustomExtras: false, complements: [] },
+  { id: 'prod-4', categoryId: 'cat-4', sku: 'POR-FRIT', name: 'Batata Frita Especial', type: 'Portion', basePrice: 32, preparationTimeMinutes: 15, isActive: true, isAvailable: true, isFeatured: false, usesCustomExtras: false, complements: [] },
 ]
 
 export const mockPizzaSizes: PizzaSize[] = [

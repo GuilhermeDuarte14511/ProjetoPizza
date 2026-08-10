@@ -11,6 +11,10 @@ public sealed record OrderManagementDto(
     Guid? CustomerId,
     string? CustomerName,
     string? DeliveryAddress,
+    string? DeliveryStatus,
+    string? DeliveryDriverName,
+    DateTimeOffset? DispatchedAt,
+    DateTimeOffset? DeliveredAt,
     string? Notes,
     decimal Total,
     DateTimeOffset CreatedAt,
@@ -27,6 +31,7 @@ public sealed record CustomerDto(
     bool IsActive,
     DateTimeOffset CreatedAt);
 public sealed record CreatedOrderDto(Guid Id, long Number, string Status, decimal Total, OrderReceiptDto Receipt);
+public sealed record CounterCheckoutResultDto(Guid Id, long Number, string Status, decimal Total, OrderReceiptDto Receipt);
 public sealed record OrderReceiptDto(
     Guid Id,
     long Number,
@@ -39,8 +44,11 @@ public sealed record OrderReceiptDto(
     decimal DeliveryFee,
     decimal Discount,
     decimal Total,
+    decimal PaidAmount,
+    decimal ChangeAmount,
     string? Notes,
-    IReadOnlyCollection<OrderReceiptItemDto> Items);
+    IReadOnlyCollection<OrderReceiptItemDto> Items,
+    IReadOnlyCollection<OrderReceiptPaymentDto> Payments);
 public sealed record OrderReceiptItemDto(
     Guid Id,
     string Name,
@@ -49,6 +57,13 @@ public sealed record OrderReceiptItemDto(
     decimal TotalPrice,
     string? Notes,
     IReadOnlyCollection<string> Details);
+public sealed record OrderReceiptPaymentDto(
+    string Method,
+    decimal Amount,
+    decimal ReceivedAmount,
+    decimal ChangeAmount,
+    DateTimeOffset PaidAt);
+public sealed record PrintBatchResultDto(IReadOnlyCollection<Guid> JobIds, string Status);
 public sealed record PizzaCrustDto(
     Guid Id,
     string Name,
@@ -117,7 +132,53 @@ public sealed record CashShiftDto(
 public sealed record CashRegisterDto(
     Guid Id,
     string Name,
-    string Code);
+    string Code,
+    bool IsActive);
+
+public sealed record CashShiftHistoryDto(
+    Guid Id,
+    string Register,
+    string Operator,
+    string? ClosedBy,
+    string Status,
+    DateTimeOffset OpenedAt,
+    DateTimeOffset? ClosedAt,
+    decimal OpeningAmount,
+    decimal ExpectedCashAmount,
+    decimal? CountedCashAmount,
+    decimal? DifferenceAmount,
+    string? ClosingNotes,
+    IReadOnlyCollection<CashMovementDto> Movements);
+
+public sealed record DiningAreaAdminDto(Guid Id, string Name, int DisplayOrder, bool IsActive);
+public sealed record RestaurantTableAdminDto(
+    Guid Id,
+    Guid DiningAreaId,
+    string AreaName,
+    int Number,
+    string Name,
+    int Capacity,
+    int DisplayOrder,
+    bool IsActive);
+public sealed record ProductionStationAdminDto(
+    Guid Id,
+    string Name,
+    string Code,
+    int TargetPreparationMinutes,
+    int DisplayOrder,
+    bool IsActive);
+public sealed record ServiceCallTypeAdminDto(Guid Id, string Code, string Name, bool IsActive);
+public sealed record InventoryItemAdminDto(
+    Guid Id,
+    string Name,
+    string Sku,
+    string UnitOfMeasure,
+    decimal MinimumStock,
+    decimal CurrentQuantity,
+    decimal ReservedQuantity,
+    decimal AvailableQuantity,
+    bool IsLowStock,
+    bool IsActive);
 
 public sealed record CashMovementDto(
     Guid Id,
@@ -133,6 +194,7 @@ public sealed record PaymentMethodDto(
     string Name,
     bool RequiresExternalReference,
     bool AllowsChange,
+    int DisplayOrder,
     bool IsActive);
 
 public sealed record PaymentDto(
@@ -174,7 +236,23 @@ public sealed record DeviceDto(
     string? AppVersion,
     DateTimeOffset? LastSeenAt,
     Guid? LinkedTableId,
-    bool IsLocked);
+    bool IsLocked,
+    int? PrinterPort,
+    int? PaperWidthMm,
+    bool AutoPrintKitchenTickets,
+    bool AutoPrintCustomerReceipts,
+    bool AutoPrintFiscalDocuments);
+
+public sealed record PrintJobDto(
+    Guid Id,
+    Guid PrinterId,
+    string PrinterName,
+    string DocumentType,
+    string Status,
+    int Attempts,
+    string? LastError,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? CompletedAt);
 
 public sealed record DeviceProvisioningDto(
     DeviceDto Device,
@@ -200,6 +278,12 @@ public sealed record SystemSnapshotDto(
     int Orders,
     int Payments,
     int Devices);
+
+public sealed record DatabaseBackupDto(
+    string FileName,
+    DateTimeOffset CreatedAt,
+    long SizeBytes,
+    string Type);
 
 public sealed record UpdateUnitCommand(
     string Name,
@@ -322,6 +406,18 @@ public sealed record CreateAdministrativeOrderCommand(
     string? Notes,
     IReadOnlyList<SubmitClientOrderItemCommand> Items);
 
+public sealed record CounterPaymentCommand(
+    Guid PaymentMethodId,
+    decimal ReceivedAmount,
+    string? ExternalReference);
+
+public sealed record CheckoutCounterOrderCommand(
+    CreateAdministrativeOrderCommand Order,
+    CounterPaymentCommand Payment);
+
+public sealed record DispatchDeliveryCommand(string DriverName);
+public sealed record FailDeliveryCommand(string Reason);
+
 public sealed record OpenTableCommand(Guid TableId, int GuestCount);
 public sealed record RecordPaymentCommand(Guid BillId, Guid PaymentMethodId, decimal Amount, decimal ReceivedAmount, string? ExternalReference);
 public sealed record SplitPaymentPartCommand(
@@ -334,6 +430,40 @@ public sealed record RecordSplitPaymentCommand(Guid BillId, IReadOnlyCollection<
 public sealed record RegisterCashMovementCommand(string Type, decimal Amount, string Description, string Reason);
 public sealed record OpenCashShiftCommand(Guid CashRegisterId, decimal OpeningAmount);
 public sealed record CloseCashShiftCommand(decimal CountedCashAmount, string? Notes);
+public sealed record SaveDiningAreaCommand(Guid? Id, string Name, int DisplayOrder, bool IsActive);
+public sealed record SaveRestaurantTableCommand(
+    Guid? Id,
+    Guid DiningAreaId,
+    int Number,
+    string Name,
+    int Capacity,
+    int DisplayOrder,
+    bool IsActive);
+public sealed record SaveCashRegisterCommand(Guid? Id, string Name, string Code, bool IsActive);
+public sealed record SavePaymentMethodCommand(
+    Guid? Id,
+    string Code,
+    string Name,
+    bool RequiresExternalReference,
+    bool AllowsChange,
+    int DisplayOrder,
+    bool IsActive);
+public sealed record SaveProductionStationCommand(
+    Guid? Id,
+    string Name,
+    string Code,
+    int TargetPreparationMinutes,
+    int DisplayOrder,
+    bool IsActive);
+public sealed record SaveServiceCallTypeCommand(Guid? Id, string Code, string Name, bool IsActive);
+public sealed record SaveInventoryItemCommand(
+    Guid? Id,
+    string Name,
+    string Sku,
+    string UnitOfMeasure,
+    decimal MinimumStock,
+    bool IsActive);
+public sealed record AdjustInventoryCommand(decimal QuantityDelta, string Reason);
 public sealed record UpdateDeviceCommand(
     string Status,
     int? BatteryPercentage,
@@ -343,6 +473,17 @@ public sealed record UpdateDeviceCommand(
     string? AppVersion,
     Guid? LinkedTableId,
     bool IsLocked);
+
+public sealed record SaveNetworkPrinterCommand(
+    Guid? Id,
+    string Name,
+    string Host,
+    int Port,
+    int PaperWidthMm,
+    bool AutoPrintKitchenTickets,
+    bool AutoPrintCustomerReceipts,
+    bool AutoPrintFiscalDocuments,
+    bool IsActive);
 
 public sealed record CreateCustomerTabletCommand(
     string Name,

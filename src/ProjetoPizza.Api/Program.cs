@@ -3,12 +3,14 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.FileProviders;
 using ProjetoPizza.Api.Endpoints;
 using ProjetoPizza.Api.ErrorHandling;
 using ProjetoPizza.Api.Health;
 using ProjetoPizza.Api.Realtime;
 using ProjetoPizza.Application.Admin;
 using ProjetoPizza.Application.Client;
+using ProjetoPizza.Application.Delivery;
 using ProjetoPizza.Infrastructure;
 using ProjetoPizza.Infrastructure.Persistence;
 
@@ -19,6 +21,7 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddOpenApi();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IAdminEventPublisher, AdminEventPublisher>();
+builder.Services.AddSingleton<IClientEventPublisher, ClientEventPublisher>();
 builder.Services.AddRateLimiter(options =>
 {
     options.AddPolicy("Login", httpContext =>
@@ -39,6 +42,15 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
+    options.AddPolicy("PublicDelivery", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("postgresql");
@@ -50,6 +62,7 @@ builder.Services.AddScoped<IClientSessionService>(provider => provider.GetRequir
 builder.Services.AddScoped<IClientQueryService>(provider => provider.GetRequiredService<ClientService>());
 builder.Services.AddScoped<IClientOrderingService>(provider => provider.GetRequiredService<ClientService>());
 builder.Services.AddScoped<IClientAssistanceService>(provider => provider.GetRequiredService<ClientService>());
+builder.Services.AddScoped<IDeliveryService, DeliveryService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -101,6 +114,11 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminWrite", policy => policy.RequireAuthenticatedUser().RequireClaim("permission", "admin:write"));
     options.AddPolicy("OperationsAccess", policy => policy.RequireAuthenticatedUser().RequireClaim("permission", "operations:read"));
     options.AddPolicy("OperationsWrite", policy => policy.RequireAuthenticatedUser().RequireClaim("permission", "operations:write"));
+    options.AddPolicy("AdminOrOperationsAccess", policy => policy
+        .RequireAuthenticatedUser()
+        .RequireAssertion(context =>
+            context.User.HasClaim("permission", "admin:read") ||
+            context.User.HasClaim("permission", "operations:read")));
 });
 builder.Services.AddCors(options =>
 {
@@ -113,9 +131,20 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+var mediaDirectorySetting = builder.Configuration["MenuMedia:Directory"] ?? "data/media";
+var mediaDirectory = Path.GetFullPath(Path.IsPathRooted(mediaDirectorySetting)
+    ? mediaDirectorySetting
+    : Path.Combine(builder.Environment.ContentRootPath, mediaDirectorySetting));
+Directory.CreateDirectory(mediaDirectory);
+
 app.UseExceptionHandler();
 app.UseRateLimiter();
 app.UseHttpsRedirection();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(mediaDirectory),
+    RequestPath = builder.Configuration["MenuMedia:PublicPath"] ?? "/media"
+});
 app.UseCors("DevelopmentWeb");
 app.UseAuthentication();
 app.UseAuthorization();
@@ -125,7 +154,9 @@ app.MapSystemEndpoints();
 app.MapAuthenticationEndpoints();
 app.MapAdminEndpoints();
 app.MapClientEndpoints();
+app.MapDeliveryEndpoints();
 app.MapHub<AdminEventsHub>("/hubs/admin");
+app.MapHub<ClientEventsHub>("/hubs/client");
 
 if (args.Contains("--migrate", StringComparer.OrdinalIgnoreCase) ||
     args.Contains("--seed", StringComparer.OrdinalIgnoreCase))

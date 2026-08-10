@@ -137,6 +137,72 @@ public sealed class AdminCashierServiceTests
         fixture.Context.AuditLogItems.Should().ContainSingle(log => log.Action == "CreateAdministrative");
     }
 
+    [Fact]
+    public async Task CheckoutCounterOrder_ShouldPersistPaidBillPaymentAndKitchenTicketAtomically()
+    {
+        var fixture = CreateFixture();
+        var unit = fixture.Context.RestaurantUnitItems.Single();
+        var settings = new OperationSettings(unit.Id);
+        settings.Update(false, false, true, new Percentage(10), new Money(8), true, true, 5);
+        var customer = new Customer(CustomerId.New(), unit.Id, "Ana Souza", "11999998877", new DateOnly(1992, 5, 18));
+        var product = new Product(ProductId.New(), unit.Id, CategoryId.New(), "PIZZA-01", "Pizza", ProductType.Standard, new Money(50));
+        var station = new ProductionStation(ProductionStationId.New(), unit.Id, "Cozinha", "HOT", 15);
+        var paymentMethod = new PaymentMethod(PaymentMethodId.New(), unit.Id, "CASH", "Dinheiro", false, true);
+        var shift = new CashShift(CashShiftId.New(), fixture.Register.Id, fixture.Employee.Id, new Money(100));
+        fixture.Context.OperationSettingItems = [settings];
+        fixture.Context.CustomerItems = [customer];
+        fixture.Context.ProductItems = [product];
+        fixture.Context.ProductionStationItems = [station];
+        fixture.Context.PaymentMethodItems = [paymentMethod];
+        fixture.Context.CashShiftItems.Add(shift);
+        var service = new AdminManagementService(fixture.Context);
+        var requestId = Guid.NewGuid();
+
+        var result = await service.CheckoutCounterOrderAsync(
+            new CheckoutCounterOrderCommand(
+                new CreateAdministrativeOrderCommand(
+                    requestId,
+                    customer.Id.Value,
+                    "Pickup",
+                    null,
+                    5,
+                    "Retirar cebola.",
+                    [new SubmitClientOrderItemCommand(product.Id.Value, 2, "Bem assada.", null)]),
+                new CounterPaymentCommand(paymentMethod.Id.Value, 100, null)),
+            fixture.IdentityUserId,
+            CancellationToken.None);
+
+        result.Id.Should().Be(requestId);
+        result.Total.Should().Be(95);
+        result.Receipt.PaidAmount.Should().Be(95);
+        result.Receipt.ChangeAmount.Should().Be(5);
+        result.Receipt.Payments.Should().ContainSingle().Which.Method.Should().Be("Dinheiro");
+        fixture.Context.BillEntities.Should().ContainSingle().Which.Status.Should().Be(BillStatus.Paid);
+        fixture.Context.PaymentEntities.Should().ContainSingle().Which.ChangeAmount.Amount.Should().Be(5);
+        fixture.Context.BillItemEntities.Should().ContainSingle();
+        fixture.Context.KitchenTicketEntities.Should().ContainSingle().Which.Status.Should().Be(KitchenTicketStatus.New);
+        fixture.Context.PrintJobEntities.Should().BeEmpty();
+        fixture.Context.AuditLogItems.Should().Contain(log => log.Action == "CounterCheckout");
+
+        var printer = new Device(DeviceId.New(), unit.Id, "Impressora balcão", "PRN-01", DeviceType.Printer, "ESC/POS TCP");
+        printer.ConfigureNetworkPrinter("Impressora balcão", "192.168.1.50", 9100, 80, true, true, false);
+        printer.UpdateStatus(DeviceStatus.Online, null, false, "Connected", "192.168.1.50", null);
+        fixture.Context.DeviceItems = [printer];
+
+        await service.QueueOrderReceiptAsync(result.Id, fixture.IdentityUserId, CancellationToken.None);
+        var kitchenResult = await service.QueueKitchenCommandAsync(result.Id, fixture.IdentityUserId, CancellationToken.None);
+
+        kitchenResult.JobIds.Should().ContainSingle();
+        fixture.Context.PrintJobEntities.Should().HaveCount(2);
+        var customerJob = fixture.Context.PrintJobEntities.Single(job => job.DocumentType == PrintDocumentType.CustomerReceipt);
+        customerJob.Payload.Should().Contain("COMPROVANTE DO CLIENTE").And.Contain("DOCUMENTO SEM VALOR FISCAL").And.Contain("Dinheiro").And.Contain("TROCO");
+        var kitchenJob = fixture.Context.PrintJobEntities.Single(job => job.DocumentType == PrintDocumentType.KitchenTicket);
+        kitchenJob.Payload.Should().Contain("COMANDA COZINHA").And.Contain("Bem assada.").And.Contain("Retirar cebola.").And.Contain("SEM VALORES").And.NotContain("R$");
+        fixture.Context.KitchenTicketEntities.Single().Status.Should().Be(KitchenTicketStatus.Confirmed);
+        fixture.Context.OrderEntities.Single().Status.Should().Be(OrderStatus.Accepted);
+        fixture.Context.SaveChangesCalls.Should().Be(3);
+    }
+
     private static CashierFixture CreateFixture()
     {
         var identityUserId = Guid.NewGuid();
@@ -178,7 +244,13 @@ public sealed class AdminCashierServiceTests
         public Customer[] CustomerItems { get; set; } = [];
         public Product[] ProductItems { get; set; } = [];
         public ProductionStation[] ProductionStationItems { get; set; } = [];
+        public PaymentMethod[] PaymentMethodItems { get; set; } = [];
+        public Device[] DeviceItems { get; set; } = [];
         public List<CashShift> CashShiftItems { get; } = [];
+        public List<Bill> BillEntities { get; } = [];
+        public List<BillItem> BillItemEntities { get; } = [];
+        public List<Payment> PaymentEntities { get; } = [];
+        public List<PrintJob> PrintJobEntities { get; } = [];
         public List<Order> OrderEntities { get; } = [];
         public List<KitchenTicket> KitchenTicketEntities { get; } = [];
         public List<KitchenTicketItem> KitchenTicketItemEntities { get; } = [];
@@ -218,16 +290,17 @@ public sealed class AdminCashierServiceTests
         public IQueryable<ProductionStation> ProductionStations => ProductionStationItems.AsQueryable();
         public IQueryable<KitchenTicket> KitchenTickets => KitchenTicketEntities.AsQueryable();
         public IQueryable<KitchenTicketItem> KitchenTicketItems => KitchenTicketItemEntities.AsQueryable();
-        public IQueryable<Bill> Bills => Array.Empty<Bill>().AsQueryable();
+        public IQueryable<Bill> Bills => BillEntities.AsQueryable();
         public IQueryable<BillSplit> BillSplits => Array.Empty<BillSplit>().AsQueryable();
-        public IQueryable<PaymentMethod> PaymentMethods => Array.Empty<PaymentMethod>().AsQueryable();
-        public IQueryable<Payment> Payments => Array.Empty<Payment>().AsQueryable();
+        public IQueryable<PaymentMethod> PaymentMethods => PaymentMethodItems.AsQueryable();
+        public IQueryable<Payment> Payments => PaymentEntities.AsQueryable();
         public IQueryable<CashRegister> CashRegisters => CashRegisterItems.AsQueryable();
         public IQueryable<CashShift> CashShifts => CashShiftItems.AsQueryable();
         public IQueryable<CashMovement> CashMovements => Array.Empty<CashMovement>().AsQueryable();
-        public IQueryable<Device> Devices => Array.Empty<Device>().AsQueryable();
+        public IQueryable<Device> Devices => DeviceItems.AsQueryable();
         public IQueryable<DeviceSession> DeviceSessions => Array.Empty<DeviceSession>().AsQueryable();
         public IQueryable<DeviceProvisioning> DeviceProvisionings => Array.Empty<DeviceProvisioning>().AsQueryable();
+        public IQueryable<PrintJob> PrintJobs => PrintJobEntities.AsQueryable();
         public IQueryable<AuditLog> AuditLogs => AuditLogItems.AsQueryable();
 
         public void Add<TEntity>(TEntity entity) where TEntity : class
@@ -236,6 +309,10 @@ public sealed class AdminCashierServiceTests
             if (entity is Order order) OrderEntities.Add(order);
             if (entity is KitchenTicket kitchenTicket) KitchenTicketEntities.Add(kitchenTicket);
             if (entity is KitchenTicketItem kitchenTicketItem) KitchenTicketItemEntities.Add(kitchenTicketItem);
+            if (entity is Bill bill) BillEntities.Add(bill);
+            if (entity is BillItem billItem) BillItemEntities.Add(billItem);
+            if (entity is Payment payment) PaymentEntities.Add(payment);
+            if (entity is PrintJob printJob) PrintJobEntities.Add(printJob);
             if (entity is AuditLog auditLog) AuditLogItems.Add(auditLog);
         }
 

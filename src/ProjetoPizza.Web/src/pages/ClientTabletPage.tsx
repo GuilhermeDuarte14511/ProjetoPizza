@@ -1,5 +1,6 @@
 import { LoaderCircle, Pizza } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ClientShell } from '../features/client/ClientShell'
 import {
   ActivationView,
@@ -21,10 +22,12 @@ import { createUuid } from '../lib/uuid'
 import {
   activateClientSession,
   activateClientProvisioning,
+  cacheClientBootstrap,
   clearClientSessionToken,
   completeClientTableSession,
   createClientServiceCall,
   getClientBootstrap,
+  getCachedClientBootstrap,
   getClientState,
   getClientSessionToken,
   logoutClientTablet,
@@ -33,7 +36,7 @@ import {
   submitClientOrder,
   updateClientTelemetry,
 } from '../services/clientService'
-import { ApiError } from '../api/httpClient'
+import { apiBaseUrl, ApiError } from '../api/httpClient'
 import type {
   ClientBootstrap,
   ClientCartItem,
@@ -60,6 +63,8 @@ export function ClientTabletPage() {
   const [cart, setCart] = useState<ClientCartItem[]>([])
   const [isMutating, setIsMutating] = useState(false)
   const [lastOrderNumber, setLastOrderNumber] = useState(0)
+  const [isOffline, setIsOffline] = useState(!navigator.onLine)
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
 
   useEffect(() => {
     const previousTitle = document.title
@@ -102,6 +107,15 @@ export function ClientTabletPage() {
         setCart(data.session.tableSessionId ? loadClientCart(data.session.tableSessionId) : [])
       })
       .catch((error) => {
+        if (error instanceof ApiError && error.status === 0) {
+          const cached = getCachedClientBootstrap()
+          if (cached) {
+            setBootstrap(cached)
+            setCart(cached.session.tableSessionId ? loadClientCart(cached.session.tableSessionId) : [])
+            setIsOffline(true)
+            return
+          }
+        }
         clearClientSessionToken()
         setActivationError(getUserErrorMessage(error))
       })
@@ -111,6 +125,39 @@ export function ClientTabletPage() {
 
   const activeTableSessionId = bootstrap?.session.tableSessionId
   const activeDeviceId = bootstrap?.session.deviceId
+
+  useEffect(() => {
+    if (bootstrap) cacheClientBootstrap(bootstrap)
+  }, [bootstrap])
+
+  const refreshState = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const state = await getClientState(signal)
+      setBootstrap((current) => current ? { ...current, ...state } : current)
+      setIsOffline(false)
+      if (state.session.tableSessionId !== activeTableSessionId) {
+        setCart(state.session.tableSessionId ? loadClientCart(state.session.tableSessionId) : [])
+        setScreen('welcome')
+      }
+      if (state.session.status === 'Closed' && state.session.clearTabletAfterTableClose) {
+        setCart([])
+        if (state.session.tableSessionId) clearClientCart(state.session.tableSessionId)
+      }
+    } catch (error) {
+      if (signal?.aborted) return
+      if (error instanceof ApiError && error.status === 401) {
+        clearClientSessionToken()
+        setBootstrap(undefined)
+        setCart([])
+        setScreen('welcome')
+        setActivationError('O acesso deste tablet foi revogado ou encerrado. Faça uma nova ativação para continuar.')
+        toast.error('Tablet desconectado', 'Ative novamente o dispositivo para continuar.')
+        return
+      }
+      setIsOffline(true)
+    }
+  }, [activeTableSessionId, toast])
+
   useEffect(() => {
     if (!activeTableSessionId) return
     saveClientCart(activeTableSessionId, cart)
@@ -124,39 +171,69 @@ export function ClientTabletPage() {
 
     const poll = async () => {
       if (document.visibilityState === 'visible') {
-        try {
-          const state = await getClientState(controller.signal)
-          setBootstrap((current) => current ? { ...current, ...state } : current)
-          if (state.session.tableSessionId !== activeTableSessionId) {
-            setCart(state.session.tableSessionId ? loadClientCart(state.session.tableSessionId) : [])
-            setScreen('welcome')
-          }
-          if (state.session.status === 'Closed' && state.session.clearTabletAfterTableClose) {
-            setCart([])
-            if (state.session.tableSessionId) clearClientCart(state.session.tableSessionId)
-          }
-        } catch (error) {
-          if (controller.signal.aborted) return
-          if (error instanceof ApiError && error.status === 401) {
-            clearClientSessionToken()
-            setBootstrap(undefined)
-            setCart([])
-            setScreen('welcome')
-            setActivationError('O acesso deste tablet foi revogado ou encerrado. Faça uma nova ativação para continuar.')
-            toast.error('Tablet desconectado', 'Ative novamente o dispositivo para continuar.')
-            return
-          }
-        }
+        await refreshState(controller.signal)
       }
-      timeout = window.setTimeout(poll, 8_000)
+      timeout = window.setTimeout(poll, 60_000)
     }
 
-    timeout = window.setTimeout(poll, 8_000)
+    timeout = window.setTimeout(poll, 60_000)
     return () => {
       if (timeout) window.clearTimeout(timeout)
       controller.abort()
     }
-  }, [activeDeviceId, activeTableSessionId, toast])
+  }, [activeDeviceId, refreshState])
+
+  useEffect(() => {
+    const token = getClientSessionToken()
+    if (!activeDeviceId || !token || !apiBaseUrl) return
+
+    const connection = new HubConnectionBuilder()
+      .withUrl(`${apiBaseUrl}/hubs/client?device_token=${encodeURIComponent(token)}`)
+      .withAutomaticReconnect([0, 2_000, 5_000, 10_000, 30_000])
+      .configureLogging(LogLevel.Warning)
+      .build()
+
+    connection.on('client:changed', (notification: { resource?: string }) => {
+      const catalogResources = new Set(['products', 'categories', 'pizza-flavors', 'pizza-sizes', 'pizza-crusts', 'ingredients'])
+      if (notification.resource && catalogResources.has(notification.resource)) {
+        void getClientBootstrap().then((data) => setBootstrap(data)).catch(() => setIsOffline(true))
+      } else {
+        void refreshState()
+      }
+    })
+    connection.onreconnecting(() => setIsRealtimeConnected(false))
+    connection.onreconnected(() => {
+      setIsRealtimeConnected(true)
+      void refreshState()
+    })
+    connection.onclose(() => setIsRealtimeConnected(false))
+
+    void connection.start()
+      .then(() => {
+        setIsRealtimeConnected(true)
+        setIsOffline(false)
+      })
+      .catch(() => setIsRealtimeConnected(false))
+
+    return () => {
+      connection.off('client:changed')
+      void connection.stop()
+    }
+  }, [activeDeviceId, refreshState])
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false)
+      void refreshState()
+    }
+    const handleOffline = () => setIsOffline(true)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [refreshState])
 
   useEffect(() => {
     if (!activeDeviceId || !getClientSessionToken()) return
@@ -445,6 +522,13 @@ export function ClientTabletPage() {
 
   return (
     <>
+      {(isOffline || !isRealtimeConnected) && (
+        <div className="client-network-banner" role="status">
+          {isOffline
+            ? 'Sem conexão. Seu carrinho está salvo neste tablet e será sincronizado quando a rede voltar.'
+            : 'Reconectando às atualizações em tempo real…'}
+        </div>
+      )}
       <ClientShell
         session={bootstrap.session}
         categories={bootstrap.catalog.categories}

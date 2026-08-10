@@ -22,7 +22,7 @@ public sealed class ProductionStation : AggregateRoot<ProductionStationId>
         Name = Guard.Required(name, nameof(name), 100);
         Code = Guard.Required(code, nameof(code), 30);
         TargetPreparationMinutes = Guard.Positive(targetPreparationMinutes, nameof(targetPreparationMinutes));
-        DisplayOrder = displayOrder;
+        DisplayOrder = (int)Guard.NonNegative(displayOrder, nameof(displayOrder));
         IsActive = true;
     }
 
@@ -32,6 +32,20 @@ public sealed class ProductionStation : AggregateRoot<ProductionStationId>
     public int TargetPreparationMinutes { get; private set; }
     public int DisplayOrder { get; private set; }
     public bool IsActive { get; private set; }
+
+    public void Update(
+        string name,
+        string code,
+        int targetPreparationMinutes,
+        int displayOrder,
+        bool isActive)
+    {
+        Name = Guard.Required(name, nameof(name), 100);
+        Code = Guard.Required(code, nameof(code), 30);
+        TargetPreparationMinutes = Guard.Positive(targetPreparationMinutes, nameof(targetPreparationMinutes));
+        DisplayOrder = (int)Guard.NonNegative(displayOrder, nameof(displayOrder));
+        IsActive = isActive;
+    }
 }
 
 public sealed class KitchenTicket : AggregateRoot<KitchenTicketId>

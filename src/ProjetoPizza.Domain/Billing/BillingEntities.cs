@@ -38,17 +38,19 @@ public sealed class Bill : AggregateRoot<BillId>
     {
         UnitId = unitId;
         TableSessionId = tableSessionId;
-        Subtotal = subtotal;
-        ServiceFeePercentage = serviceFeePercentage;
-        ServiceFeeAmount = subtotal * serviceFeePercentage.AsFactor;
-        DiscountAmount = PaidAmount = Money.Zero();
-        TotalAmount = subtotal + ServiceFeeAmount;
-        RemainingAmount = TotalAmount;
-        Status = BillStatus.Open;
+        InitializeAmounts(subtotal, serviceFeePercentage, Money.Zero());
+    }
+
+    public Bill(BillId id, RestaurantUnitId unitId, OrderId orderId, Money subtotal, Money discountAmount) : base(id)
+    {
+        UnitId = unitId;
+        OrderId = orderId;
+        InitializeAmounts(subtotal, new Percentage(0), discountAmount);
     }
 
     public RestaurantUnitId UnitId { get; private set; }
-    public TableSessionId TableSessionId { get; private set; }
+    public TableSessionId? TableSessionId { get; private set; }
+    public OrderId? OrderId { get; private set; }
     public BillStatus Status { get; private set; }
     public Money Subtotal { get; private set; }
     public Percentage ServiceFeePercentage { get; private set; }
@@ -61,6 +63,23 @@ public sealed class Bill : AggregateRoot<BillId>
     public int? RequestedSplitCount { get; private set; }
     public DateTimeOffset? ConfirmedAt { get; private set; }
     public DateTimeOffset? ClosedAt { get; private set; }
+
+    private void InitializeAmounts(Money subtotal, Percentage serviceFeePercentage, Money discountAmount)
+    {
+        if (discountAmount.Amount > subtotal.Amount + (subtotal * serviceFeePercentage.AsFactor).Amount)
+        {
+            throw new BusinessRuleException("bill.discount", "Discount cannot exceed the bill amount.");
+        }
+
+        Subtotal = subtotal;
+        ServiceFeePercentage = serviceFeePercentage;
+        ServiceFeeAmount = subtotal * serviceFeePercentage.AsFactor;
+        DiscountAmount = discountAmount;
+        PaidAmount = Money.Zero();
+        TotalAmount = subtotal + ServiceFeeAmount - discountAmount;
+        RemainingAmount = TotalAmount;
+        Status = BillStatus.Open;
+    }
 
     public void Request(int? splitCount = null)
     {
@@ -217,7 +236,7 @@ public sealed class PaymentMethod : AggregateRoot<PaymentMethodId>
         Name = Guard.Required(name, nameof(name), 100);
         RequiresExternalReference = requiresExternalReference;
         AllowsChange = allowsChange;
-        DisplayOrder = displayOrder;
+        DisplayOrder = (int)Guard.NonNegative(displayOrder, nameof(displayOrder));
         IsActive = true;
     }
 
@@ -228,6 +247,22 @@ public sealed class PaymentMethod : AggregateRoot<PaymentMethodId>
     public bool AllowsChange { get; private set; }
     public bool IsActive { get; private set; }
     public int DisplayOrder { get; private set; }
+
+    public void Update(
+        string code,
+        string name,
+        bool requiresExternalReference,
+        bool allowsChange,
+        int displayOrder,
+        bool isActive)
+    {
+        Code = Guard.Required(code, nameof(code), 40);
+        Name = Guard.Required(name, nameof(name), 100);
+        RequiresExternalReference = requiresExternalReference;
+        AllowsChange = allowsChange;
+        DisplayOrder = (int)Guard.NonNegative(displayOrder, nameof(displayOrder));
+        IsActive = isActive;
+    }
 }
 
 public sealed class Payment : AggregateRoot<PaymentId>

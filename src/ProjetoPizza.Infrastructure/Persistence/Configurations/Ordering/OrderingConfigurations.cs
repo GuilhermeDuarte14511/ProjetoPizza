@@ -36,8 +36,13 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(entity => entity.Total).HasMoneyConversion();
         builder.Property(entity => entity.Notes).HasMaxLength(1000);
         builder.Property(entity => entity.DeliveryAddressSnapshot).HasMaxLength(500);
+        builder.Property(entity => entity.DeliveryStatus).HasConversion<string>().HasMaxLength(30);
+        builder.Property(entity => entity.DeliveryDriverName).HasMaxLength(120);
+        builder.Property(entity => entity.DeliveryTrackingTokenHash).HasMaxLength(128);
+        builder.Property(entity => entity.DeliveryFailureReason).HasMaxLength(500);
         builder.Property(entity => entity.CancellationReason).HasMaxLength(500);
         builder.HasIndex(entity => new { entity.UnitId, entity.Status, entity.PlacedAt });
+        builder.HasIndex(entity => entity.DeliveryTrackingTokenHash).IsUnique();
         builder.HasIndex(entity => new { entity.UnitId, entity.OrderNumber }).IsUnique();
         builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<TableSession>().WithMany().HasForeignKey(entity => entity.TableSessionId).OnDelete(DeleteBehavior.Restrict);

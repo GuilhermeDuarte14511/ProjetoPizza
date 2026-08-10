@@ -7,6 +7,7 @@ import { FieldError } from '../components/ui/FieldError'
 import { CurrencyInput } from '../components/ui/CurrencyInput'
 import { Modal } from '../components/ui/Modal'
 import { OrderReceiptDialog } from '../components/orders/OrderReceiptDialog'
+import { CounterCheckoutDialog } from '../components/orders/CounterCheckoutDialog'
 import { PageHeader } from '../components/ui/PageHeader'
 import { useToast } from '../components/ui/toast'
 import { ViewTransitionLink } from '../components/ui/ViewTransitionLink'
@@ -17,7 +18,7 @@ import { useAdminQuery } from '../hooks/useAdminQuery'
 import { createUuid } from '../lib/uuid'
 import { queryKeys } from '../lib/queryKeys'
 import { adminService } from '../services/adminService'
-import type { CreateAdministrativeOrder, OrderReceipt } from '../types/admin'
+import type { CounterPaymentDraft, CreateAdministrativeOrder, OrderReceipt } from '../types/admin'
 import type { ClientCartItem, ClientProduct } from '../types/client'
 import { getUserErrorMessage } from '../utils/errors'
 
@@ -29,6 +30,7 @@ export function NewOrderPage() {
   const toast = useToast()
   const { data: orderCatalog } = useAdminQuery(queryKeys.orderCatalog, adminService.orderCatalog)
   const { data: customers, setData: setCustomers } = useAdminQuery(queryKeys.customers, adminService.customers)
+  const { data: paymentMethods } = useAdminQuery(queryKeys.paymentMethods, adminService.paymentMethods)
   const [requestId] = useState(createUuid)
   const [fulfillment, setFulfillment] = useState<'Pickup' | 'Delivery'>('Pickup')
   const [customerId, setCustomerId] = useState('')
@@ -44,6 +46,7 @@ export function NewOrderPage() {
   const [customerModal, setCustomerModal] = useState(false)
   const [savingCustomer, setSavingCustomer] = useState(false)
   const [createdReceipt, setCreatedReceipt] = useState<OrderReceipt>()
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
   const customerForm = useForm<CustomerFormData>({ resolver: zodResolver(customerSchema), defaultValues: emptyCustomer })
   const activeCustomers = customers.filter((customer) => customer.isActive)
   const customerMatches = useMemo(() => {
@@ -106,27 +109,34 @@ export function NewOrderPage() {
     }
   }
 
-  async function submit() {
+  function validateOrder() {
     if (!selectedCustomer) {
       toast.error('Selecione o cliente', 'Busque pelo nome ou telefone antes de criar o pedido.')
-      return
+      return false
     }
     if (!cart.length) {
       toast.error('Pedido vazio', 'Adicione ao menos um produto ao pedido.')
-      return
+      return false
     }
     if (fulfillment === 'Delivery' && !deliveryAddress.trim()) {
       toast.error('Informe o endereço', 'O endereço é obrigatório para calcular e registrar a entrega.')
-      return
+      return false
     }
     if (discountAmount > subtotal + deliveryFee) {
       toast.error('Desconto inválido', 'O desconto não pode ultrapassar o valor do pedido.')
-      return
+      return false
     }
+    if (total <= 0) {
+      toast.error('Total inválido', 'O pedido de balcão precisa ter um valor positivo para registrar o pagamento.')
+      return false
+    }
+    return true
+  }
 
-    const command: CreateAdministrativeOrder = {
+  function buildCommand(): CreateAdministrativeOrder {
+    return {
       requestId,
-      customerId: selectedCustomer.id,
+      customerId,
       fulfillment,
       deliveryAddress: fulfillment === 'Delivery' ? deliveryAddress.trim() : undefined,
       discountAmount,
@@ -149,16 +159,57 @@ export function NewOrderPage() {
         } : undefined,
       })),
     }
+  }
+
+  function reviewAndReceive() {
+    if (!validateOrder()) return
+    if (!paymentMethods.some((method) => method.isActive)) {
+      toast.error('Forma de pagamento indisponível', 'Cadastre e ative ao menos uma forma de pagamento antes de concluir a venda.')
+      return
+    }
+    setCheckoutOpen(true)
+  }
+
+  async function submit(payment?: CounterPaymentDraft) {
+    if (!validateOrder()) return
+    const command = buildCommand()
 
     setSaving(true)
     try {
-      const created = await adminService.createOrder(command)
-      toast.success('Pedido criado', `Pedido #${created.number} enviado para a produção.`)
+      const created = payment
+        ? await adminService.checkoutCounterOrder({ order: command, payment })
+        : await adminService.createOrder(command)
+      setCheckoutOpen(false)
+      toast.success(payment ? 'Venda concluída' : 'Pedido criado', payment
+        ? `Pagamento do pedido #${created.number} registrado. Escolha as impressões.`
+        : `Pedido #${created.number} enviado para a produção.`)
       setCreatedReceipt(created.receipt)
     } catch (error) {
       toast.error('Não foi possível criar o pedido', getUserErrorMessage(error))
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function printCustomerReceipt() {
+    if (!createdReceipt) return
+    try {
+      await adminService.printCustomerReceipt(createdReceipt.id)
+      toast.success('Comprovante na fila', `O comprovante não fiscal do pedido #${createdReceipt.number} será impresso.`)
+    } catch (error) {
+      toast.error('Falha ao imprimir comprovante', getUserErrorMessage(error))
+      throw error
+    }
+  }
+
+  async function printKitchenCommand() {
+    if (!createdReceipt) return
+    try {
+      const result = await adminService.printKitchenCommand(createdReceipt.id)
+      toast.success('Comanda na fila', `${result.jobIds.length} ${result.jobIds.length === 1 ? 'comanda foi enviada' : 'comandas foram enviadas'} para a cozinha.`)
+    } catch (error) {
+      toast.error('Falha ao imprimir comanda', getUserErrorMessage(error))
+      throw error
     }
   }
 
@@ -214,13 +265,14 @@ export function NewOrderPage() {
           <label className="field-label">Observações<textarea value={notes} maxLength={1000} onChange={(event) => setNotes(event.target.value)} placeholder="Ex.: retirar no balcão às 20h" /></label>
           <label className="field-label order-discount-field">Desconto<CurrencyInput value={discountAmount} onCurrencyValueChange={setDiscountAmount} /></label>
           <div className="order-summary-lines"><div><span>Subtotal</span><strong>{currency.format(subtotal)}</strong></div>{fulfillment === 'Delivery' && <div><span>Taxa de entrega</span><strong>{currency.format(deliveryFee)}</strong></div>}<div><span>Desconto</span><strong>- {currency.format(discountAmount)}</strong></div><div className="total"><span>Total</span><strong>{currency.format(total)}</strong></div></div>
-          <button className="primary-button full" disabled={saving || !cart.length || !selectedCustomer} onClick={() => void submit()}>{saving ? 'Criando pedido...' : 'Confirmar e enviar para produção'}</button>
+          <button className="primary-button full" disabled={saving || !cart.length || !selectedCustomer} onClick={() => fulfillment === 'Pickup' ? reviewAndReceive() : void submit()}>{saving ? 'Confirmando...' : fulfillment === 'Pickup' ? 'Revisar e receber pagamento' : 'Confirmar e enviar para produção'}</button>
           <small className="order-price-note">Preço, disponibilidade e taxa são confirmados novamente pelo servidor.</small>
         </aside>
       </section>
 
       {builderProduct && <PizzaBuilder product={builderProduct} catalog={orderCatalog.catalog.pizza} onCancel={() => setBuilderProduct(undefined)} onAdd={addPizza} />}
-      <OrderReceiptDialog receipt={createdReceipt} onClose={() => { const number = createdReceipt?.number; setCreatedReceipt(undefined); navigate(number ? `/admin/orders?search=${number}` : '/admin/orders') }} />
+      {checkoutOpen && <CounterCheckoutDialog open orderTotal={total} itemCount={cart.reduce((sum, item) => sum + item.quantity, 0)} customerName={selectedCustomer?.name ?? 'Cliente'} methods={paymentMethods} saving={saving} onClose={() => setCheckoutOpen(false)} onConfirm={(payment) => void submit(payment)} />}
+      <OrderReceiptDialog receipt={createdReceipt} onPrintCustomerReceipt={createdReceipt?.fulfillment === 'Pickup' ? printCustomerReceipt : undefined} onPrintKitchenCommand={createdReceipt?.fulfillment === 'Pickup' ? printKitchenCommand : undefined} onClose={() => { const number = createdReceipt?.number; setCreatedReceipt(undefined); navigate(number ? `/admin/orders?search=${number}` : '/admin/orders') }} />
       {customerModal && <Modal open title="Novo cliente" description="Cadastro rápido durante o atendimento." isBusy={savingCustomer} onClose={() => setCustomerModal(false)}>
         <form onSubmit={customerForm.handleSubmit(saveCustomer)} noValidate>
           <div className="modal-body"><div className="form-grid two-columns">
