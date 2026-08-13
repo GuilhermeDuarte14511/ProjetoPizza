@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, Cake, MapPin, Minus, PackageCheck, Phone, Plus, Search, ShoppingCart, Trash2, Truck, UserPlus } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { useLocation } from 'wouter'
 import { FieldError } from '../components/ui/FieldError'
 import { CurrencyInput } from '../components/ui/CurrencyInput'
@@ -9,6 +9,7 @@ import { Modal } from '../components/ui/Modal'
 import { OrderReceiptDialog } from '../components/orders/OrderReceiptDialog'
 import { CounterCheckoutDialog } from '../components/orders/CounterCheckoutDialog'
 import { PageHeader } from '../components/ui/PageHeader'
+import { PhoneInput } from '../components/ui/PhoneInput'
 import { useToast } from '../components/ui/toast'
 import { ViewTransitionLink } from '../components/ui/ViewTransitionLink'
 import { PizzaBuilder, type PizzaBuilderResult } from '../features/client/PizzaBuilder'
@@ -21,6 +22,7 @@ import { adminService } from '../services/adminService'
 import type { CounterPaymentDraft, CreateAdministrativeOrder, OrderReceipt } from '../types/admin'
 import type { ClientCartItem, ClientProduct } from '../types/client'
 import { getUserErrorMessage } from '../utils/errors'
+import { formatPhone } from '../utils/phone'
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const emptyCustomer: CustomerFormData = { name: '', phone: '', birthDate: '', isActive: true }
@@ -225,7 +227,7 @@ export function NewOrderPage() {
             <div className="customer-picker">
               <label className="field-label">Buscar cliente<div className="order-search-field"><Search size={17} /><input value={customerSearch} onChange={(event) => { setCustomerSearch(event.target.value); setCustomerId('') }} placeholder="Nome ou telefone..." /></div></label>
               {customerSearch && !selectedCustomer && <div className="customer-picker-results">
-                {customerMatches.map((customer) => <button type="button" key={customer.id} onClick={() => { setCustomerId(customer.id); setCustomerSearch(customer.name) }}><strong>{customer.name}</strong><span><Phone size={13} /> {customer.phone}</span></button>)}
+                {customerMatches.map((customer) => <button type="button" key={customer.id} onClick={() => { setCustomerId(customer.id); setCustomerSearch(customer.name) }}><strong>{customer.name}</strong><span><Phone size={13} /> {formatPhone(customer.phone)}</span></button>)}
                 {!customerMatches.length && <button type="button" className="create-customer-result" onClick={openCustomerModal}><UserPlus size={15} /> Cadastrar “{customerSearch}”</button>}
               </div>}
               <div className="fulfillment-choice" role="radiogroup" aria-label="Tipo de atendimento">
@@ -233,7 +235,7 @@ export function NewOrderPage() {
                 <button type="button" role="radio" aria-checked={fulfillment === 'Delivery'} className={fulfillment === 'Delivery' ? 'selected' : ''} onClick={() => setFulfillment('Delivery')}><Truck /><span><strong>Entrega</strong><small>Pedido recebido por telefone</small></span></button>
               </div>
             </div>
-            {selectedCustomer && <div className="selected-customer"><strong>{selectedCustomer.name}</strong><span><Phone size={14} /> {selectedCustomer.phone}</span><span><Cake size={14} /> {new Date(`${selectedCustomer.birthDate}T00:00:00`).toLocaleDateString('pt-BR')}</span></div>}
+            {selectedCustomer && <div className="selected-customer"><strong>{selectedCustomer.name}</strong><span><Phone size={14} /> {formatPhone(selectedCustomer.phone)}</span><span><Cake size={14} /> {new Date(`${selectedCustomer.birthDate}T00:00:00`).toLocaleDateString('pt-BR')}</span></div>}
             {fulfillment === 'Delivery' && <label className="field-label delivery-address"><MapPin size={15} /> Endereço completo<textarea value={deliveryAddress} maxLength={500} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Rua, número, bairro, complemento e referência" /></label>}
           </article>
 
@@ -277,7 +279,7 @@ export function NewOrderPage() {
         <form onSubmit={customerForm.handleSubmit(saveCustomer)} noValidate>
           <div className="modal-body"><div className="form-grid two-columns">
             <label className="field-label wide">Nome completo<input autoFocus aria-invalid={Boolean(customerForm.formState.errors.name)} {...customerForm.register('name')} /><FieldError message={customerForm.formState.errors.name?.message} /></label>
-            <label className="field-label">Telefone<input inputMode="tel" aria-invalid={Boolean(customerForm.formState.errors.phone)} {...customerForm.register('phone')} /><FieldError message={customerForm.formState.errors.phone?.message} /></label>
+            <label className="field-label">Celular<Controller control={customerForm.control} name="phone" render={({ field }) => <PhoneInput getInputRef={field.ref} name={field.name} value={field.value} onBlur={field.onBlur} onPhoneValueChange={field.onChange} placeholder="(00) 00000-0000" aria-invalid={Boolean(customerForm.formState.errors.phone)} />} /><FieldError message={customerForm.formState.errors.phone?.message} /></label>
             <label className="field-label">Data de nascimento<input type="date" aria-invalid={Boolean(customerForm.formState.errors.birthDate)} {...customerForm.register('birthDate')} /><FieldError message={customerForm.formState.errors.birthDate?.message} /></label>
           </div></div>
           <div className="modal-footer"><button type="button" className="secondary-button" disabled={savingCustomer} onClick={() => setCustomerModal(false)}>Cancelar</button><button className="primary-button" disabled={savingCustomer}>{savingCustomer ? 'Cadastrando...' : 'Cadastrar e selecionar'}</button></div>

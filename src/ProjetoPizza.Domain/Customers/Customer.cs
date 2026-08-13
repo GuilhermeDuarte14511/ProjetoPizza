@@ -18,6 +18,8 @@ public sealed class Customer : AggregateRoot<CustomerId>
         Phone = NormalizePhone(phone);
         BirthDate = ValidateBirthDate(birthDate);
         IsActive = true;
+        LoyaltyPoints = 0;
+        LifetimeSpend = Money.Zero();
         CreatedAt = UpdatedAt = DateTimeOffset.UtcNow;
     }
 
@@ -26,6 +28,10 @@ public sealed class Customer : AggregateRoot<CustomerId>
     public string Phone { get; private set; } = string.Empty;
     public DateOnly BirthDate { get; private set; }
     public bool IsActive { get; private set; }
+    public int LoyaltyPoints { get; private set; }
+    public Money LifetimeSpend { get; private set; }
+    public int OrderCount { get; private set; }
+    public DateTimeOffset? LastOrderAt { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -35,6 +41,25 @@ public sealed class Customer : AggregateRoot<CustomerId>
         Phone = NormalizePhone(phone);
         BirthDate = ValidateBirthDate(birthDate);
         IsActive = isActive;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void RegisterPurchase(Money amount)
+    {
+        if (amount.Amount <= 0) return;
+        LoyaltyPoints += decimal.ToInt32(decimal.Floor(amount.Amount));
+        LifetimeSpend += amount;
+        OrderCount += 1;
+        LastOrderAt = DateTimeOffset.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void ReversePurchase(Money amount)
+    {
+        if (amount.Amount <= 0) return;
+        LoyaltyPoints = Math.Max(0, LoyaltyPoints - decimal.ToInt32(decimal.Floor(amount.Amount)));
+        LifetimeSpend = new Money(Math.Max(0, LifetimeSpend.Amount - amount.Amount));
+        OrderCount = Math.Max(0, OrderCount - 1);
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 

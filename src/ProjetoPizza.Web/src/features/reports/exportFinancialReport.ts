@@ -96,6 +96,12 @@ function createSummarySheet({ report, period, unitName, generatedBy, generatedAt
       metricLabel('Ticket médio'), metricValue(report.averageTicket, currencyFormat),
       metricLabel('Pedidos'), metricValue(report.orderCount, '#,##0'),
     ],
+    [
+      metricLabel('CMV estimado'), metricValue(report.foodCost, currencyFormat),
+      metricLabel('Margem de contribuição'), metricValue(report.contributionMargin, currencyFormat),
+      metricLabel('Tempo médio de preparo'), metricValue(report.averagePreparationMinutes, '0.0 "min"'),
+      metricLabel('Dentro da meta'), metricValue(report.onTimeRate / 100, percentageFormat),
+    ],
     emptyRow(8),
     sectionRow('VENDAS POR CANAL', 8),
     tableHeaderRow(['Canal', 'Pedidos', 'Faturamento', 'Participação'], 8),
@@ -126,6 +132,15 @@ function createSummarySheet({ report, period, unitName, generatedBy, generatedAt
       totalValue(report.paymentMethods.reduce((total, item) => total + item.total, 0), currencyFormat),
       totalValue(report.paidAmount ? report.paymentMethods.reduce((total, item) => total + item.total, 0) / report.paidAmount : 0, percentageFormat),
     ], 8),
+    emptyRow(8),
+    sectionRow('DESEMPENHO DA PRODUÇÃO', 8),
+    tableHeaderRow(['Praça', 'Tickets', 'Tempo médio', 'Dentro da meta'], 8),
+    ...report.productionStations.map((item, index) => padRow([
+      bodyCell(item.station, index),
+      numericCell(item.tickets, '#,##0', index),
+      numericCell(item.averagePreparationMinutes, '0.0 "min"', index),
+      numericCell(item.onTimeRate / 100, percentageFormat, index),
+    ], 8)),
     emptyRow(8),
     noteRow('Documento gerado pelo ProjetoPizza. Valores monetários em reais (BRL).', 8),
   ]

@@ -77,6 +77,32 @@ public sealed class BillTests
             .Which.Rule.Should().Be("bill.discount");
     }
 
+    [Fact]
+    public void RegisterRefund_ShouldReopenPaidBillAndRestoreRemainingAmount()
+    {
+        var bill = CreateBill();
+        bill.RegisterPayment(new Money(110));
+
+        bill.RegisterRefund(new Money(35));
+
+        bill.Status.Should().Be(BillStatus.PaymentInProgress);
+        bill.PaidAmount.Amount.Should().Be(75);
+        bill.RemainingAmount.Amount.Should().Be(35);
+        bill.ClosedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void ApplyDiscount_AfterPayment_ShouldReject()
+    {
+        var bill = CreateBill();
+        bill.RegisterPayment(new Money(50));
+
+        var act = () => bill.ApplyDiscount(new Money(10));
+
+        act.Should().Throw<BusinessRuleException>()
+            .Which.Rule.Should().Be("bill.discount_after_payment");
+    }
+
     private static Bill CreateBill() => new(
         BillId.New(),
         RestaurantUnitId.New(),

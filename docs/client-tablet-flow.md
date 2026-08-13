@@ -9,7 +9,7 @@ A aplicação do cliente está disponível em `/mesa` e consome somente HTTP. El
 3. boas-vindas com identificação da mesa e garçom responsável, quando atribuído;
 4. cardápio real por categoria, busca e destaques;
 5. montagem de pizza em tamanho, quantidade de sabores, sabores, personalização por sabor, ingredientes adicionais com quantidade, borda inteira ou dividida em duas metades e revisão;
-6. carrinho com quantidade, remoção, consumo existente e taxa de serviço;
+6. carrinho persistente com quantidade, edição de pizza, remoção, consumo existente, sugestões, prazo e taxa de serviço;
 7. envio idempotente do pedido e criação de tickets por estação;
 8. acompanhamento do pedido;
 9. chamado da equipe com motivo e detalhes;
@@ -32,10 +32,10 @@ Os arquivos em `designs` são somente referência. As variantes `*_atualizada` o
 - O ingrediente é habilitado globalmente em `/admin/catalog/ingredients` e pode ser vinculado como padrão a cada sabor em `/admin/catalog/pizza-flavors`. A aba **Complementos** do modal de produto permite que uma pizza sobrescreva essa lista, inclusive com preço e quantidade máxima próprios; uma lista vazia remove todos os complementos daquela pizza.
 - Em pizzas de 2, 3 ou mais sabores, o complemento do produto pode ser aplicado a cada sabor selecionado. Quando o produto não possui configuração própria, prevalecem os complementos permitidos pelo sabor. O preço enviado pelo navegador nunca é aceito como autoridade.
 - Cada adicional é persistido em `ordering.order_item_modifiers` com nome, quantidade e preços unitário/total em snapshot, preservando o histórico mesmo após mudanças no catálogo.
-- O `RequestId` do pedido é reutilizado como identificador idempotente.
+- O `RequestId` do pedido é reutilizado como identificador idempotente. Após falha ambígua, o carrinho fica bloqueado e a repetição usa o mesmo conteúdo e identificador até a confirmação do servidor.
 - O tablet abre a comanda quando o cliente informa de 1 a 50 pessoas. Só uma comanda ativa pode existir por mesa. Quando configurado, o turno de caixa continua sendo exigido para enviar pedidos.
 - Solicitações duplicadas de atendimento com o mesmo motivo são rejeitadas enquanto estiverem pendentes.
-- O carrinho é isolado pelo identificador da sessão da mesa e é limpo quando a operação determina a limpeza após o fechamento.
+- O carrinho usa armazenamento local isolado pela sessão da mesa, sobrevive ao fechamento do navegador e só é limpo após envio confirmado ou encerramento operacional da comanda.
 - As mudanças chegam por SignalR autenticado pela sessão opaca do dispositivo. Uma reconciliação a cada 60 segundos substitui o polling de 8 segundos; durante falha de rede, o shell, o último catálogo e o carrinho continuam disponíveis e nenhuma resposta autenticada é gravada pelo service worker.
 - Após o bootstrap inicial, a atualização periódica usa `/api/v1/client/state`; o catálogo completo não é transferido a cada ciclo.
 - A telemetria usa `POST /api/v1/client/telemetry` com a mesma credencial do aparelho. O envio ocorre a cada minuto, ao recuperar visibilidade e em mudanças de bateria ou conectividade; a ausência da Battery Status API resulta em percentual desconhecido.

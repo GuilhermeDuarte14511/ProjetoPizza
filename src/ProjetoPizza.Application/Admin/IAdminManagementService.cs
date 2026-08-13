@@ -6,6 +6,8 @@ public interface IAdminManagementService
     Task<OrderReceiptDto?> GetOrderReceiptAsync(Guid id, CancellationToken cancellationToken);
     Task<AdministrativeOrderCatalogDto> GetOrderCatalogAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<CustomerDto>> ListCustomersAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<ReservationDto>> ListReservationsAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<WaitlistEntryDto>> ListWaitlistAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<PizzaCrustDto>> ListPizzaCrustsAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<IngredientDto>> ListIngredientsAsync(CancellationToken cancellationToken);
     Task<UnitSettingsDto> GetUnitSettingsAsync(CancellationToken cancellationToken);
@@ -26,6 +28,7 @@ public interface IAdminManagementService
     Task<IReadOnlyCollection<ProductionStationAdminDto>> ListProductionStationsAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<ServiceCallTypeAdminDto>> ListServiceCallTypesAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<InventoryItemAdminDto>> ListInventoryItemsAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<RecipeAdminDto>> ListRecipesAsync(CancellationToken cancellationToken);
 
     Task UpdateUnitAsync(UpdateUnitCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task UpdateOperationSettingsAsync(UpdateOperationSettingsCommand command, Guid identityUserId, CancellationToken cancellationToken);
@@ -39,11 +42,20 @@ public interface IAdminManagementService
     Task<CommandResultDto> SavePizzaFlavorAsync(SavePizzaFlavorCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SavePizzaFlavorImageAsync(Guid flavorId, Stream content, string contentType, string fileName, Guid identityUserId, CancellationToken cancellationToken);
     Task<CustomerDto> SaveCustomerAsync(SaveCustomerCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<ReservationDto> CreateReservationAsync(CreateReservationCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> TransitionReservationAsync(Guid id, string transition, Guid identityUserId, CancellationToken cancellationToken);
+    Task<WaitlistEntryDto> CreateWaitlistEntryAsync(CreateWaitlistEntryCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> TransitionWaitlistEntryAsync(Guid id, string transition, Guid identityUserId, CancellationToken cancellationToken);
     Task<CreatedOrderDto> CreateOrderAsync(CreateAdministrativeOrderCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CounterCheckoutResultDto> CheckoutCounterOrderAsync(CheckoutCounterOrderCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> OpenTableAsync(OpenTableCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> AssignTableWaiterAsync(Guid tableSessionId, AssignTableWaiterCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> LinkTableAsync(Guid tableSessionId, LinkTableCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> TransferTableAsync(Guid tableSessionId, TransferTableCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RequestBillAsync(Guid tableSessionId, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> TransitionOrderAsync(Guid id, string transition, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> CancelOrderAsync(Guid id, CancelOrderCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> ApplyOrderDiscountAsync(Guid id, ApplyOrderDiscountCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> DispatchDeliveryAsync(Guid id, string driverName, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> CompleteDeliveryAsync(Guid id, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> FailDeliveryAsync(Guid id, string reason, Guid identityUserId, CancellationToken cancellationToken);
@@ -52,6 +64,7 @@ public interface IAdminManagementService
     Task<CommandResultDto> CompleteServiceCallAsync(Guid id, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RecordPaymentAsync(RecordPaymentCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RecordSplitPaymentAsync(RecordSplitPaymentCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> RefundPaymentAsync(Guid id, RefundPaymentCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CashShiftDto> OpenCashShiftAsync(OpenCashShiftCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> RegisterCashMovementAsync(RegisterCashMovementCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> CloseCashShiftAsync(CloseCashShiftCommand command, Guid identityUserId, CancellationToken cancellationToken);
@@ -70,4 +83,5 @@ public interface IAdminManagementService
     Task<CommandResultDto> SaveServiceCallTypeAsync(SaveServiceCallTypeCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SaveInventoryItemAsync(SaveInventoryItemCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> AdjustInventoryAsync(Guid id, AdjustInventoryCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> SaveRecipeAsync(SaveRecipeCommand command, Guid identityUserId, CancellationToken cancellationToken);
 }

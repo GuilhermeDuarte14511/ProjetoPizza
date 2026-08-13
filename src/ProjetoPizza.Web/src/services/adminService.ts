@@ -43,6 +43,8 @@ import type {
   CheckoutCounterOrder,
   CreatedOrder,
   Customer,
+  Reservation,
+  WaitlistEntry,
   Dashboard,
   Device,
   DeviceProvisioning,
@@ -52,6 +54,8 @@ import type {
   KitchenTicket,
   Ingredient,
   InventoryItem,
+  InventoryRecipe,
+  SaveInventoryRecipe,
   ManagedOrder,
   OperationSettings,
   OrderReceipt,
@@ -89,12 +93,17 @@ const demoResult = { id: createUuid(), status: 'Saved' }
 const mockCustomerStore = [...mockCustomers]
 const mockReceiptStore = new Map<string, OrderReceipt>()
 
-function saveMockCustomer(command: Omit<Customer, 'id' | 'createdAt'> & { id?: string }): Customer {
+function saveMockCustomer(command: Pick<Customer, 'name' | 'phone' | 'birthDate' | 'isActive'> & { id?: string }): Customer {
+  const current = mockCustomerStore.find((item) => item.id === command.id)
   const customer: Customer = {
     ...command,
     id: command.id || createUuid(),
     phone: command.phone.replace(/\D/g, ''),
-    createdAt: mockCustomerStore.find((item) => item.id === command.id)?.createdAt ?? new Date().toISOString(),
+    loyaltyPoints: current?.loyaltyPoints ?? 0,
+    lifetimeSpend: current?.lifetimeSpend ?? 0,
+    orderCount: current?.orderCount ?? 0,
+    lastOrderAt: current?.lastOrderAt,
+    createdAt: current?.createdAt ?? new Date().toISOString(),
   }
   const index = mockCustomerStore.findIndex((item) => item.id === customer.id)
   if (index >= 0) mockCustomerStore[index] = customer
@@ -190,12 +199,46 @@ function createMockAdministrativeOrder(command: CreateAdministrativeOrder): Crea
     customerName: customer?.name,
     deliveryAddress: command.deliveryAddress,
     notes: command.notes,
+    subtotal,
+    discount: command.discountAmount,
     total,
     createdAt: placedAt,
     placedAt,
     items: receiptItems.map((item) => ({ ...item, status: 'Pending' })),
   })
   return { id: command.requestId, number, status: 'Submitted', total, receipt }
+}
+
+function getMockOrderReceipt(id: string): OrderReceipt {
+  const storedReceipt = mockReceiptStore.get(id)
+  if (storedReceipt) return storedReceipt
+
+  const order = mockOrders.find((item) => item.id === id)
+  return {
+    id,
+    number: order?.number ?? 0,
+    customerName: order?.customerName ?? 'Consumidor',
+    customerPhone: '',
+    fulfillment: order?.fulfillment ?? 'Pickup',
+    deliveryAddress: order?.deliveryAddress,
+    placedAt: order?.placedAt ?? order?.createdAt ?? new Date().toISOString(),
+    subtotal: order?.subtotal ?? 0,
+    deliveryFee: Math.max(0, (order?.total ?? 0) - (order?.subtotal ?? 0) + (order?.discount ?? 0)),
+    discount: order?.discount ?? 0,
+    total: order?.total ?? 0,
+    paidAmount: 0,
+    changeAmount: 0,
+    notes: order?.notes,
+    items: order?.items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      details: [],
+    })) ?? [],
+    payments: [],
+  }
 }
 
 export const adminService = {
@@ -223,6 +266,8 @@ export const adminService = {
   orders: (signal?: AbortSignal) => fromApiOrMock(() => getJson<ManagedOrder[]>('/api/v1/admin/orders', signal), mockOrders),
   orderCatalog: (signal?: AbortSignal) => fromApiOrMock(() => getJson<AdministrativeOrderCatalog>('/api/v1/admin/orders/catalog', signal), mockAdministrativeOrderCatalog),
   customers: (signal?: AbortSignal) => fromApiOrMock(() => getJson<Customer[]>('/api/v1/admin/customers', signal), mockCustomerStore),
+  reservations: (signal?: AbortSignal) => fromApiOrMock(() => getJson<Reservation[]>('/api/v1/admin/reservations', signal), []),
+  waitlist: (signal?: AbortSignal) => fromApiOrMock(() => getJson<WaitlistEntry[]>('/api/v1/admin/waitlist', signal), []),
   crusts: (signal?: AbortSignal) => fromApiOrMock(() => getJson<PizzaCrust[]>('/api/v1/admin/pizza-crusts', signal), mockCrusts),
   ingredients: (signal?: AbortSignal) => fromApiOrMock(() => getJson<Ingredient[]>('/api/v1/admin/ingredients', signal), []),
   unitSettings: (signal?: AbortSignal) => fromApiOrMock(() => getJson<UnitSettings>('/api/v1/admin/settings/unit', signal), mockUnitSettings),
@@ -252,6 +297,7 @@ export const adminService = {
   productionStations: (signal?: AbortSignal) => fromApiOrMock(() => getJson<ProductionStationSetting[]>('/api/v1/admin/settings/production-stations', signal), []),
   serviceCallTypes: (signal?: AbortSignal) => fromApiOrMock(() => getJson<ServiceCallTypeSetting[]>('/api/v1/admin/settings/service-call-types', signal), []),
   inventory: (signal?: AbortSignal) => fromApiOrMock(() => getJson<InventoryItem[]>('/api/v1/admin/inventory/items', signal), []),
+  recipes: (signal?: AbortSignal) => fromApiOrMock(() => getJson<InventoryRecipe[]>('/api/v1/admin/inventory/recipes', signal), []),
   backups: (signal?: AbortSignal) => fromApiOrMock(() => getJson<DatabaseBackup[]>('/api/v1/admin/system/backups', signal), []),
 
   saveUnit: (command: Omit<UnitSettings, 'id' | 'timezone' | 'currencyCode'>) =>
@@ -299,7 +345,7 @@ export const adminService = {
     form.append('image', image)
     return postForm<{ id: string; status: string }>(`/api/v1/admin/pizza-flavors/${flavorId}/image`, form)
   },
-  saveCustomer: (command: Omit<Customer, 'id' | 'createdAt'> & { id?: string }) =>
+  saveCustomer: (command: Pick<Customer, 'name' | 'phone' | 'birthDate' | 'isActive'> & { id?: string }) =>
     isApiConfigured
       ? command.id
         ? putJson<Customer, typeof command>(`/api/v1/admin/customers/${command.id}`, command)
@@ -329,29 +375,32 @@ export const adminService = {
   orderReceipt: (id: string, signal?: AbortSignal) =>
     fromApiOrMock(
       () => getJson<OrderReceipt>(`/api/v1/admin/orders/${id}/receipt`, signal),
-      (mockReceiptStore.get(id) ?? {
-        id,
-        number: 0,
-        customerName: 'Consumidor',
-        customerPhone: '',
-        fulfillment: 'Pickup',
-        placedAt: new Date().toISOString(),
-        subtotal: 0,
-        deliveryFee: 0,
-        discount: 0,
-        total: 0,
-        paidAmount: 0,
-        changeAmount: 0,
-        items: [],
-        payments: [],
-      }),
+      getMockOrderReceipt(id),
     ),
   openTable: (tableId: string, guestCount: number) =>
     isApiConfigured ? postJson(`/api/v1/admin/tables/${tableId}/open`, { tableId, guestCount }) : Promise.resolve(demoResult),
+  createReservation: (command: Omit<Reservation, 'id' | 'status' | 'createdAt'>) =>
+    isApiConfigured ? postJson<Reservation, typeof command>('/api/v1/admin/reservations', command) : Promise.resolve({ ...command, id: crypto.randomUUID(), status: 'Pending', createdAt: new Date().toISOString() }),
+  transitionReservation: (id: string, transition: string) =>
+    isApiConfigured ? postJson(`/api/v1/admin/reservations/${id}/transitions/${transition}`, {}) : Promise.resolve({ ...demoResult, id, status: transition }),
+  createWaitlistEntry: (command: Omit<WaitlistEntry, 'id' | 'status' | 'enteredAt' | 'notifiedAt'>) =>
+    isApiConfigured ? postJson<WaitlistEntry, typeof command>('/api/v1/admin/waitlist', command) : Promise.resolve({ ...command, id: crypto.randomUUID(), status: 'Waiting', enteredAt: new Date().toISOString() }),
+  transitionWaitlistEntry: (id: string, transition: string) =>
+    isApiConfigured ? postJson(`/api/v1/admin/waitlist/${id}/transitions/${transition}`, {}) : Promise.resolve({ ...demoResult, id, status: transition }),
+  assignTableWaiter: (tableSessionId: string, employeeId: string) =>
+    isApiConfigured ? postJson(`/api/v1/admin/table-sessions/${tableSessionId}/waiter`, { employeeId }) : Promise.resolve(demoResult),
+  linkTable: (tableSessionId: string, tableId: string) =>
+    isApiConfigured ? postJson(`/api/v1/admin/table-sessions/${tableSessionId}/tables`, { tableId }) : Promise.resolve(demoResult),
+  transferTable: (tableSessionId: string, currentTableId: string, targetTableId: string) =>
+    isApiConfigured ? postJson(`/api/v1/admin/table-sessions/${tableSessionId}/transfer`, { currentTableId, targetTableId }) : Promise.resolve(demoResult),
   requestBill: (tableSessionId: string) =>
     isApiConfigured ? postJson(`/api/v1/admin/table-sessions/${tableSessionId}/request-bill`, {}) : Promise.resolve({ ...demoResult, status: 'Requested' }),
   transitionOrder: (id: string, transition: string) =>
     isApiConfigured ? postJson(`/api/v1/admin/orders/${id}/transitions/${transition}`, {}) : Promise.resolve({ ...demoResult, status: transition }),
+  cancelOrder: (id: string, reason: string) =>
+    isApiConfigured ? postJson(`/api/v1/admin/orders/${id}/cancel`, { reason }) : Promise.resolve({ ...demoResult, id, status: 'Cancelled' }),
+  applyOrderDiscount: (id: string, amount: number, reason: string) =>
+    isApiConfigured ? postJson(`/api/v1/admin/orders/${id}/discount`, { amount, reason }) : Promise.resolve({ ...demoResult, id, status: 'Updated' }),
   dispatchDelivery: (id: string, driverName: string) =>
     isApiConfigured ? postJson(`/api/v1/admin/deliveries/${id}/dispatch`, { driverName }) : Promise.resolve({ ...demoResult, status: 'Dispatched' }),
   completeDelivery: (id: string) =>
@@ -368,6 +417,8 @@ export const adminService = {
     isApiConfigured ? postJson('/api/v1/admin/payments', command) : Promise.resolve({ ...demoResult, status: 'Paid' }),
   recordSplitPayment: (command: { billId: string; payments: Array<{ payer: string; paymentMethodId: string; amount: number; receivedAmount: number; externalReference?: string }> }) =>
     isApiConfigured ? postJson('/api/v1/admin/payments/split', command) : Promise.resolve({ ...demoResult, status: 'Paid' }),
+  refundPayment: (id: string, amount: number, reason: string) =>
+    isApiConfigured ? postJson(`/api/v1/admin/payments/${id}/refund`, { amount, reason }) : Promise.resolve({ ...demoResult, id, status: 'Refunded' }),
   openCashShift: (command: { cashRegisterId: string; openingAmount: number }): Promise<CashShift> =>
     isApiConfigured
       ? postJson('/api/v1/admin/cashier/open', command)
@@ -394,6 +445,7 @@ export const adminService = {
   saveInventoryItem: (command: Partial<InventoryItem>) => saveSetting('/api/v1/admin/inventory/items', command),
   adjustInventory: (id: string, quantityDelta: number, reason: string) =>
     isApiConfigured ? postJson(`/api/v1/admin/inventory/items/${id}/adjustments`, { quantityDelta, reason }) : Promise.resolve(demoResult),
+  saveRecipe: (command: SaveInventoryRecipe) => saveSetting('/api/v1/admin/inventory/recipes', command),
   createBackup: (): Promise<DatabaseBackup> =>
     isApiConfigured ? postJson('/api/v1/admin/system/backups', {}) : Promise.resolve({ fileName: 'projeto-pizza-manual-demo.dump', createdAt: new Date().toISOString(), sizeBytes: 0, type: 'Manual' }),
   downloadBackup: (fileName: string) => isApiConfigured

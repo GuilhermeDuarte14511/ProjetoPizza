@@ -126,9 +126,11 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(entity => entity.Amount).HasMoneyConversion();
         builder.Property(entity => entity.ReceivedAmount).HasMoneyConversion();
         builder.Property(entity => entity.ChangeAmount).HasMoneyConversion();
+        builder.Property(entity => entity.RefundedAmount).HasMoneyConversion();
         builder.Property(entity => entity.ExternalReference).HasMaxLength(200);
         builder.Property(entity => entity.AuthorizationCode).HasMaxLength(100);
         builder.Property(entity => entity.CancellationReason).HasMaxLength(500);
+        builder.Property(entity => entity.RefundReason).HasMaxLength(500);
         builder.HasIndex(entity => new { entity.BillId, entity.Status });
         builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Bill>().WithMany().HasForeignKey(entity => entity.BillId).OnDelete(DeleteBehavior.Restrict);

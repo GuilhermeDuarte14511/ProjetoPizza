@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using ProjetoPizza.Application.Abstractions.Persistence;
 using ProjetoPizza.Application.Devices;
+using ProjetoPizza.Application.Inventory;
 using ProjetoPizza.Domain.Audit;
 using ProjetoPizza.Domain.Billing;
 using ProjetoPizza.Domain.Cashier;
@@ -313,6 +314,10 @@ public sealed class ClientService(
             AddOrderItem(order, requestedItem, tableSession.UnitId, stationItems);
         }
 
+        var inventoryEmployeeId = tableSession.PrimaryWaiterId
+            ?? tableSession.OpenedByEmployeeId
+            ?? context.Employees.Where(employee => employee.UnitId == tableSession.UnitId && employee.IsActive).Select(employee => employee.Id).First();
+        InventoryConsumption.Apply(context, order, requestedItems, inventoryEmployeeId);
         order.Submit();
         context.Add(order);
         await CreateKitchenTicketsAsync(order, stationItems, cancellationToken);
@@ -443,6 +448,7 @@ public sealed class ClientService(
                 .OrderBy(callType => callType.Name)
                 .Select(callType => new ClientServiceCallTypeDto(callType.Id.Value, callType.Code, callType.Name))
                 .ToArray(),
+            tableSession is null ? [] : CreateServiceCalls(tableSession.Id),
             tableSession is null ? [] : CreateOrders(tableSession.Id),
             tableSession is null ? EmptyBill() : CreateBill(tableSession));
     }
@@ -458,6 +464,7 @@ public sealed class ClientService(
 
         return new ClientStateDto(
             CreateSessionDto(session, unit.TradeName, table, tableSession),
+            tableSession is null ? [] : CreateServiceCalls(tableSession.Id),
             tableSession is null ? [] : CreateOrders(tableSession.Id),
             tableSession is null ? EmptyBill() : CreateBill(tableSession));
     }
@@ -1175,6 +1182,25 @@ public sealed class ClientService(
         }
     }
 
+    private IReadOnlyList<ClientServiceCallDto> CreateServiceCalls(TableSessionId sessionId)
+    {
+        var typeNames = context.ServiceCallTypes.ToDictionary(type => type.Id, type => type.Name);
+        return context.ServiceCalls
+            .Where(call => call.TableSessionId == sessionId && call.Status != ServiceCallStatus.Cancelled)
+            .ToArray()
+            .OrderByDescending(call => call.CreatedAt)
+            .Take(5)
+            .Select(call => new ClientServiceCallDto(
+                call.Id.Value,
+                call.ServiceCallTypeId.Value,
+                typeNames.GetValueOrDefault(call.ServiceCallTypeId, "Atendimento"),
+                call.Status.ToString(),
+                call.CreatedAt,
+                call.AcknowledgedAt,
+                call.CompletedAt))
+            .ToArray();
+    }
+
     private IReadOnlyList<ClientOrderDto> CreateOrders(TableSessionId sessionId) =>
         context.Orders
             .Where(order => order.TableSessionId == sessionId)
@@ -1195,14 +1221,14 @@ public sealed class ClientService(
             .Where(pizza => items.Select(item => item.Id).Contains(pizza.Id))
             .ToArray()
             .ToDictionary(pizza => pizza.Id);
-        var pizzaFlavorNames = context.OrderItemPizzaFlavors
+        var pizzaFlavors = context.OrderItemPizzaFlavors
             .Where(flavor => items.Select(item => item.Id).Contains(flavor.OrderItemId))
             .ToArray()
             .GroupBy(flavor => flavor.OrderItemId)
             .ToDictionary(
                 group => group.Key,
-                group => (IReadOnlyList<string>)group.OrderBy(flavor => flavor.PartNumber)
-                    .Select(flavor => flavor.FlavorNameSnapshot)
+                group => (IReadOnlyList<ClientOrderPizzaFlavorDto>)group.OrderBy(flavor => flavor.PartNumber)
+                    .Select(flavor => new ClientOrderPizzaFlavorDto(flavor.PizzaFlavorId.Value, flavor.FlavorNameSnapshot))
                     .ToArray());
         var modifiers = context.OrderItemModifiers
             .Where(modifier => items.Select(item => item.Id).Contains(modifier.OrderItemId))
@@ -1217,7 +1243,8 @@ public sealed class ClientService(
                         modifier.Quantity,
                         modifier.UnitPrice.Amount,
                         modifier.TotalPrice.Amount,
-                        modifier.PizzaFlavorId?.Value))
+                        modifier.PizzaFlavorId?.Value,
+                        modifier.IngredientId?.Value))
                     .ToArray());
 
         return new ClientOrderDto(
@@ -1232,6 +1259,7 @@ public sealed class ClientService(
                 pizzas.TryGetValue(item.Id, out var pizza);
                 return new ClientOrderItemDto(
                     item.Id.Value,
+                    item.ProductId.Value,
                     item.ProductNameSnapshot,
                     item.Quantity,
                     item.UnitPrice.Amount,
@@ -1241,9 +1269,13 @@ public sealed class ClientService(
                     pizza is null
                         ? null
                         : new ClientOrderPizzaDto(
+                            pizza.PizzaSizeId.Value,
                             pizza.SizeNameSnapshot,
-                            pizzaFlavorNames.GetValueOrDefault(item.Id, []),
-                            FormatCrustDescription(pizza)),
+                            pizzaFlavors.GetValueOrDefault(item.Id, []),
+                            pizza.PizzaCrustId?.Value,
+                            pizza.CrustNameSnapshot,
+                            pizza.SecondPizzaCrustId?.Value,
+                            pizza.SecondCrustNameSnapshot),
                     modifiers.GetValueOrDefault(item.Id, []));
             }).ToArray());
     }

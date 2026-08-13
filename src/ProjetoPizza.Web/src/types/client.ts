@@ -113,6 +113,7 @@ export interface ClientCatalog {
 
 export interface ClientOrderItem {
   id: string
+  productId: string
   name: string
   quantity: number
   unitPrice: number
@@ -120,9 +121,13 @@ export interface ClientOrderItem {
   status: string
   notes?: string
   pizza?: {
+    sizeId: string
     size: string
-    flavors: string[]
+    flavors: Array<{ id: string; name: string }>
+    crustId?: string
     crust?: string
+    secondCrustId?: string
+    secondCrust?: string
   }
   modifiers: Array<{
     type: string
@@ -131,7 +136,18 @@ export interface ClientOrderItem {
     unitPrice: number
     totalPrice: number
     pizzaFlavorId?: string
+    ingredientId?: string
   }>
+}
+
+export interface ClientServiceCall {
+  id: string
+  serviceCallTypeId: string
+  typeName: string
+  status: string
+  createdAt: string
+  acknowledgedAt?: string
+  completedAt?: string
 }
 
 export interface ClientOrder {
@@ -159,6 +175,7 @@ export interface ClientBill {
 
 export interface ClientState {
   session: ClientSession
+  serviceCalls: ClientServiceCall[]
   orders: ClientOrder[]
   bill: ClientBill
 }
@@ -167,6 +184,7 @@ export interface ClientBootstrap {
   session: ClientSession
   catalog: ClientCatalog
   serviceCallTypes: Array<{ id: string; code: string; name: string }>
+  serviceCalls: ClientServiceCall[]
   orders: ClientOrder[]
   bill: ClientBill
 }

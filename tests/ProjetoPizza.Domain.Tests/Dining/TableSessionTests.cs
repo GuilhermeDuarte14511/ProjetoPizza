@@ -72,6 +72,33 @@ public sealed class TableSessionTests
         act.Should().Throw<BusinessRuleException>();
     }
 
+    [Fact]
+    public void LinkTable_ShouldKeepBothTablesActive()
+    {
+        var session = OpenSession();
+        var additional = new RestaurantTable(RestaurantTableId.New(), _unitId, DiningAreaId.New(), 2, 4);
+
+        session.LinkTable(additional, _employeeId);
+
+        session.Tables.Count(link => link.UnlinkedAt is null).Should().Be(2);
+        session.Tables.Single(link => link.RestaurantTableId == additional.Id).IsPrimary.Should().BeFalse();
+    }
+
+    [Fact]
+    public void TransferTable_ShouldCloseSourceAndPreservePrimaryFlag()
+    {
+        var session = OpenSession();
+        var source = session.Tables.Single();
+        var target = new RestaurantTable(RestaurantTableId.New(), _unitId, DiningAreaId.New(), 3, 4);
+
+        session.TransferTable(source.RestaurantTableId, target, _employeeId);
+
+        source.UnlinkedAt.Should().NotBeNull();
+        var active = session.Tables.Single(link => link.UnlinkedAt is null);
+        active.RestaurantTableId.Should().Be(target.Id);
+        active.IsPrimary.Should().BeTrue();
+    }
+
     private TableSession OpenSession()
     {
         var table = new RestaurantTable(RestaurantTableId.New(), _unitId, DiningAreaId.New(), 1, 4);

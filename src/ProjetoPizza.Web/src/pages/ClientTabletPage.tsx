@@ -16,7 +16,14 @@ import {
 import { MenuView } from '../features/client/MenuView'
 import { PizzaBuilder, type PizzaBuilderResult } from '../features/client/PizzaBuilder'
 import { getProductImage } from '../features/client/clientPresentation'
-import { clearClientCart, loadClientCart, saveClientCart } from '../features/client/clientCartStorage'
+import {
+  clearClientCart,
+  clearClientOrderDraft,
+  loadClientCart,
+  loadClientOrderDraft,
+  saveClientCart,
+  saveClientOrderDraft,
+} from '../features/client/clientCartStorage'
 import { createClientTelemetry, getClientBattery, type ClientBatteryManager } from '../lib/deviceTelemetry'
 import { createUuid } from '../lib/uuid'
 import {
@@ -40,6 +47,7 @@ import { apiBaseUrl, ApiError } from '../api/httpClient'
 import type {
   ClientBootstrap,
   ClientCartItem,
+  ClientOrder,
   ClientProduct,
   SubmitClientOrder,
 } from '../types/client'
@@ -60,11 +68,13 @@ export function ClientTabletPage() {
   const [activeCategoryId, setActiveCategoryId] = useState('featured')
   const [search, setSearch] = useState('')
   const [builderProduct, setBuilderProduct] = useState<ClientProduct>()
+  const [editingCartItem, setEditingCartItem] = useState<ClientCartItem>()
   const [cart, setCart] = useState<ClientCartItem[]>([])
   const [isMutating, setIsMutating] = useState(false)
   const [lastOrderNumber, setLastOrderNumber] = useState(0)
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
+  const [hasPendingOrderRecovery, setHasPendingOrderRecovery] = useState(false)
 
   useEffect(() => {
     const previousTitle = document.title
@@ -83,7 +93,10 @@ export function ClientTabletPage() {
       .then((data) => {
         setBootstrap(data)
         setCart([])
-        if (data.session.tableSessionId) clearClientCart(data.session.tableSessionId)
+        if (data.session.tableSessionId) {
+          clearClientCart(data.session.tableSessionId)
+          clearClientOrderDraft(data.session.tableSessionId)
+        }
         setScreen('welcome')
         const cleanUrl = new URL(window.location.href)
         cleanUrl.hash = ''
@@ -105,6 +118,7 @@ export function ClientTabletPage() {
       .then((data) => {
         setBootstrap(data)
         setCart(data.session.tableSessionId ? loadClientCart(data.session.tableSessionId) : [])
+        setHasPendingOrderRecovery(Boolean(data.session.tableSessionId && loadClientOrderDraft(data.session.tableSessionId)))
       })
       .catch((error) => {
         if (error instanceof ApiError && error.status === 0) {
@@ -112,6 +126,7 @@ export function ClientTabletPage() {
           if (cached) {
             setBootstrap(cached)
             setCart(cached.session.tableSessionId ? loadClientCart(cached.session.tableSessionId) : [])
+            setHasPendingOrderRecovery(Boolean(cached.session.tableSessionId && loadClientOrderDraft(cached.session.tableSessionId)))
             setIsOffline(true)
             return
           }
@@ -137,11 +152,16 @@ export function ClientTabletPage() {
       setIsOffline(false)
       if (state.session.tableSessionId !== activeTableSessionId) {
         setCart(state.session.tableSessionId ? loadClientCart(state.session.tableSessionId) : [])
+        setHasPendingOrderRecovery(Boolean(state.session.tableSessionId && loadClientOrderDraft(state.session.tableSessionId)))
         setScreen('welcome')
       }
       if (state.session.status === 'Closed' && state.session.clearTabletAfterTableClose) {
         setCart([])
-        if (state.session.tableSessionId) clearClientCart(state.session.tableSessionId)
+        if (state.session.tableSessionId) {
+          clearClientCart(state.session.tableSessionId)
+          clearClientOrderDraft(state.session.tableSessionId)
+        }
+        setHasPendingOrderRecovery(false)
       }
     } catch (error) {
       if (signal?.aborted) return
@@ -276,6 +296,13 @@ export function ClientTabletPage() {
 
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0)
   const cartTotal = cart.reduce((total, item) => total + item.quantity * item.unitPrice, 0)
+  const cartEstimatedMinutes = cart.reduce((estimate, item) => {
+    const product = bootstrap?.catalog.products.find((candidate) => candidate.id === item.productId)
+    return Math.max(estimate, product?.preparationTimeMinutes ?? 0)
+  }, 0)
+  const cartSuggestions = bootstrap?.catalog.products
+    .filter((product) => !cart.some((item) => item.productId === product.id) && product.productType !== 'Pizza' && (product.isPopular || product.isFeatured))
+    .slice(0, 3) ?? []
   const existingConsumption = bootstrap?.orders
     .filter((order) => order.status !== 'Cancelled')
     .reduce((total, order) => total + order.total, 0) ?? 0
@@ -311,7 +338,11 @@ export function ClientTabletPage() {
       const data = await activateClientSession(deviceCode)
       setBootstrap(data)
       setCart([])
-      if (data.session.tableSessionId) clearClientCart(data.session.tableSessionId)
+      if (data.session.tableSessionId) {
+        clearClientCart(data.session.tableSessionId)
+        clearClientOrderDraft(data.session.tableSessionId)
+      }
+      setHasPendingOrderRecovery(false)
       setScreen('welcome')
       toast.success('Tablet ativado', `Mesa ${data.session.tableNumber} conectada com sucesso.`)
     } catch (error) {
@@ -328,7 +359,11 @@ export function ClientTabletPage() {
       const data = await startClientTableSession({ guestCount })
       setBootstrap(data)
       setCart([])
-      if (data.session.tableSessionId) clearClientCart(data.session.tableSessionId)
+      if (data.session.tableSessionId) {
+        clearClientCart(data.session.tableSessionId)
+        clearClientOrderDraft(data.session.tableSessionId)
+      }
+      setHasPendingOrderRecovery(false)
       setScreen('welcome')
       toast.success('Comanda iniciada', `Atendimento aberto para ${guestCount} pessoa(s).`)
     } catch (error) {
@@ -345,7 +380,9 @@ export function ClientTabletPage() {
     try {
       const data = await completeClientTableSession()
       clearClientCart(completedTableSessionId)
+      clearClientOrderDraft(completedTableSessionId)
       setCart([])
+      setHasPendingOrderRecovery(false)
       setBootstrap(data)
       setScreen('welcome')
     } catch (error) {
@@ -360,8 +397,13 @@ export function ClientTabletPage() {
     setIsMutating(true)
     try {
       await logoutClientTablet()
+      if (activeTableSessionId) {
+        clearClientCart(activeTableSessionId)
+        clearClientOrderDraft(activeTableSessionId)
+      }
       setBootstrap(undefined)
       setCart([])
+      setHasPendingOrderRecovery(false)
       setScreen('welcome')
       setActivationError('Tablet desvinculado com segurança.')
     } catch (error) {
@@ -372,6 +414,11 @@ export function ClientTabletPage() {
   }
 
   function addStandardProduct(product: ClientProduct) {
+    if (hasPendingOrderRecovery) {
+      toast.info('Pedido aguardando confirmação', 'Tente enviar novamente antes de alterar o carrinho.')
+      setScreen('cart')
+      return
+    }
     setCart((current) => {
       const existing = current.find((item) => item.productId === product.id && !item.pizza)
       if (existing) {
@@ -392,13 +439,116 @@ export function ClientTabletPage() {
   }
 
   function addPizza(result: PizzaBuilderResult) {
-    setCart((current) => [...current, { key: createUuid(), ...result }])
+    if (hasPendingOrderRecovery) {
+      setBuilderProduct(undefined)
+      setScreen('cart')
+      toast.info('Pedido aguardando confirmação', 'Tente enviar novamente antes de alterar o carrinho.')
+      return
+    }
+    setCart((current) => editingCartItem
+      ? current.map((item) => item.key === editingCartItem.key ? { key: item.key, ...result } : item)
+      : [...current, { key: createUuid(), ...result }])
     setBuilderProduct(undefined)
+    setEditingCartItem(undefined)
     setScreen('cart')
-    toast.success('Pizza adicionada', 'Sua montagem está pronta no carrinho.')
+    toast.success(editingCartItem ? 'Pizza atualizada' : 'Pizza adicionada', editingCartItem ? 'As alterações foram salvas no carrinho.' : 'Sua montagem está pronta no carrinho.')
+  }
+
+  function openPizzaBuilder(product: ClientProduct, item?: ClientCartItem) {
+    if (hasPendingOrderRecovery) {
+      toast.info('Pedido aguardando confirmação', 'Tente enviar novamente antes de alterar o carrinho.')
+      setScreen('cart')
+      return
+    }
+    setEditingCartItem(item)
+    setBuilderProduct(product)
+  }
+
+  function editPizza(key: string) {
+    const item = cart.find((candidate) => candidate.key === key)
+    const product = bootstrap?.catalog.products.find((candidate) => candidate.id === item?.productId)
+    if (!item?.pizza || !product) {
+      toast.error('Item indisponível', 'Não foi possível abrir esta pizza para edição.')
+      return
+    }
+    openPizzaBuilder(product, item)
+  }
+
+  function reorder(order: ClientOrder) {
+    if (!bootstrap || hasPendingOrderRecovery) {
+      toast.info('Pedido aguardando confirmação', 'Conclua a tentativa atual antes de repetir outro pedido.')
+      return
+    }
+    const nextItems: ClientCartItem[] = []
+    let skipped = 0
+    for (const item of order.items) {
+      const product = bootstrap.catalog.products.find((candidate) => candidate.id === item.productId)
+      if (!product) {
+        skipped += 1
+        continue
+      }
+      if (!item.pizza) {
+        nextItems.push({
+          key: createUuid(),
+          productId: product.id,
+          name: product.name,
+          quantity: item.quantity,
+          unitPrice: product.price,
+          notes: item.notes,
+          imageUrl: getProductImage(product),
+        })
+        continue
+      }
+      const size = bootstrap.catalog.pizza.sizes.find((candidate) => candidate.id === item.pizza?.sizeId)
+      const flavors = item.pizza.flavors
+        .map((snapshot) => bootstrap.catalog.pizza.flavors.find((candidate) => candidate.id === snapshot.id))
+        .filter((flavor) => flavor?.isAvailable)
+      const crust = bootstrap.catalog.pizza.crusts.find((candidate) => candidate.id === item.pizza?.crustId)
+      const secondCrust = bootstrap.catalog.pizza.crusts.find((candidate) => candidate.id === item.pizza?.secondCrustId)
+      if (!size || flavors.length !== item.pizza.flavors.length || !crust?.isAvailable || (item.pizza.secondCrustId && !secondCrust?.isAvailable)) {
+        skipped += 1
+        continue
+      }
+      nextItems.push({
+        key: createUuid(),
+        productId: product.id,
+        name: `Pizza ${size.name} · ${flavors.length} ${flavors.length === 1 ? 'sabor' : 'sabores'}`,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        notes: item.notes,
+        imageUrl: getProductImage(product),
+        pizza: {
+          sizeId: size.id,
+          sizeName: size.name,
+          flavorIds: flavors.map((flavor) => flavor!.id),
+          flavorNames: flavors.map((flavor) => flavor!.name),
+          crustId: crust.id,
+          crustName: crust.name,
+          secondCrustId: secondCrust?.id,
+          secondCrustName: secondCrust?.name,
+          removedIngredientIds: item.modifiers.filter((modifier) => modifier.type === 'Remove' && modifier.ingredientId).map((modifier) => modifier.ingredientId!),
+          extraIngredients: item.modifiers.filter((modifier) => modifier.type === 'Extra' && modifier.ingredientId).map((modifier) => ({
+            ingredientId: modifier.ingredientId!,
+            ingredientName: modifier.name,
+            pizzaFlavorId: modifier.pizzaFlavorId,
+            pizzaFlavorName: flavors.find((flavor) => flavor?.id === modifier.pizzaFlavorId)?.name,
+            quantity: modifier.quantity,
+            unitPrice: modifier.unitPrice,
+          })),
+        },
+      })
+    }
+    if (!nextItems.length) {
+      toast.error('Pedido indisponível', 'Os itens deste pedido não estão disponíveis no cardápio atual.')
+      return
+    }
+    setCart((current) => [...current, ...nextItems])
+    setScreen('cart')
+    toast.success('Pedido adicionado ao carrinho', skipped ? `${nextItems.length} item(ns) incluído(s). ${skipped} indisponível(is) foi(ram) ignorado(s).` : 'Revise os itens e confirme quando estiver pronto.')
   }
 
   function changeQuantity(key: string, quantity: number) {
+    if (hasPendingOrderRecovery) return
     if (quantity <= 0) {
       removeCartItem(key)
       return
@@ -409,43 +559,73 @@ export function ClientTabletPage() {
   }
 
   function removeCartItem(key: string) {
+    if (hasPendingOrderRecovery) return
     setCart((current) => current.filter((item) => item.key !== key))
     toast.info('Item removido', 'O carrinho foi atualizado.')
   }
 
   async function submitOrder() {
-    if (!cart.length) return
-    setIsMutating(true)
-    const payload: SubmitClientOrder = {
-      requestId: createUuid(),
-      items: cart.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        notes: item.notes,
-        pizza: item.pizza ? {
-          sizeId: item.pizza.sizeId,
-          flavorIds: item.pizza.flavorIds,
-          crustId: item.pizza.crustId,
-          secondCrustId: item.pizza.secondCrustId,
-          removedIngredientIds: item.pizza.removedIngredientIds,
-          extraIngredients: (item.pizza.extraIngredients ?? []).map((extra) => ({
-            ingredientId: extra.ingredientId,
-            pizzaFlavorId: extra.pizzaFlavorId,
-            quantity: extra.quantity,
-          })),
-        } : undefined,
-      })),
+    if (!cart.length || !activeTableSessionId) return
+    if (isOffline) {
+      toast.info('Sem conexão', 'O carrinho está salvo neste tablet. Envie quando a rede voltar.')
+      return
     }
+    setIsMutating(true)
+    const orderItems: SubmitClientOrder['items'] = cart.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      notes: item.notes,
+      pizza: item.pizza ? {
+        sizeId: item.pizza.sizeId,
+        flavorIds: item.pizza.flavorIds,
+        crustId: item.pizza.crustId,
+        secondCrustId: item.pizza.secondCrustId,
+        removedIngredientIds: item.pizza.removedIngredientIds,
+        extraIngredients: (item.pizza.extraIngredients ?? []).map((extra) => ({
+          ingredientId: extra.ingredientId,
+          pizzaFlavorId: extra.pizzaFlavorId,
+          quantity: extra.quantity,
+        })),
+      } : undefined,
+    }))
+    const fingerprint = JSON.stringify(orderItems)
+    const storedDraft = loadClientOrderDraft(activeTableSessionId)
+    const requestId = storedDraft?.fingerprint === fingerprint ? storedDraft.requestId : createUuid()
+    const payload: SubmitClientOrder = {
+      requestId,
+      items: orderItems,
+    }
+    saveClientOrderDraft(activeTableSessionId, {
+      requestId,
+      fingerprint,
+      attemptedAt: new Date().toISOString(),
+    })
+    setHasPendingOrderRecovery(true)
     try {
       const order = await submitClientOrder(payload)
+      clearClientOrderDraft(activeTableSessionId)
+      clearClientCart(activeTableSessionId)
       setCart([])
+      setHasPendingOrderRecovery(false)
       setLastOrderNumber(order.number)
-      const fresh = await getClientBootstrap()
-      setBootstrap(fresh)
       setScreen('orderSent')
       toast.success('Pedido enviado', `Pedido #${order.number} recebido pela cozinha.`)
+      try {
+        const fresh = await getClientBootstrap()
+        setBootstrap(fresh)
+      } catch {
+        void refreshState()
+      }
     } catch (error) {
-      toast.error('Não foi possível enviar', getUserErrorMessage(error))
+      const isAmbiguousFailure = error instanceof ApiError && (error.status === 0 || error.status >= 500)
+      if (isAmbiguousFailure) {
+        setHasPendingOrderRecovery(true)
+        toast.error('Confirmação pendente', 'A conexão caiu durante o envio. O carrinho foi bloqueado para uma nova tentativa segura.')
+      } else {
+        clearClientOrderDraft(activeTableSessionId)
+        setHasPendingOrderRecovery(false)
+        toast.error('Não foi possível enviar', getUserErrorMessage(error))
+      }
     } finally {
       setIsMutating(false)
     }
@@ -456,7 +636,8 @@ export function ClientTabletPage() {
     try {
       await createClientServiceCall(typeId, details)
       toast.success('Solicitação enviada', 'A equipe foi avisada e irá até sua mesa.')
-      setScreen('menu')
+      await refreshState()
+      setScreen('service')
     } catch (error) {
       toast.error('Não foi possível chamar a equipe', getUserErrorMessage(error))
     } finally {
@@ -525,8 +706,8 @@ export function ClientTabletPage() {
       {(isOffline || !isRealtimeConnected) && (
         <div className="client-network-banner" role="status">
           {isOffline
-            ? 'Sem conexão. Seu carrinho está salvo neste tablet e será sincronizado quando a rede voltar.'
-            : 'Reconectando às atualizações em tempo real…'}
+            ? 'Sem conexão. Seu carrinho está salvo neste tablet. O envio será liberado quando a rede voltar.'
+            : 'Reconectando às atualizações em tempo real...'}
         </div>
       )}
       <ClientShell
@@ -550,7 +731,7 @@ export function ClientTabletPage() {
             categoryName={categoryName}
             isFeatured={activeCategoryId === 'featured'}
             onAddProduct={addStandardProduct}
-            onBuildPizza={setBuilderProduct}
+            onBuildPizza={(product) => openPizzaBuilder(product)}
           />
         )}
         {screen === 'cart' && (
@@ -558,20 +739,29 @@ export function ClientTabletPage() {
             items={cart}
             existingConsumption={existingConsumption}
             serviceFeePercentage={bootstrap.catalog.serviceFeePercentage}
-            canSubmit={canSubmitOrders}
-            blockedMessage={orderBlockedMessage}
+            estimatedPreparationMinutes={cartEstimatedMinutes}
+            suggestions={cartSuggestions}
+            canSubmit={canSubmitOrders && !isOffline}
+            isLocked={hasPendingOrderRecovery}
+            blockedMessage={hasPendingOrderRecovery
+              ? 'A conexão caiu durante uma tentativa. Reenvie o mesmo pedido com segurança antes de alterar o carrinho.'
+              : isOffline
+                ? 'O carrinho está salvo. Conecte-se à rede para enviar o pedido.'
+                : orderBlockedMessage}
             isSubmitting={isMutating}
             onChangeQuantity={changeQuantity}
+            onEdit={editPizza}
+            onAddSuggestion={addStandardProduct}
             onRemove={removeCartItem}
             onContinue={() => setScreen('menu')}
             onSubmit={submitOrder}
           />
         )}
         {screen === 'orders' && (
-          <OrdersView orders={bootstrap.orders} onMenu={() => setScreen('menu')} onBill={() => setScreen('bill')} />
+          <OrdersView orders={bootstrap.orders} onMenu={() => setScreen('menu')} onBill={() => setScreen('bill')} onReorder={reorder} />
         )}
         {screen === 'service' && (
-          <ServiceCallView types={bootstrap.serviceCallTypes} isSubmitting={isMutating} onSubmit={sendServiceCall} />
+          <ServiceCallView types={bootstrap.serviceCallTypes} calls={bootstrap.serviceCalls} isSubmitting={isMutating} onSubmit={sendServiceCall} />
         )}
         {screen === 'bill' && (
           <BillView bill={bootstrap.bill} guestCount={bootstrap.session.guestCount} isSubmitting={isMutating} onRequest={requestBill} />
@@ -585,7 +775,8 @@ export function ClientTabletPage() {
           key={builderProduct.id}
           product={builderProduct}
           catalog={bootstrap.catalog.pizza}
-          onCancel={() => setBuilderProduct(undefined)}
+          initialValue={editingCartItem}
+          onCancel={() => { setBuilderProduct(undefined); setEditingCartItem(undefined) }}
           onAdd={addPizza}
         />
       )}

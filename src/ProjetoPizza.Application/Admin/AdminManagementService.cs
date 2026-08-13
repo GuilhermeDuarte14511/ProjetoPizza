@@ -3,6 +3,7 @@ using ProjetoPizza.Application.Abstractions.Persistence;
 using ProjetoPizza.Application.Client;
 using ProjetoPizza.Application.Catalog;
 using ProjetoPizza.Application.Devices;
+using ProjetoPizza.Application.Inventory;
 using ProjetoPizza.Domain.Audit;
 using ProjetoPizza.Domain.Billing;
 using ProjetoPizza.Domain.Cashier;
@@ -58,6 +59,9 @@ public sealed class AdminManagementService(
                 order.DispatchedAt,
                 order.DeliveredAt,
                 order.Notes,
+                order.CancellationReason,
+                order.Subtotal.Amount,
+                order.Discount.Amount,
                 order.Total.Amount,
                 order.CreatedAt,
                 order.PlacedAt,
@@ -84,6 +88,22 @@ public sealed class AdminManagementService(
             .Select(ToCustomerDto)
             .ToArray();
         return Task.FromResult<IReadOnlyCollection<CustomerDto>>(result);
+    }
+
+    public Task<IReadOnlyCollection<ReservationDto>> ListReservationsAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult<IReadOnlyCollection<ReservationDto>>(context.Reservations
+            .OrderBy(reservation => reservation.ScheduledAt)
+            .ToArray().Select(ToReservationDto).ToArray());
+    }
+
+    public Task<IReadOnlyCollection<WaitlistEntryDto>> ListWaitlistAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult<IReadOnlyCollection<WaitlistEntryDto>>(context.WaitlistEntries
+            .OrderBy(entry => entry.EnteredAt)
+            .ToArray().Select(ToWaitlistEntryDto).ToArray());
     }
 
     public Task<OrderReceiptDto?> GetOrderReceiptAsync(Guid id, CancellationToken cancellationToken)
@@ -131,6 +151,108 @@ public sealed class AdminManagementService(
         AddAudit(unit.Id, employee.Id, "Customers", action, nameof(Customer), customer.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return ToCustomerDto(customer);
+    }
+
+    public async Task<ReservationDto> CreateReservationAsync(
+        CreateReservationCommand command, Guid identityUserId, CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var unit = GetUnit();
+        CustomerId? customerId = command.CustomerId.HasValue ? new CustomerId(command.CustomerId.Value) : null;
+        var phone = Customer.NormalizePhone(command.Phone);
+        var customerName = command.CustomerName;
+        if (customerId.HasValue)
+        {
+            var selectedCustomer = context.Customers.SingleOrDefault(customer =>
+                customer.Id == customerId.Value && customer.UnitId == unit.Id && customer.IsActive);
+            if (selectedCustomer is null)
+                throw new BusinessRuleException("reservation.customer", "The selected customer is unavailable.");
+
+            customerName = selectedCustomer.Name;
+            phone = selectedCustomer.Phone;
+        }
+        else
+        {
+            var existingCustomer = context.Customers.SingleOrDefault(customer =>
+                customer.UnitId == unit.Id && customer.Phone == phone && customer.IsActive);
+            if (existingCustomer is not null)
+            {
+                customerId = existingCustomer.Id;
+                customerName = existingCustomer.Name;
+                phone = existingCustomer.Phone;
+            }
+            else
+            {
+                if (!command.CustomerBirthDate.HasValue)
+                    throw new BusinessRuleException("reservation.customer_birth_date", "Birth date is required for a new customer.");
+
+                var newCustomer = new Customer(
+                    CustomerId.New(), unit.Id, command.CustomerName, command.Phone, command.CustomerBirthDate.Value);
+                context.Add(newCustomer);
+                customerId = newCustomer.Id;
+                customerName = newCustomer.Name;
+                phone = newCustomer.Phone;
+                AddAudit(unit.Id, employee.Id, "Customers", "CreateFromReservation", nameof(Customer), newCustomer.Id.Value);
+            }
+        }
+
+        var end = command.ScheduledAt.AddMinutes(command.DurationMinutes);
+        if (context.Reservations.Any(reservation => reservation.Phone == phone &&
+            reservation.Status != ReservationStatus.Cancelled && reservation.Status != ReservationStatus.NoShow &&
+            reservation.ScheduledAt < end && reservation.ScheduledAt.AddMinutes(reservation.DurationMinutes) > command.ScheduledAt))
+            throw new BusinessRuleException("reservation.duplicate", "This customer already has an overlapping reservation.");
+        var reservation = new Reservation(
+            ReservationId.New(), unit.Id, customerName, phone, command.PartySize,
+            command.ScheduledAt, command.DurationMinutes, command.Notes, customerId);
+        context.Add(reservation);
+        AddAudit(unit.Id, employee.Id, "Dining", "CreateReservation", nameof(Reservation), reservation.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return ToReservationDto(reservation);
+    }
+
+    public async Task<CommandResultDto> TransitionReservationAsync(
+        Guid id, string transition, Guid identityUserId, CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var reservation = context.Reservations.Single(item => item.Id == new ReservationId(id));
+        if (!Enum.TryParse<ReservationStatus>(transition, true, out var status))
+            throw new BusinessRuleException("reservation.transition", "Unknown reservation transition.");
+        reservation.Transition(status);
+        AddAudit(reservation.UnitId, employee.Id, "Dining", status.ToString(), nameof(Reservation), reservation.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(reservation.Id.Value, reservation.Status.ToString());
+    }
+
+    public async Task<WaitlistEntryDto> CreateWaitlistEntryAsync(
+        CreateWaitlistEntryCommand command, Guid identityUserId, CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var unit = GetUnit();
+        CustomerId? customerId = command.CustomerId.HasValue ? new CustomerId(command.CustomerId.Value) : null;
+        var phone = Customer.NormalizePhone(command.Phone);
+        if (context.WaitlistEntries.Any(entry => entry.Phone == phone &&
+            entry.Status != WaitlistStatus.Seated && entry.Status != WaitlistStatus.Cancelled))
+            throw new BusinessRuleException("waitlist.duplicate", "This customer is already on the waitlist.");
+        var entry = new WaitlistEntry(
+            WaitlistEntryId.New(), unit.Id, command.CustomerName, command.Phone, command.PartySize,
+            command.EstimatedWaitMinutes, command.Notes, customerId);
+        context.Add(entry);
+        AddAudit(unit.Id, employee.Id, "Dining", "JoinWaitlist", nameof(WaitlistEntry), entry.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return ToWaitlistEntryDto(entry);
+    }
+
+    public async Task<CommandResultDto> TransitionWaitlistEntryAsync(
+        Guid id, string transition, Guid identityUserId, CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var entry = context.WaitlistEntries.Single(item => item.Id == new WaitlistEntryId(id));
+        if (!Enum.TryParse<WaitlistStatus>(transition, true, out var status))
+            throw new BusinessRuleException("waitlist.transition", "Unknown waitlist transition.");
+        entry.Transition(status);
+        AddAudit(entry.UnitId, employee.Id, "Dining", status.ToString(), nameof(WaitlistEntry), entry.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(entry.Id.Value, entry.Status.ToString());
     }
 
     public async Task<CreatedOrderDto> CreateOrderAsync(
@@ -323,7 +445,9 @@ public sealed class AdminManagementService(
         order.RecalculateTotals(
             deliveryFee: fulfillment == FulfillmentType.Delivery ? settings.DefaultDeliveryFee : Money.Zero(),
             discount: new Money(command.DiscountAmount));
+        InventoryConsumption.Apply(context, order, requestedItems, employee.Id);
         order.Submit();
+        customer.RegisterPurchase(order.Total);
         context.Add(order);
         await composition.CreateAdministrativeKitchenTicketsAsync(order, stationItems, cancellationToken);
         AddAudit(unit.Id, employee.Id, "Ordering", "CreateAdministrative", nameof(Order), order.Id.Value);
@@ -566,8 +690,11 @@ public sealed class AdminManagementService(
                 payment.Amount.Amount,
                 payment.ReceivedAmount.Amount,
                 payment.ChangeAmount.Amount,
+                payment.RefundedAmount.Amount,
                 payment.ExternalReference,
-                payment.PaidAt))
+                payment.PaidAt,
+                payment.RefundedAt,
+                payment.RefundReason))
             .ToArray();
         return Task.FromResult<IReadOnlyCollection<PaymentDto>>(result);
     }
@@ -587,17 +714,56 @@ public sealed class AdminManagementService(
             .Where(order => order.CreatedAt >= from && order.CreatedAt <= to && order.Status != OrderStatus.Cancelled)
             .ToArray();
         var payments = context.Payments
-            .Where(payment => payment.PaidAt >= from && payment.PaidAt <= to && payment.Status == PaymentStatus.Paid)
+            .Where(payment => payment.PaidAt >= from && payment.PaidAt <= to &&
+                payment.Status != PaymentStatus.Pending && payment.Status != PaymentStatus.Authorized &&
+                payment.Status != PaymentStatus.Failed && payment.Status != PaymentStatus.Cancelled)
             .ToArray();
         var methods = context.PaymentMethods.ToDictionary(method => method.Id, method => method.Name);
+        var stockMovements = context.StockMovements
+            .Where(movement => movement.CreatedAt >= from && movement.CreatedAt <= to &&
+                movement.MovementType == StockMovementType.Consumption)
+            .ToArray();
+        var stations = context.ProductionStations.ToDictionary(station => station.Id);
+        var completedTickets = context.KitchenTickets
+            .Where(ticket => ticket.ReadyAt >= from && ticket.ReadyAt <= to && ticket.StartedAt.HasValue)
+            .ToArray();
         var grossSales = orders.Sum(order => order.Total.Amount);
+        var paidAmount = payments.Sum(payment => payment.Amount.Amount - payment.RefundedAmount.Amount);
+        var foodCost = stockMovements.Sum(movement => movement.Quantity * movement.UnitCost.Amount);
+        var contributionMargin = grossSales - foodCost;
+        var performance = completedTickets
+            .GroupBy(ticket => ticket.ProductionStationId)
+            .Select(group =>
+            {
+                var station = stations.GetValueOrDefault(group.Key);
+                var durations = group.Select(ticket => (decimal)(ticket.ReadyAt!.Value - ticket.StartedAt!.Value).TotalMinutes).ToArray();
+                var onTime = station is null ? 0 : group.Count(ticket =>
+                    ticket.ReadyAt!.Value - ticket.StartedAt!.Value <= TimeSpan.FromMinutes(station.TargetPreparationMinutes));
+                return new ProductionPerformanceDto(
+                    station?.Name ?? "Praça desconhecida",
+                    group.Count(),
+                    decimal.Round(durations.Average(), 1),
+                    decimal.Round(onTime * 100m / group.Count(), 1));
+            })
+            .OrderBy(item => item.Station)
+            .ToArray();
         var result = new FinancialReportDto(
             from,
             to,
             grossSales,
-            payments.Sum(payment => payment.Amount.Amount),
+            paidAmount,
+            foodCost,
+            contributionMargin,
+            grossSales == 0 ? 0 : decimal.Round(contributionMargin * 100m / grossSales, 1),
             orders.Length == 0 ? 0 : decimal.Round(grossSales / orders.Length, 2),
             orders.Length,
+            completedTickets.Length,
+            completedTickets.Length == 0 ? 0 : decimal.Round(
+                (decimal)completedTickets.Average(ticket => (ticket.ReadyAt!.Value - ticket.StartedAt!.Value).TotalMinutes), 1),
+            completedTickets.Length == 0 ? 0 : decimal.Round(
+                completedTickets.Count(ticket => stations.TryGetValue(ticket.ProductionStationId, out var station) &&
+                    ticket.ReadyAt!.Value - ticket.StartedAt!.Value <= TimeSpan.FromMinutes(station.TargetPreparationMinutes)) * 100m /
+                completedTickets.Length, 1),
             orders.GroupBy(order => order.SalesChannel)
                 .Select(group => new FinancialChannelDto(group.Key.ToString(), group.Count(), group.Sum(order => order.Total.Amount)))
                 .OrderByDescending(channel => channel.Total)
@@ -606,9 +772,10 @@ public sealed class AdminManagementService(
                 .Select(group => new FinancialMethodDto(
                     methods.GetValueOrDefault(group.Key, "Desconhecido"),
                     group.Count(),
-                    group.Sum(payment => payment.Amount.Amount)))
+                    group.Sum(payment => payment.Amount.Amount - payment.RefundedAmount.Amount)))
                 .OrderByDescending(method => method.Total)
-                .ToArray());
+                .ToArray(),
+            performance);
         return Task.FromResult(result);
     }
 
@@ -772,6 +939,7 @@ public sealed class AdminManagementService(
                     item.Sku,
                     item.UnitOfMeasure,
                     item.MinimumStock,
+                    item.UnitCost.Amount,
                     current,
                     reserved,
                     available,
@@ -780,6 +948,31 @@ public sealed class AdminManagementService(
             })
             .ToArray();
         return Task.FromResult<IReadOnlyCollection<InventoryItemAdminDto>>(result);
+    }
+
+    public Task<IReadOnlyCollection<RecipeAdminDto>> ListRecipesAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var products = context.Products.ToDictionary(product => product.Id, product => product.Name);
+        var flavors = context.PizzaFlavors.ToDictionary(flavor => flavor.Id, flavor => flavor.Name);
+        var sizes = context.PizzaSizes.ToDictionary(size => size.Id, size => size.Name);
+        var inventoryItems = context.InventoryItems.ToDictionary(item => item.Id, item => item.Name);
+        var ingredients = context.RecipeItems.ToArray().GroupBy(item => item.RecipeId).ToDictionary(group => group.Key, group => group.ToArray());
+        var result = context.Recipes.OrderBy(recipe => recipe.Id).ToArray().Select(recipe => new RecipeAdminDto(
+            recipe.Id.Value,
+            recipe.ProductId?.Value,
+            recipe.ProductId.HasValue ? products.GetValueOrDefault(recipe.ProductId.Value) : null,
+            recipe.PizzaFlavorId?.Value,
+            recipe.PizzaFlavorId.HasValue ? flavors.GetValueOrDefault(recipe.PizzaFlavorId.Value) : null,
+            recipe.PizzaSizeId?.Value,
+            recipe.PizzaSizeId.HasValue ? sizes.GetValueOrDefault(recipe.PizzaSizeId.Value) : null,
+            recipe.YieldQuantity,
+            ingredients.GetValueOrDefault(recipe.Id, []).Select(item => new RecipeItemAdminDto(
+                item.InventoryItemId.Value,
+                inventoryItems.GetValueOrDefault(item.InventoryItemId, "Item removido"),
+                item.Quantity,
+                item.UnitOfMeasure)).ToArray())).ToArray();
+        return Task.FromResult<IReadOnlyCollection<RecipeAdminDto>>(result);
     }
 
     public async Task UpdateUnitAsync(UpdateUnitCommand command, Guid identityUserId, CancellationToken cancellationToken)
@@ -1631,7 +1824,7 @@ public sealed class AdminManagementService(
             context.Add(new StockBalance(StockBalanceId.New(), item.Id));
         }
 
-        item.Update(command.Name, sku, command.UnitOfMeasure, command.MinimumStock, command.IsActive);
+        item.Update(command.Name, sku, command.UnitOfMeasure, command.MinimumStock, new Money(command.UnitCost), command.IsActive);
         AddAudit(unit.Id, employee.Id, "Inventory", action, nameof(InventoryItem), item.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return new CommandResultDto(item.Id.Value, action == "Create" ? "Created" : "Updated");
@@ -1663,12 +1856,67 @@ public sealed class AdminManagementService(
             item.Id,
             command.QuantityDelta > 0 ? StockMovementType.Entry : StockMovementType.Loss,
             Math.Abs(command.QuantityDelta),
-            Money.Zero(),
+            item.UnitCost,
             command.Reason,
             employee.Id));
         AddAudit(item.UnitId, employee.Id, "Inventory", "Adjust", nameof(InventoryItem), item.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return new CommandResultDto(item.Id.Value, "Adjusted");
+    }
+
+    public async Task<CommandResultDto> SaveRecipeAsync(
+        SaveRecipeCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        if (command.ProductId.HasValue == command.PizzaFlavorId.HasValue)
+        {
+            throw new BusinessRuleException("recipe.target", "Select exactly one product or pizza flavor for the recipe.");
+        }
+        var items = command.Items?.ToArray() ?? [];
+        if (items.Length == 0 || items.GroupBy(item => item.InventoryItemId).Any(group => group.Count() > 1))
+        {
+            throw new BusinessRuleException("recipe.items", "A recipe needs unique inventory ingredients.");
+        }
+        foreach (var item in items)
+        {
+            _ = context.InventoryItems.Single(candidate => candidate.Id == new InventoryItemId(item.InventoryItemId) && candidate.IsActive);
+        }
+
+        var productId = command.ProductId.HasValue ? new ProductId(command.ProductId.Value) : (ProductId?)null;
+        var flavorId = command.PizzaFlavorId.HasValue ? new PizzaFlavorId(command.PizzaFlavorId.Value) : (PizzaFlavorId?)null;
+        var sizeId = command.PizzaSizeId.HasValue ? new PizzaSizeId(command.PizzaSizeId.Value) : (PizzaSizeId?)null;
+        var duplicate = context.Recipes.Any(recipe =>
+            (!command.Id.HasValue || recipe.Id.Value != command.Id.Value) &&
+            recipe.ProductId == productId && recipe.PizzaFlavorId == flavorId && recipe.PizzaSizeId == sizeId);
+        if (duplicate)
+        {
+            throw new BusinessRuleException("recipe.duplicate", "A recipe already exists for this target and size.");
+        }
+
+        Recipe recipe;
+        var action = command.Id.HasValue ? "Update" : "Create";
+        if (command.Id.HasValue)
+        {
+            recipe = context.Recipes.Single(candidate => candidate.Id == new RecipeId(command.Id.Value));
+            foreach (var currentItem in context.RecipeItems.Where(item => item.RecipeId == recipe.Id).ToArray()) context.Remove(currentItem);
+            recipe.Update(command.YieldQuantity, productId: productId, pizzaFlavorId: flavorId, pizzaSizeId: sizeId);
+        }
+        else
+        {
+            recipe = new Recipe(RecipeId.New(), command.YieldQuantity, productId: productId, pizzaFlavorId: flavorId, pizzaSizeId: sizeId);
+            context.Add(recipe);
+        }
+        foreach (var item in items)
+        {
+            context.Add(new RecipeItem(
+                RecipeItemId.New(), recipe.Id, new InventoryItemId(item.InventoryItemId),
+                item.Quantity, item.UnitOfMeasure));
+        }
+        AddAudit(GetUnit().Id, employee.Id, "Inventory", action, nameof(Recipe), recipe.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(recipe.Id.Value, action == "Create" ? "Created" : "Updated");
     }
 
     public async Task<CommandResultDto> OpenTableAsync(
@@ -1710,6 +1958,66 @@ public sealed class AdminManagementService(
         AddAudit(unit.Id, employee.Id, "Dining", "Open", nameof(TableSession), session.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return new CommandResultDto(session.Id.Value, session.Status.ToString());
+    }
+
+    public async Task<CommandResultDto> AssignTableWaiterAsync(
+        Guid tableSessionId,
+        AssignTableWaiterCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var session = context.TableSessions.Single(item => item.Id == new TableSessionId(tableSessionId));
+        session.EnsureCanReceiveOrders();
+        var waiter = context.Employees.Single(item => item.Id == new EmployeeId(command.EmployeeId));
+        if (!waiter.IsActive || waiter.UnitId != session.UnitId)
+        {
+            throw new BusinessRuleException("table_session.waiter_unavailable", "The selected waiter is not available for this unit.");
+        }
+        session.AssignWaiter(waiter.Id);
+        AddAudit(session.UnitId, employee.Id, "Dining", "AssignWaiter", nameof(TableSession), session.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(session.Id.Value, "WaiterAssigned");
+    }
+
+    public async Task<CommandResultDto> LinkTableAsync(
+        Guid tableSessionId,
+        LinkTableCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var session = context.TableSessions.Single(item => item.Id == new TableSessionId(tableSessionId));
+        _ = context.TableSessionTables.Where(link => link.TableSessionId == session.Id).ToArray();
+        var table = context.RestaurantTables.Single(item => item.Id == new RestaurantTableId(command.TableId));
+        if (HasOpenTableSession(table.Id))
+        {
+            throw new BusinessRuleException("table.already_in_open_session", "Table already belongs to an open session.");
+        }
+        session.LinkTable(table, employee.Id);
+        AddAudit(session.UnitId, employee.Id, "Dining", "LinkTable", nameof(TableSession), session.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(session.Id.Value, "TableLinked");
+    }
+
+    public async Task<CommandResultDto> TransferTableAsync(
+        Guid tableSessionId,
+        TransferTableCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var session = context.TableSessions.Single(item => item.Id == new TableSessionId(tableSessionId));
+        _ = context.TableSessionTables.Where(link => link.TableSessionId == session.Id).ToArray();
+        var target = context.RestaurantTables.Single(item => item.Id == new RestaurantTableId(command.TargetTableId));
+        if (HasOpenTableSession(target.Id))
+        {
+            throw new BusinessRuleException("table.already_in_open_session", "Target table already belongs to an open session.");
+        }
+        session.TransferTable(new RestaurantTableId(command.CurrentTableId), target, employee.Id);
+        AddAudit(session.UnitId, employee.Id, "Dining", "TransferTable", nameof(TableSession), session.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(session.Id.Value, "TableTransferred");
     }
 
     public async Task<CommandResultDto> RequestBillAsync(
@@ -1772,11 +2080,95 @@ public sealed class AdminManagementService(
             case "complete" when order.FulfillmentType == FulfillmentType.Delivery:
                 throw new BusinessRuleException("order.delivery_dispatch", "Delivery orders must be dispatched before completion.");
             case "complete": order.Complete(); break;
-            case "cancel": order.Cancel("Cancelado pelo painel administrativo."); break;
             default: throw new BusinessRuleException("order.transition", "Unknown order transition.");
         }
 
         AddAudit(order.UnitId, employee.Id, "Ordering", transition, nameof(Order), order.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(order.Id.Value, order.Status.ToString());
+    }
+
+    public async Task<CommandResultDto> CancelOrderAsync(
+        Guid id,
+        CancelOrderCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var order = context.Orders.Single(item => item.Id == new OrderId(id));
+        var bills = context.Bills.Where(bill =>
+            bill.OrderId == order.Id || (order.TableSessionId.HasValue && bill.TableSessionId == order.TableSessionId)).ToArray();
+        if (bills.Any(bill => bill.PaidAmount.Amount > 0))
+        {
+            throw new BusinessRuleException("order.cancel_paid", "Refund every payment before cancelling this order.");
+        }
+
+        order.Cancel(command.Reason);
+        if (order.CustomerId.HasValue)
+        {
+            context.Customers.SingleOrDefault(customer => customer.Id == order.CustomerId.Value)?.ReversePurchase(order.Total);
+        }
+        foreach (var ticket in context.KitchenTickets.Where(ticket => ticket.OrderId == order.Id).ToArray())
+        {
+            if (ticket.Status != KitchenTicketStatus.Dispatched && ticket.Status != KitchenTicketStatus.Cancelled) ticket.Cancel();
+        }
+        foreach (var bill in bills)
+        {
+            if (bill.OrderId.HasValue)
+            {
+                bill.Cancel();
+                continue;
+            }
+            var activeOrders = context.Orders
+                .Where(candidate => candidate.TableSessionId == order.TableSessionId && candidate.Id != order.Id && candidate.Status != OrderStatus.Cancelled)
+                .ToArray();
+            if (activeOrders.Length == 0) bill.Cancel();
+            else bill.Recalculate(
+                new Money(activeOrders.Sum(candidate => candidate.Subtotal.Amount)),
+                new Money(activeOrders.Sum(candidate => candidate.Discount.Amount)));
+        }
+
+        AddAudit(order.UnitId, employee.Id, "Ordering", "CancelApproved", nameof(Order), order.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(order.Id.Value, order.Status.ToString());
+    }
+
+    public async Task<CommandResultDto> ApplyOrderDiscountAsync(
+        Guid id,
+        ApplyOrderDiscountCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var order = context.Orders.Single(item => item.Id == new OrderId(id));
+        _ = Guard.Required(command.Reason, nameof(command.Reason), 500);
+        if (command.Amount < 0)
+        {
+            throw new BusinessRuleException("order.discount", "Discount cannot be negative.");
+        }
+        order.RecalculateTotals(discount: new Money(command.Amount));
+
+        var bill = context.Bills.SingleOrDefault(candidate =>
+            candidate.OrderId == order.Id || (order.TableSessionId.HasValue && candidate.TableSessionId == order.TableSessionId));
+        if (bill is not null)
+        {
+            if (context.BillSplits.Any(split => split.BillId == bill.Id))
+            {
+                throw new BusinessRuleException("bill.discount_split", "A split bill cannot be discounted after its parts are created.");
+            }
+            if (bill.OrderId.HasValue) bill.ApplyDiscount(order.Discount);
+            else
+            {
+                var sessionOrders = context.Orders
+                    .Where(candidate => candidate.TableSessionId == order.TableSessionId && candidate.Status != OrderStatus.Cancelled)
+                    .ToArray();
+                bill.Recalculate(
+                    new Money(sessionOrders.Sum(candidate => candidate.Subtotal.Amount)),
+                    new Money(sessionOrders.Sum(candidate => candidate.Discount.Amount)));
+            }
+        }
+
+        AddAudit(order.UnitId, employee.Id, "Ordering", "DiscountApproved", nameof(Order), order.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return new CommandResultDto(order.Id.Value, order.Status.ToString());
     }
@@ -2083,6 +2475,63 @@ public sealed class AdminManagementService(
         AddAudit(bill.UnitId, employee.Id, "Billing", "SplitPayment", nameof(Bill), bill.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return new CommandResultDto(bill.Id.Value, bill.Status.ToString());
+    }
+
+    public async Task<CommandResultDto> RefundPaymentAsync(
+        Guid id,
+        RefundPaymentCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var payment = context.Payments.Single(item => item.Id == new PaymentId(id));
+        var bill = context.Bills.Single(item => item.Id == payment.BillId);
+        var method = context.PaymentMethods.Single(item => item.Id == payment.PaymentMethodId);
+        var amount = new Money(command.Amount);
+
+        CashShift? cashShift = null;
+        if (method.Code == "CASH")
+        {
+            cashShift = context.CashShifts
+                .Where(shift => shift.Status == CashShiftStatus.Open)
+                .OrderByDescending(shift => shift.OpenedAt)
+                .ToArray()
+                .FirstOrDefault();
+            if (cashShift is null)
+            {
+                throw new BusinessRuleException("refund.cash_shift", "Cash refunds require an open cash shift.");
+            }
+        }
+
+        payment.Refund(amount, command.Reason);
+        bill.RegisterRefund(amount);
+        if (payment.BillSplitId.HasValue)
+        {
+            var split = context.BillSplits.Single(item => item.Id == payment.BillSplitId.Value);
+            split.RegisterRefund(amount);
+        }
+        if (cashShift is not null)
+        {
+            _ = context.CashMovements.Where(movement => movement.CashShiftId == cashShift.Id).ToArray();
+            cashShift.RegisterMovement(
+                CashMovementId.New(),
+                CashMovementType.Refund,
+                amount,
+                $"Estorno do pagamento {payment.Id.Value}",
+                command.Reason,
+                employee.Id,
+                authorizedByEmployeeId: employee.Id,
+                paymentId: payment.Id);
+        }
+        if (bill.TableSessionId.HasValue)
+        {
+            var session = context.TableSessions.Single(item => item.Id == bill.TableSessionId.Value);
+            if (session.Status == TableSessionStatus.Closed) session.ReopenPaymentAfterRefund();
+        }
+
+        AddAudit(payment.UnitId, employee.Id, "Billing", "RefundApproved", nameof(Payment), payment.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(payment.Id.Value, payment.Status.ToString());
     }
 
     public async Task<CashShiftDto> OpenCashShiftAsync(
@@ -2557,7 +3006,20 @@ public sealed class AdminManagementService(
         customer.Phone,
         customer.BirthDate,
         customer.IsActive,
+        customer.LoyaltyPoints,
+        customer.LifetimeSpend.Amount,
+        customer.OrderCount,
+        customer.LastOrderAt,
         customer.CreatedAt);
+
+    private static ReservationDto ToReservationDto(Reservation reservation) => new(
+        reservation.Id.Value, reservation.CustomerId?.Value, reservation.CustomerName, reservation.Phone,
+        reservation.PartySize, reservation.ScheduledAt, reservation.DurationMinutes, reservation.Notes,
+        reservation.Status.ToString(), reservation.CreatedAt);
+
+    private static WaitlistEntryDto ToWaitlistEntryDto(WaitlistEntry entry) => new(
+        entry.Id.Value, entry.CustomerId?.Value, entry.CustomerName, entry.Phone, entry.PartySize,
+        entry.EstimatedWaitMinutes, entry.Notes, entry.Status.ToString(), entry.EnteredAt, entry.NotifiedAt);
 
     private OrderReceiptDto CreateOrderReceipt(Order order)
     {

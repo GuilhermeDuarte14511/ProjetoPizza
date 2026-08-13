@@ -4,9 +4,11 @@ import {
   Check,
   ChevronLeft,
   Minus,
+  Leaf,
   Pizza,
   Plus,
   RotateCcw,
+  ShieldCheck,
   Sparkles,
   X,
 } from 'lucide-react'
@@ -17,6 +19,7 @@ import type {
   ClientPizzaExtra,
   ClientPizzaFlavor,
   ClientPizzaSize,
+  ClientCartItem,
   ClientProduct,
   PizzaCartConfiguration,
 } from '../../types/client'
@@ -36,6 +39,7 @@ export interface PizzaBuilderResult {
 interface PizzaBuilderProps {
   product: ClientProduct
   catalog: ClientPizzaCatalog
+  initialValue?: ClientCartItem
   onCancel: () => void
   onAdd: (result: PizzaBuilderResult) => void
 }
@@ -50,20 +54,27 @@ type CrustMode = 'whole' | 'split'
 
 const stepLabels = ['Tamanho', 'Quantidade', 'Sabores', 'Personalizar', 'Borda', 'Revisão']
 
-export function PizzaBuilder({ product, catalog, onCancel, onAdd }: PizzaBuilderProps) {
+export function PizzaBuilder({ product, catalog, initialValue, onCancel, onAdd }: PizzaBuilderProps) {
+  const initialPizza = initialValue?.pizza
   const dialogRef = useRef<HTMLDivElement>(null)
-  const [step, setStep] = useState(0)
-  const [size, setSize] = useState<ClientPizzaSize>()
-  const [flavorCount, setFlavorCount] = useState(1)
-  const [flavorIds, setFlavorIds] = useState<string[]>([])
-  const [removedIngredientIds, setRemovedIngredientIds] = useState<string[]>([])
-  const [extraIngredients, setExtraIngredients] = useState<PizzaExtraSelection[]>([])
-  const [customizingFlavorId, setCustomizingFlavorId] = useState<string>()
-  const [crustMode, setCrustMode] = useState<CrustMode>('whole')
-  const [crust, setCrust] = useState<ClientPizzaCrust>()
-  const [secondCrust, setSecondCrust] = useState<ClientPizzaCrust>()
-  const [quantity, setQuantity] = useState(1)
-  const [notes, setNotes] = useState('')
+  const [step, setStep] = useState(initialPizza ? 5 : 0)
+  const [size, setSize] = useState<ClientPizzaSize | undefined>(() => catalog.sizes.find((candidate) => candidate.id === initialPizza?.sizeId))
+  const [flavorCount, setFlavorCount] = useState(initialPizza?.flavorIds.length ?? 1)
+  const [flavorIds, setFlavorIds] = useState<string[]>(initialPizza?.flavorIds ?? [])
+  const [removedIngredientIds, setRemovedIngredientIds] = useState<string[]>(initialPizza?.removedIngredientIds ?? [])
+  const [extraIngredients, setExtraIngredients] = useState<PizzaExtraSelection[]>(() => initialPizza?.extraIngredients.map((extra) => ({
+    ingredientId: extra.ingredientId,
+    pizzaFlavorId: extra.pizzaFlavorId,
+    quantity: extra.quantity,
+  })) ?? [])
+  const [customizingFlavorId, setCustomizingFlavorId] = useState<string | undefined>(initialPizza?.flavorIds[0])
+  const [crustMode, setCrustMode] = useState<CrustMode>(initialPizza?.secondCrustId ? 'split' : 'whole')
+  const [crust, setCrust] = useState<ClientPizzaCrust | undefined>(() => catalog.crusts.find((candidate) => candidate.id === initialPizza?.crustId))
+  const [secondCrust, setSecondCrust] = useState<ClientPizzaCrust | undefined>(() => catalog.crusts.find((candidate) => candidate.id === initialPizza?.secondCrustId))
+  const [quantity, setQuantity] = useState(initialValue?.quantity ?? 1)
+  const [notes, setNotes] = useState(initialValue?.notes ?? '')
+  const [vegetarianOnly, setVegetarianOnly] = useState(false)
+  const [allergenAware, setAllergenAware] = useState(false)
 
   const selectedFlavors = catalog.flavors.filter((flavor) => flavorIds.includes(flavor.id))
   const pricing = useMemo(
@@ -79,6 +90,9 @@ export function PizzaBuilder({ product, catalog, onCancel, onAdd }: PizzaBuilder
   const removableIngredients = (customizingFlavor?.ingredients ?? [])
     .filter((ingredient, index, all) =>
       ingredient.isRemovable && all.findIndex((candidate) => candidate.id === ingredient.id) === index)
+  const visibleFlavors = catalog.flavors.filter((flavor) =>
+    (!vegetarianOnly || flavor.isVegetarian) &&
+    (!allergenAware || flavor.ingredients.every((ingredient) => !ingredient.isAllergen)))
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -222,7 +236,7 @@ export function PizzaBuilder({ product, catalog, onCancel, onAdd }: PizzaBuilder
         <button type="button" onClick={goBack} aria-label="Voltar"><ArrowLeft aria-hidden="true" /></button>
         <div>
           <Pizza aria-hidden="true" />
-          <h1 id="pizza-builder-title">Monte sua pizza</h1>
+          <h1 id="pizza-builder-title">{initialPizza ? 'Edite sua pizza' : 'Monte sua pizza'}</h1>
         </div>
         <button type="button" onClick={onCancel} aria-label="Fechar montador"><X aria-hidden="true" /></button>
       </header>
@@ -294,6 +308,10 @@ export function PizzaBuilder({ product, catalog, onCancel, onAdd }: PizzaBuilder
             title={`Escolha ${flavorCount === 1 ? 'o sabor' : `os ${flavorCount} sabores`}`}
             subtitle={`${flavorIds.length} de ${flavorCount} selecionado${flavorIds.length === 1 ? '' : 's'}.`}
           >
+            <div className="pizza-diet-filters" aria-label="Filtros de sabores">
+              <button type="button" className={vegetarianOnly ? 'active' : ''} aria-pressed={vegetarianOnly} onClick={() => setVegetarianOnly((current) => !current)}><Leaf aria-hidden="true" /> Vegetarianos</button>
+              <button type="button" className={allergenAware ? 'active' : ''} aria-pressed={allergenAware} onClick={() => setAllergenAware((current) => !current)}><ShieldCheck aria-hidden="true" /> Sem alérgenos cadastrados</button>
+            </div>
             <div className="pizza-flavor-layout">
               <aside className="pizza-selection-summary">
                 <strong>Pizza {size?.name}</strong>
@@ -315,7 +333,7 @@ export function PizzaBuilder({ product, catalog, onCancel, onAdd }: PizzaBuilder
                 ))}
               </aside>
               <div className="pizza-flavor-grid">
-                {catalog.flavors.map((flavor) => {
+                {visibleFlavors.map((flavor) => {
                   const flavorPrice = flavor.prices.find((price) => price.pizzaSizeId === size?.id)
                   const mixedBlocked = !catalog.allowSweetAndSavoryMix &&
                     selectedFlavors.some((selected) => selected.flavorType !== flavor.flavorType)
@@ -344,6 +362,7 @@ export function PizzaBuilder({ product, catalog, onCancel, onAdd }: PizzaBuilder
                     </button>
                   )
                 })}
+                {visibleFlavors.length === 0 && <div className="pizza-flavor-empty">Nenhum sabor corresponde aos filtros selecionados.</div>}
               </div>
             </div>
           </BuilderStage>
@@ -564,7 +583,7 @@ export function PizzaBuilder({ product, catalog, onCancel, onAdd }: PizzaBuilder
           <ChevronLeft aria-hidden="true" /> Voltar
         </button>
         <button type="button" className="client-primary-action" onClick={continueFlow} disabled={!canContinue()}>
-          {step === stepLabels.length - 1 ? <><Plus aria-hidden="true" /> Adicionar ao carrinho</> : <>Continuar <ArrowRight aria-hidden="true" /></>}
+          {step === stepLabels.length - 1 ? <><Plus aria-hidden="true" /> {initialPizza ? 'Salvar alterações' : 'Adicionar ao carrinho'}</> : <>Continuar <ArrowRight aria-hidden="true" /></>}
         </button>
       </footer>
     </div>

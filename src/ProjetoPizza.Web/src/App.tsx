@@ -16,6 +16,7 @@ const ClientTabletPage = lazy(() => import('./pages/ClientTabletPage').then((mod
 const CategoriesPage = lazy(() => import('./pages/CategoriesPage').then((module) => ({ default: module.CategoriesPage })))
 const CrustsPage = lazy(() => import('./pages/CrustsPage').then((module) => ({ default: module.CrustsPage })))
 const CustomersPage = lazy(() => import('./pages/CustomersPage').then((module) => ({ default: module.CustomersPage })))
+const ReservationsPage = lazy(() => import('./pages/ReservationsPage').then((module) => ({ default: module.ReservationsPage })))
 const IngredientsPage = lazy(() => import('./pages/IngredientsPage').then((module) => ({ default: module.IngredientsPage })))
 const InventoryPage = lazy(() => import('./pages/InventoryPage').then((module) => ({ default: module.InventoryPage })))
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((module) => ({ default: module.DashboardPage })))
@@ -91,6 +92,7 @@ export function App() {
             <Route path="/admin/reports"><AdminPage><FinancialReportsPage /></AdminPage></Route>
             <Route path="/admin/devices"><AdminPage><DevicesPage /></AdminPage></Route>
             <Route path="/admin/customers"><AdminPage><CustomersPage /></AdminPage></Route>
+            <Route path="/admin/reservations"><AdminPage><ReservationsPage /></AdminPage></Route>
             <Route path="/admin/inventory"><AdminPage><InventoryPage /></AdminPage></Route>
             <Route path="/admin/users"><AdminPage><UsersPage tab="users" /></AdminPage></Route>
             <Route path="/admin/roles"><AdminPage><UsersPage tab="roles" /></AdminPage></Route>

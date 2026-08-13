@@ -77,7 +77,7 @@ export function DashboardPage() {
           </div>
           {!dashboard.paymentMethods.length && <div className="empty-inline">Nenhum pagamento confirmado hoje.</div>}
         </article>
-        <article className="surface-card">
+        <article className="surface-card stock-alert-card">
           <div className="card-heading"><div><h2>Alertas de estoque</h2><p>Itens no mínimo ou abaixo dele.</p></div><AlertTriangle size={22} /></div>
           <div className="stock-alert-list">
             {dashboard.stockAlerts.map((item) => <a href="/admin/inventory" key={item.inventoryItemId}><AlertTriangle size={17} /><span><strong>{item.name}</strong><small>Disponível: {item.availableQuantity.toLocaleString('pt-BR')} {item.unitOfMeasure} · mínimo {item.minimumStock.toLocaleString('pt-BR')}</small></span></a>)}

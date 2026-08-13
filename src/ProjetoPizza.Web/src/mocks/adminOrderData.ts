@@ -15,6 +15,10 @@ export const mockCustomers: Customer[] = [
     phone: '11999990001',
     birthDate: '1990-05-15',
     isActive: true,
+    loyaltyPoints: 248,
+    lifetimeSpend: 1248.9,
+    orderCount: 17,
+    lastOrderAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
   },
 ]

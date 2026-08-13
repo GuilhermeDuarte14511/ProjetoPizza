@@ -1,10 +1,12 @@
-import { CheckCircle2, Clock3, Plus, Printer, Search, Truck } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { BadgePercent, CheckCircle2, Clock3, Plus, Printer, Search, ShieldCheck, Truck, XCircle } from 'lucide-react'
+import { type FormEvent, useMemo, useState } from 'react'
 import { useAdminQuery } from '../hooks/useAdminQuery'
 import { usePdfTableExport } from '../hooks/usePdfTableExport'
 import { queryKeys } from '../lib/queryKeys'
 import { PageHeader } from '../components/ui/PageHeader'
 import { OrderReceiptDialog } from '../components/orders/OrderReceiptDialog'
+import { CurrencyInput } from '../components/ui/CurrencyInput'
+import { Modal } from '../components/ui/Modal'
 import { PdfExportButton } from '../components/ui/PdfExportButton'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { useToast } from '../components/ui/toast'
@@ -31,6 +33,9 @@ export function OrdersPage() {
   const [receipt, setReceipt] = useState<OrderReceipt>()
   const [loadingReceipt, setLoadingReceipt] = useState<string>()
   const [driverNames, setDriverNames] = useState<Record<string, string>>({})
+  const [adjustment, setAdjustment] = useState<{ kind: 'discount' | 'cancel'; order: ManagedOrder }>()
+  const [adjustmentAmount, setAdjustmentAmount] = useState(0)
+  const [adjustmentReason, setAdjustmentReason] = useState('')
   const toast = useToast()
   const { exportPdf, exporting } = usePdfTableExport()
 
@@ -57,10 +62,10 @@ export function OrdersPage() {
   async function printReceipt(order: ManagedOrder) {
     setLoadingReceipt(order.id)
     try {
-      await adminService.printOrder(order.id)
-      toast.success('Impressão enfileirada', `O comprovante do pedido #${order.number} será enviado à impressora configurada.`)
+      const preparedReceipt = await adminService.orderReceipt(order.id)
+      setReceipt(preparedReceipt)
     } catch (error) {
-      toast.error('Não foi possível preparar a impressão', getUserErrorMessage(error))
+      toast.error('Não foi possível abrir o comprovante', getUserErrorMessage(error))
     } finally {
       setLoadingReceipt(undefined)
     }
@@ -84,6 +89,34 @@ export function OrdersPage() {
       setOrders((current) => current.map((item) => item.id === order.id ? { ...item, status: 'Completed', deliveryStatus: 'Delivered', deliveredAt: new Date().toISOString() } : item))
       toast.success('Entrega concluída', `O pedido #${order.number} foi entregue.`)
     } catch (error) { toast.error('Não foi possível concluir a entrega', getUserErrorMessage(error)) } finally { setBusy(undefined) }
+  }
+
+  function openAdjustment(kind: 'discount' | 'cancel', order: ManagedOrder) {
+    setAdjustment({ kind, order })
+    setAdjustmentAmount(order.discount)
+    setAdjustmentReason('')
+  }
+
+  async function saveAdjustment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!adjustment || !adjustmentReason.trim()) return
+    setBusy(adjustment.order.id)
+    try {
+      if (adjustment.kind === 'cancel') {
+        await adminService.cancelOrder(adjustment.order.id, adjustmentReason.trim())
+        setOrders((current) => current.map((item) => item.id === adjustment.order.id ? { ...item, status: 'Cancelled', cancellationReason: adjustmentReason.trim(), total: 0 } : item))
+        toast.success('Cancelamento autorizado', `O pedido #${adjustment.order.number} e sua produção foram cancelados.`)
+      } else {
+        await adminService.applyOrderDiscount(adjustment.order.id, adjustmentAmount, adjustmentReason.trim())
+        setOrders((current) => current.map((item) => item.id === adjustment.order.id ? { ...item, discount: adjustmentAmount, total: item.total + item.discount - adjustmentAmount } : item))
+        toast.success('Cortesia autorizada', `O desconto do pedido #${adjustment.order.number} foi atualizado.`)
+      }
+      setAdjustment(undefined)
+    } catch (error) {
+      toast.error(adjustment.kind === 'cancel' ? 'Não foi possível cancelar' : 'Não foi possível aplicar a cortesia', getUserErrorMessage(error))
+    } finally {
+      setBusy(undefined)
+    }
   }
 
   function exportOrders() {
@@ -134,12 +167,13 @@ export function OrdersPage() {
               <div className="order-time"><Clock3 size={15} /> {new Date(order.createdAt).toLocaleString('pt-BR')}</div>
               {order.customerName && <div className="order-customer-summary"><strong>{order.customerName}</strong>{order.deliveryAddress && <span>{order.deliveryAddress}</span>}{order.deliveryStatus && <span><Truck size={14} /> {translateEnum(order.deliveryStatus)}{order.deliveryDriverName ? ` · ${order.deliveryDriverName}` : ''}</span>}</div>}
               <div className="order-lines">{order.items.map((item) => <div key={item.id}><span>{item.quantity}× {item.name}</span><strong>{currency.format(item.totalPrice)}</strong></div>)}</div>
-              <footer><strong>{currency.format(order.total)}</strong><div className="order-card-actions"><button className="secondary-button" disabled={loadingReceipt === order.id} onClick={() => void printReceipt(order)}><Printer size={15} /> {loadingReceipt === order.id ? 'Preparando...' : 'Imprimir'}</button>{order.fulfillment === 'Delivery' && order.deliveryStatus === 'ReadyForDispatch' && hasPermission('operations:write') ? <><input className="driver-name-input" aria-label={`Entregador do pedido ${order.number}`} value={driverNames[order.id] ?? ''} onChange={(event) => setDriverNames((current) => ({ ...current, [order.id]: event.target.value }))} placeholder="Nome do entregador" /><button className="primary-button" disabled={busy === order.id} onClick={() => void dispatch(order)}><Truck size={16} /> Entregador saiu</button></> : order.fulfillment === 'Delivery' && order.deliveryStatus === 'Dispatched' && hasPermission('operations:write') ? <button className="primary-button" disabled={busy === order.id} onClick={() => void completeDelivery(order)}><CheckCircle2 size={16} /> Confirmar entrega</button> : transition && !(order.fulfillment === 'Delivery' && order.status === 'Ready') && hasPermission('operations:write') ? <button className="primary-button" disabled={busy === order.id} onClick={() => void advance(order)}><CheckCircle2 size={16} /> {busy === order.id ? 'Atualizando...' : transition.label}</button> : <span className="completed-label">{order.deliveryStatus === 'Delivered' ? 'Entrega concluída' : transition ? 'Somente leitura' : 'Fluxo concluído'}</span>}</div></footer>
+              <footer><span className="order-total"><strong>{currency.format(order.total)}</strong>{order.discount > 0 && <small>Cortesia {currency.format(order.discount)}</small>}</span><div className="order-card-actions"><button className="secondary-button" disabled={loadingReceipt === order.id} onClick={() => void printReceipt(order)}><Printer size={15} /> {loadingReceipt === order.id ? 'Preparando...' : 'Imprimir'}</button>{hasPermission('admin:write') && !['Cancelled', 'Completed'].includes(order.status) && <><button className="secondary-button" onClick={() => openAdjustment('discount', order)}><BadgePercent size={15} /> Cortesia</button><button className="secondary-button danger-text" onClick={() => openAdjustment('cancel', order)}><XCircle size={15} /> Cancelar</button></>}{order.fulfillment === 'Delivery' && order.deliveryStatus === 'ReadyForDispatch' && hasPermission('operations:write') ? <><input className="driver-name-input" aria-label={`Entregador do pedido ${order.number}`} value={driverNames[order.id] ?? ''} onChange={(event) => setDriverNames((current) => ({ ...current, [order.id]: event.target.value }))} placeholder="Nome do entregador" /><button className="primary-button" disabled={busy === order.id} onClick={() => void dispatch(order)}><Truck size={16} /> Entregador saiu</button></> : order.fulfillment === 'Delivery' && order.deliveryStatus === 'Dispatched' && hasPermission('operations:write') ? <button className="primary-button" disabled={busy === order.id} onClick={() => void completeDelivery(order)}><CheckCircle2 size={16} /> Confirmar entrega</button> : transition && !(order.fulfillment === 'Delivery' && order.status === 'Ready') && hasPermission('operations:write') ? <button className="primary-button" disabled={busy === order.id} onClick={() => void advance(order)}><CheckCircle2 size={16} /> {busy === order.id ? 'Atualizando...' : transition.label}</button> : <span className="completed-label">{order.deliveryStatus === 'Delivered' ? 'Entrega concluída' : transition ? 'Somente leitura' : 'Fluxo concluído'}</span>}</div></footer>
             </article>
           )
         })}
       </section>
-      <OrderReceiptDialog receipt={receipt} onClose={() => setReceipt(undefined)} />
+      <OrderReceiptDialog receipt={receipt} context="preview" onClose={() => setReceipt(undefined)} />
+      {adjustment && <Modal open title={adjustment.kind === 'cancel' ? `Cancelar pedido #${adjustment.order.number}` : `Autorizar cortesia no pedido #${adjustment.order.number}`} description="Esta ação exige permissão administrativa e ficará registrada na auditoria." isBusy={busy === adjustment.order.id} onClose={() => setAdjustment(undefined)}><form onSubmit={saveAdjustment}><div className="modal-body"><aside className="form-note"><ShieldCheck size={19} /><span><strong>Autorização administrativa</strong>{adjustment.kind === 'cancel' ? 'Pagamentos existentes precisam ser estornados antes do cancelamento.' : 'A cortesia altera o total do pedido e da conta ainda não paga.'}</span></aside>{adjustment.kind === 'discount' && <label className="field-label">Valor da cortesia<CurrencyInput value={adjustmentAmount} max={adjustment.order.total + adjustment.order.discount} onCurrencyValueChange={setAdjustmentAmount} required /></label>}<label className="field-label">Motivo<textarea rows={3} maxLength={500} value={adjustmentReason} onChange={(event) => setAdjustmentReason(event.target.value)} required autoFocus={adjustment.kind === 'cancel'} /></label>{adjustment.kind === 'discount' && <button type="button" className="secondary-button full" onClick={() => setAdjustmentAmount(adjustment.order.total + adjustment.order.discount)}>Aplicar cortesia integral</button>}</div><div className="modal-footer"><button type="button" className="secondary-button" onClick={() => setAdjustment(undefined)}>Voltar</button><button className={adjustment.kind === 'cancel' ? 'danger-button' : 'primary-button'} disabled={busy === adjustment.order.id || !adjustmentReason.trim()}>{busy === adjustment.order.id ? 'Processando...' : adjustment.kind === 'cancel' ? 'Autorizar cancelamento' : 'Autorizar cortesia'}</button></div></form></Modal>}
     </>
   )
 }

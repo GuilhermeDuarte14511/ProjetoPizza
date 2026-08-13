@@ -4,6 +4,10 @@ const enumLabels: Record<string, string> = {
   Submitted: 'Enviado',
   Accepted: 'Aceito',
   Confirmed: 'Confirmado',
+  Seated: 'Recepcionado',
+  NoShow: 'Não compareceu',
+  Waiting: 'Aguardando',
+  Notified: 'Avisado',
   InProduction: 'Em preparo',
   Preparing: 'Em preparo',
   Ready: 'Pronto',
@@ -78,7 +82,7 @@ const enumLabels: Record<string, string> = {
 }
 
 export function translateEnum(value?: string | null) {
-  if (!value) return '—'
+  if (!value) return 'Não informado'
   return enumLabels[value] ?? value
 }
 

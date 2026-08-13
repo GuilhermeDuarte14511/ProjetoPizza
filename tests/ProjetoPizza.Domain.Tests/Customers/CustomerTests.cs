@@ -7,6 +7,20 @@ namespace ProjetoPizza.Domain.Tests.Customers;
 public sealed class CustomerTests
 {
     [Fact]
+    public void Purchase_should_accumulate_and_cancellation_should_reverse_loyalty()
+    {
+        var customer = new Customer(
+            CustomerId.New(), RestaurantUnitId.New(), "Ana Souza", "11999998877", new DateOnly(1992, 5, 18));
+
+        customer.RegisterPurchase(new Money(72.90m));
+        customer.ReversePurchase(new Money(72.90m));
+
+        customer.LoyaltyPoints.Should().Be(0);
+        customer.LifetimeSpend.Should().Be(Money.Zero());
+        customer.OrderCount.Should().Be(0);
+    }
+
+    [Fact]
     public void Create_ShouldNormalizePhoneAndKeepProfile()
     {
         var birthDate = new DateOnly(1992, 5, 18);

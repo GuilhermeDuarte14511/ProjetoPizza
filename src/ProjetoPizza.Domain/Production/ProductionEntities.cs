@@ -97,6 +97,15 @@ public sealed class KitchenTicket : AggregateRoot<KitchenTicketId>
         DispatchedAt = DateTimeOffset.UtcNow;
     }
 
+    public void Cancel()
+    {
+        if (Status is KitchenTicketStatus.Dispatched or KitchenTicketStatus.Cancelled)
+        {
+            throw new BusinessRuleException("kitchen_ticket.cannot_cancel", "A dispatched or cancelled kitchen ticket cannot be cancelled.");
+        }
+        Status = KitchenTicketStatus.Cancelled;
+    }
+
     private void Transition(KitchenTicketStatus expected, KitchenTicketStatus next)
     {
         if (Status != expected)

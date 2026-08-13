@@ -13,6 +13,8 @@ export const queryKeys = {
   orders: ['admin', 'orders'] as const,
   orderCatalog: ['admin', 'orders', 'catalog'] as const,
   customers: ['admin', 'customers'] as const,
+  reservations: ['admin', 'reservations'] as const,
+  waitlist: ['admin', 'waitlist'] as const,
   crusts: ['admin', 'pizza-crusts'] as const,
   ingredients: ['admin', 'ingredients'] as const,
   unitSettings: ['admin', 'settings', 'unit'] as const,
@@ -34,5 +36,6 @@ export const queryKeys = {
   productionStations: ['admin', 'settings', 'production-stations'] as const,
   serviceCallTypes: ['admin', 'settings', 'service-call-types'] as const,
   inventory: ['admin', 'inventory'] as const,
+  recipes: ['admin', 'inventory', 'recipes'] as const,
   backups: ['admin', 'system', 'backups'] as const,
 }

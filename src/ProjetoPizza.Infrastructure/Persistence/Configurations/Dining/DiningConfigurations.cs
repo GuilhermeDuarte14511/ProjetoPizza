@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProjetoPizza.Domain.Core;
+using ProjetoPizza.Domain.Customers;
 using ProjetoPizza.Domain.Devices;
 using ProjetoPizza.Domain.Dining;
 using ProjetoPizza.Domain.Identity;
@@ -98,6 +99,46 @@ internal sealed class WaiterAssignmentConfiguration : IEntityTypeConfiguration<W
         builder.HasOne<TableSession>().WithMany().HasForeignKey(entity => entity.TableSessionId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Employee>().WithMany().HasForeignKey(entity => entity.EmployeeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Employee>().WithMany().HasForeignKey(entity => entity.AssignedByEmployeeId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class ReservationConfiguration : IEntityTypeConfiguration<Reservation>
+{
+    public void Configure(EntityTypeBuilder<Reservation> builder)
+    {
+        builder.ToTable("reservations", "dining");
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.Id).HasConversion(id => id.Value, value => new ReservationId(value));
+        builder.Property(entity => entity.UnitId).HasConversion(id => id.Value, value => new RestaurantUnitId(value));
+        builder.Property(entity => entity.CustomerId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new CustomerId(value.Value) : null);
+        builder.Property(entity => entity.CustomerName).HasMaxLength(120);
+        builder.Property(entity => entity.Phone).HasMaxLength(15);
+        builder.Property(entity => entity.Notes).HasMaxLength(500);
+        builder.Property(entity => entity.Status).HasConversion<string>().HasMaxLength(30);
+        builder.HasIndex(entity => new { entity.UnitId, entity.ScheduledAt, entity.Status });
+        builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Customer>().WithMany().HasForeignKey(entity => entity.CustomerId).OnDelete(DeleteBehavior.SetNull);
+        builder.Property<uint>("xmin").IsRowVersion();
+    }
+}
+
+internal sealed class WaitlistEntryConfiguration : IEntityTypeConfiguration<WaitlistEntry>
+{
+    public void Configure(EntityTypeBuilder<WaitlistEntry> builder)
+    {
+        builder.ToTable("waitlist_entries", "dining");
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.Id).HasConversion(id => id.Value, value => new WaitlistEntryId(value));
+        builder.Property(entity => entity.UnitId).HasConversion(id => id.Value, value => new RestaurantUnitId(value));
+        builder.Property(entity => entity.CustomerId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new CustomerId(value.Value) : null);
+        builder.Property(entity => entity.CustomerName).HasMaxLength(120);
+        builder.Property(entity => entity.Phone).HasMaxLength(15);
+        builder.Property(entity => entity.Notes).HasMaxLength(500);
+        builder.Property(entity => entity.Status).HasConversion<string>().HasMaxLength(30);
+        builder.HasIndex(entity => new { entity.UnitId, entity.Status, entity.EnteredAt });
+        builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Customer>().WithMany().HasForeignKey(entity => entity.CustomerId).OnDelete(DeleteBehavior.SetNull);
+        builder.Property<uint>("xmin").IsRowVersion();
     }
 }
 

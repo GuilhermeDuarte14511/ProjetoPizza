@@ -121,6 +121,58 @@ public sealed class Bill : AggregateRoot<BillId>
             ClosedAt = DateTimeOffset.UtcNow;
         }
     }
+
+    public void ApplyDiscount(Money discountAmount)
+    {
+        if (Status is BillStatus.Paid or BillStatus.Cancelled || PaidAmount.Amount > 0)
+        {
+            throw new BusinessRuleException("bill.discount_after_payment", "A bill with payments cannot be discounted.");
+        }
+
+        Recalculate(Subtotal, discountAmount);
+    }
+
+    public void Recalculate(Money subtotal, Money discountAmount)
+    {
+        if (Status is BillStatus.Paid or BillStatus.Cancelled || PaidAmount.Amount > 0)
+        {
+            throw new BusinessRuleException("bill.recalculate_after_payment", "A bill with payments cannot be recalculated.");
+        }
+        var serviceFeeAmount = subtotal * ServiceFeePercentage.AsFactor;
+        var gross = subtotal + serviceFeeAmount;
+        if (discountAmount.Amount < 0 || discountAmount.Amount > gross.Amount)
+        {
+            throw new BusinessRuleException("bill.discount", "Discount must be between zero and the gross bill amount.");
+        }
+        Subtotal = subtotal;
+        ServiceFeeAmount = serviceFeeAmount;
+        DiscountAmount = discountAmount;
+        TotalAmount = gross - discountAmount;
+        RemainingAmount = TotalAmount;
+    }
+
+    public void RegisterRefund(Money amount)
+    {
+        if (amount.Amount <= 0 || amount.Amount > PaidAmount.Amount)
+        {
+            throw new BusinessRuleException("bill.invalid_refund", "Refund must be positive and not exceed the paid amount.");
+        }
+
+        PaidAmount -= amount;
+        RemainingAmount += amount;
+        ClosedAt = null;
+        Status = PaidAmount.Amount > 0 ? BillStatus.PaymentInProgress : RequestedAt.HasValue ? BillStatus.Requested : BillStatus.Open;
+    }
+
+    public void Cancel()
+    {
+        if (PaidAmount.Amount > 0)
+        {
+            throw new BusinessRuleException("bill.cancel_paid", "A bill with payments cannot be cancelled.");
+        }
+        Status = BillStatus.Cancelled;
+        ClosedAt = DateTimeOffset.UtcNow;
+    }
 }
 
 public sealed class BillItem : Entity<BillItemId>
@@ -192,6 +244,17 @@ public sealed class BillSplit : AggregateRoot<BillSplitId>
         PaidAmount += amount;
         RemainingAmount -= amount;
         Status = RemainingAmount.Amount == 0 ? BillSplitStatus.Paid : BillSplitStatus.PartiallyPaid;
+    }
+
+    public void RegisterRefund(Money amount)
+    {
+        if (amount.Amount <= 0 || amount.Amount > PaidAmount.Amount)
+        {
+            throw new BusinessRuleException("bill_split.invalid_refund", "Refund must be positive and not exceed the paid split amount.");
+        }
+        PaidAmount -= amount;
+        RemainingAmount += amount;
+        Status = PaidAmount.Amount > 0 ? BillSplitStatus.PartiallyPaid : BillSplitStatus.Open;
     }
 }
 
@@ -313,6 +376,7 @@ public sealed class Payment : AggregateRoot<PaymentId>
         ExternalReference = externalReference;
         ReceivedByEmployeeId = receivedByEmployeeId;
         Status = PaymentStatus.Paid;
+        RefundedAmount = Money.Zero();
         PaidAt = DateTimeOffset.UtcNow;
     }
 
@@ -331,6 +395,9 @@ public sealed class Payment : AggregateRoot<PaymentId>
     public EmployeeId ReceivedByEmployeeId { get; private set; }
     public DateTimeOffset? CancelledAt { get; private set; }
     public string? CancellationReason { get; private set; }
+    public Money RefundedAmount { get; private set; }
+    public DateTimeOffset? RefundedAt { get; private set; }
+    public string? RefundReason { get; private set; }
 
     public void Cancel(string reason)
     {
@@ -347,5 +414,22 @@ public sealed class Payment : AggregateRoot<PaymentId>
         CancellationReason = Guard.Required(reason, nameof(reason), 500);
         Status = PaymentStatus.Cancelled;
         CancelledAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Refund(Money amount, string reason)
+    {
+        if (Status is not (PaymentStatus.Paid or PaymentStatus.PartiallyRefunded))
+        {
+            throw new BusinessRuleException("payment.not_refundable", "Only paid or partially refunded payments can be refunded.");
+        }
+        var refundableAmount = Amount - RefundedAmount;
+        if (amount.Amount <= 0 || amount.Amount > refundableAmount.Amount)
+        {
+            throw new BusinessRuleException("payment.invalid_refund", "Refund must be positive and not exceed the refundable amount.");
+        }
+        RefundReason = Guard.Required(reason, nameof(reason), 500);
+        RefundedAmount += amount;
+        RefundedAt = DateTimeOffset.UtcNow;
+        Status = RefundedAmount.Amount == Amount.Amount ? PaymentStatus.Refunded : PaymentStatus.PartiallyRefunded;
     }
 }

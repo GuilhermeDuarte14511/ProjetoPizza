@@ -69,6 +69,49 @@ public sealed class AdminQueryServiceTests
         result.StockAlerts.Single().AvailableQuantity.Should().Be(2.5m);
     }
 
+    [Fact]
+    public async Task GetTable_WithLinkedTables_ShouldReturnNamesOrderedAfterMaterialization()
+    {
+        var unitId = RestaurantUnitId.New();
+        var employeeId = EmployeeId.New();
+        var area = new DiningArea(DiningAreaId.New(), unitId, "Salão Principal");
+        var tableTwo = new RestaurantTable(RestaurantTableId.New(), unitId, area.Id, 2, 4);
+        var tableOne = new RestaurantTable(RestaurantTableId.New(), unitId, area.Id, 1, 4);
+        var session = TableSession.Open(
+            TableSessionId.New(), unitId, 1, 4, employeeId, new Percentage(10), [tableTwo]);
+        session.LinkTable(tableOne, employeeId);
+        var order = new Order(
+            OrderId.New(), unitId, 27, SalesChannel.DineIn, FulfillmentType.DineIn,
+            tableSessionId: session.Id);
+        order.SetNotes("Entregar pratos juntos.");
+        order.AddItem(OrderItemId.New(), ProductId.New(), "Pizza Média · 2 sabores", 2, new Money(37.50m), notes: "Sem cebola.");
+        order.Submit();
+        var context = new FakeContext
+        {
+            DiningAreaItems = [area],
+            RestaurantTableItems = [tableTwo, tableOne],
+            TableSessionItems = [session],
+            OrderItemsData = [order]
+        };
+        var service = new AdminQueryService(context);
+
+        var result = await service.GetTableAsync(tableTwo.Id.Value, CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.LinkedTables.Select(table => table.Name).Should().ContainInOrder("Mesa 01", "Mesa 02");
+        result.Orders.Should().ContainSingle();
+        result.Orders.Single().Number.Should().Be(27);
+        result.Orders.Single().Notes.Should().Be("Entregar pratos juntos.");
+        result.Orders.Single().Items.Should().ContainSingle().Which.Should().BeEquivalentTo(new
+        {
+            Name = "Pizza Média · 2 sabores",
+            Quantity = 2,
+            UnitPrice = 37.50m,
+            TotalPrice = 75m,
+            Notes = "Sem cebola."
+        });
+    }
+
     private sealed class FakeContext : IProjetoPizzaDbContext
     {
         public Category[] CategoryItems { get; init; } = [];
@@ -107,10 +150,15 @@ public sealed class AdminQueryServiceTests
         public IQueryable<PizzaFlavorExtra> PizzaFlavorExtras => Array.Empty<PizzaFlavorExtra>().AsQueryable();
         public IQueryable<InventoryItem> InventoryItems => InventoryItemItems.AsQueryable();
         public IQueryable<StockBalance> StockBalances => StockBalanceItems.AsQueryable();
+        public IQueryable<StockMovement> StockMovements => Array.Empty<StockMovement>().AsQueryable();
+        public IQueryable<Recipe> Recipes => Array.Empty<Recipe>().AsQueryable();
+        public IQueryable<RecipeItem> RecipeItems => Array.Empty<RecipeItem>().AsQueryable();
         public IQueryable<DiningArea> DiningAreas => DiningAreaItems.AsQueryable();
         public IQueryable<RestaurantTable> RestaurantTables => RestaurantTableItems.AsQueryable();
         public IQueryable<TableSession> TableSessions => TableSessionItems.AsQueryable();
         public IQueryable<TableSessionTable> TableSessionTables => TableSessionItems.SelectMany(session => session.Tables).AsQueryable();
+        public IQueryable<Reservation> Reservations => Array.Empty<Reservation>().AsQueryable();
+        public IQueryable<WaitlistEntry> WaitlistEntries => Array.Empty<WaitlistEntry>().AsQueryable();
         public IQueryable<ServiceCallType> ServiceCallTypes => Array.Empty<ServiceCallType>().AsQueryable();
         public IQueryable<ServiceCall> ServiceCalls => ServiceCallItems.AsQueryable();
         public IQueryable<Order> Orders => OrderItemsData.AsQueryable();
@@ -135,6 +183,7 @@ public sealed class AdminQueryServiceTests
         public IQueryable<AuditLog> AuditLogs => Array.Empty<AuditLog>().AsQueryable();
 
         public void Add<TEntity>(TEntity entity) where TEntity : class { }
+        public void Remove<TEntity>(TEntity entity) where TEntity : class { }
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
     }
 }

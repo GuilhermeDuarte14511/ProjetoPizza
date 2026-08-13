@@ -21,6 +21,33 @@ namespace ProjetoPizza.Application.Tests.Admin;
 public sealed class AdminCashierServiceTests
 {
     [Fact]
+    public async Task CreateReservation_WithoutExistingCustomer_ShouldCreateAndLinkCustomer()
+    {
+        var fixture = CreateFixture();
+        var service = new AdminManagementService(fixture.Context);
+
+        var result = await service.CreateReservationAsync(
+            new CreateReservationCommand(
+                null,
+                "Marina Costa",
+                "11987654321",
+                4,
+                DateTimeOffset.UtcNow.AddDays(2),
+                90,
+                "Mesa próxima à janela.",
+                new DateOnly(1990, 4, 12)),
+            fixture.IdentityUserId,
+            CancellationToken.None);
+
+        fixture.Context.CustomerItems.Should().ContainSingle();
+        fixture.Context.ReservationEntities.Should().ContainSingle();
+        result.CustomerId.Should().Be(fixture.Context.CustomerItems.Single().Id.Value);
+        result.Phone.Should().Be("11987654321");
+        fixture.Context.AuditLogItems.Should().Contain(log => log.Action == "CreateFromReservation");
+        fixture.Context.AuditLogItems.Should().Contain(log => log.Action == "CreateReservation");
+    }
+
+    [Fact]
     public async Task OpenCashShift_ShouldUseAuthenticatedEmployeeAndCreateAudit()
     {
         var fixture = CreateFixture();
@@ -241,7 +268,7 @@ public sealed class AdminCashierServiceTests
         public Employee[] EmployeeItems { get; init; } = [];
         public CashRegister[] CashRegisterItems { get; init; } = [];
         public OperationSettings[] OperationSettingItems { get; set; } = [];
-        public Customer[] CustomerItems { get; set; } = [];
+        public List<Customer> CustomerItems { get; set; } = [];
         public Product[] ProductItems { get; set; } = [];
         public ProductionStation[] ProductionStationItems { get; set; } = [];
         public PaymentMethod[] PaymentMethodItems { get; set; } = [];
@@ -252,6 +279,7 @@ public sealed class AdminCashierServiceTests
         public List<Payment> PaymentEntities { get; } = [];
         public List<PrintJob> PrintJobEntities { get; } = [];
         public List<Order> OrderEntities { get; } = [];
+        public List<Reservation> ReservationEntities { get; } = [];
         public List<KitchenTicket> KitchenTicketEntities { get; } = [];
         public List<KitchenTicketItem> KitchenTicketItemEntities { get; } = [];
         public List<AuditLog> AuditLogItems { get; } = [];
@@ -276,10 +304,15 @@ public sealed class AdminCashierServiceTests
         public IQueryable<PizzaFlavorExtra> PizzaFlavorExtras => Array.Empty<PizzaFlavorExtra>().AsQueryable();
         public IQueryable<InventoryItem> InventoryItems => Array.Empty<InventoryItem>().AsQueryable();
         public IQueryable<StockBalance> StockBalances => Array.Empty<StockBalance>().AsQueryable();
+        public IQueryable<StockMovement> StockMovements => Array.Empty<StockMovement>().AsQueryable();
+        public IQueryable<Recipe> Recipes => Array.Empty<Recipe>().AsQueryable();
+        public IQueryable<RecipeItem> RecipeItems => Array.Empty<RecipeItem>().AsQueryable();
         public IQueryable<DiningArea> DiningAreas => Array.Empty<DiningArea>().AsQueryable();
         public IQueryable<RestaurantTable> RestaurantTables => Array.Empty<RestaurantTable>().AsQueryable();
         public IQueryable<TableSession> TableSessions => Array.Empty<TableSession>().AsQueryable();
         public IQueryable<TableSessionTable> TableSessionTables => Array.Empty<TableSessionTable>().AsQueryable();
+        public IQueryable<Reservation> Reservations => ReservationEntities.AsQueryable();
+        public IQueryable<WaitlistEntry> WaitlistEntries => Array.Empty<WaitlistEntry>().AsQueryable();
         public IQueryable<ServiceCallType> ServiceCallTypes => Array.Empty<ServiceCallType>().AsQueryable();
         public IQueryable<ServiceCall> ServiceCalls => Array.Empty<ServiceCall>().AsQueryable();
         public IQueryable<Order> Orders => OrderEntities.AsQueryable();
@@ -306,6 +339,8 @@ public sealed class AdminCashierServiceTests
         public void Add<TEntity>(TEntity entity) where TEntity : class
         {
             if (entity is CashShift shift) CashShiftItems.Add(shift);
+            if (entity is Customer customer) CustomerItems.Add(customer);
+            if (entity is Reservation reservation) ReservationEntities.Add(reservation);
             if (entity is Order order) OrderEntities.Add(order);
             if (entity is KitchenTicket kitchenTicket) KitchenTicketEntities.Add(kitchenTicket);
             if (entity is KitchenTicketItem kitchenTicketItem) KitchenTicketItemEntities.Add(kitchenTicketItem);
@@ -315,6 +350,8 @@ public sealed class AdminCashierServiceTests
             if (entity is PrintJob printJob) PrintJobEntities.Add(printJob);
             if (entity is AuditLog auditLog) AuditLogItems.Add(auditLog);
         }
+
+        public void Remove<TEntity>(TEntity entity) where TEntity : class { }
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

@@ -10,7 +10,7 @@ O painel administrativo mantém o design do Stitch e usa uma camada de experiên
 - **Sonner** apresenta sucesso e falhas tratadas, inclusive detalhes seguros fornecidos por Problem Details.
 - **SignalR** notifica alterações administrativas com recurso, método e origem. O cliente invalida o cache e busca a versão atual do servidor sem manter regra de negócio no Hub.
 - **View Transitions API** anima mudanças de rota quando suportada. O fallback CSS mantém a navegação funcional e respeita `prefers-reduced-motion`.
-- **React Number Format** aplica entrada monetária brasileira consistente (`R$ 1.234,56`) a preços, taxas, caixa e pagamentos sem transformar valores de domínio em texto.
+- **React Number Format** aplica entradas brasileiras consistentes: moeda (`R$ 1.234,56`) em preços, taxas, caixa e pagamentos e celular (`(11) 99999-9999`) nos cadastros de clientes. O telefone segue para a API apenas com dígitos.
 
 ## Estados de interface
 
@@ -34,6 +34,8 @@ As ações de escrita são exibidas somente quando a sessão contém `admin:writ
 - movimento reduzido de acordo com a preferência do sistema;
 - teste automatizado básico com axe.
 
+Os diálogos administrativos compartilham o mesmo sistema de composição: cabeçalho e rodapé fixos, corpo com respiro lateral, grades responsivas, campos com foco visível, switches e checkboxes consistentes e notas contextuais separadas do formulário. A abertura e o fechamento usam transições curtas de opacidade, deslocamento e escala, automaticamente reduzidas quando o sistema solicita menos movimento.
+
 ## Testes
 
 ```powershell
@@ -47,7 +49,7 @@ O Vitest cobre componentes, apresentações, carrinho isolado por sessão, acess
 
 ## Recebimento e auditoria
 
-O modal de pagamento alterna entre recebimento único e divisão por 2 a 50 pessoas. A divisão distribui centavos sem perder ou criar valor, mostra a parcela individual e coleta forma de pagamento, valor recebido, troco e referência de cada pessoa. O envio é único para evitar uma conta parcialmente atualizada.
+O modal de pagamento alterna entre recebimento único, divisão por 2 a 50 pessoas e divisão por consumo. A divisão igualitária distribui centavos sem perder ou criar valor; a divisão por consumo atribui cada item da comanda a uma pessoa e calcula sua parte. Ambas coletam forma de pagamento, valor recebido, troco e referência individual e enviam todos os pagamentos em uma única operação.
 
 O histórico administrativo traduz ação, módulo e entidade para português. Para tickets de cozinha, a API projeta o número operacional (`Ticket #1024`) no lugar do GUID, mantendo o identificador técnico no contrato e na exportação CSV.
 
@@ -55,11 +57,21 @@ O histórico administrativo traduz ação, módulo e entidade para português. P
 
 A rota `/admin/orders/new` conduz o atendimento em três blocos: seleção ou cadastro rápido do cliente, escolha entre retirada e entrega e montagem dos itens com o mesmo catálogo/compositor de pizzas do tablet. Em entrega, o endereço é obrigatório e a prévia usa `DefaultDeliveryFee`; preço, disponibilidade, taxa e desconto são confirmados novamente pela API. O identificador da tentativa é mantido durante o envio para impedir pedido duplicado em uma repetição da requisição.
 
-Após a confirmação, a interface mantém a prévia não fiscal de 80 mm. Na listagem, o botão de impressão cria um trabalho durável e o worker envia ESC/POS pela rede local, com tentativas, erro visível e corte automático quando suportado pelo equipamento.
+Após a confirmação, a interface mantém a prévia não fiscal de 80 mm. Na listagem de pedidos, o botão `Imprimir` abre o comprovante histórico completo e usa a caixa de impressão do navegador, permitindo conferir o layout e imprimir mesmo sem uma impressora de rede configurada. Nos fluxos com impressora térmica online, comprovante e comanda ainda podem criar trabalhos duráveis e o worker envia ESC/POS pela rede local, com tentativas, erro visível e corte automático quando suportado pelo equipamento.
+
+O detalhe da mesa apresenta cada pedido com data, canal, itens, quantidade, descrição da montagem, observações, preço unitário, subtotal, desconto, serviço e total. Todas as entradas que representam dinheiro no admin — catálogo, estoque, caixa, pedidos, pagamentos, estornos e configurações — usam a máscara brasileira `R$ 1.234,56`; campos de quantidade e percentual continuam numéricos, sem máscara monetária.
+
+## Clientes e navegação administrativa
+
+A rota `/admin/customers` organiza busca, contagem e registros em uma única superfície operacional. Nome, celular formatado, nascimento, fidelidade, situação e edição seguem colunas estáveis no desktop e se reorganizam em blocos legíveis no mobile. Cada real de pedido administrativo válido rende um ponto e cancelamentos revertem pontos, valor acumulado e quantidade de pedidos.
+
+A rota `/admin/reservations` combina agenda e lista de espera. O campo de cliente funciona como combobox acessível, pesquisa por nome ou telefone e preenche telefone e nascimento do cadastro selecionado. Quando a busca não encontra o cliente, a data de nascimento passa a ser obrigatória e a API cria cliente e reserva na mesma transação, evitando registros incompletos. Reservas seguem estados pendente, confirmado, recepcionado e concluído, com cancelamento ou ausência; a fila mantém posição, previsão, aviso e acomodação. Os dois fluxos têm regras e auditoria no servidor, estados vazios, responsividade e permissões operacionais.
+
+A sidebar mantém marca e ação principal no topo, navegação com rolagem independente no centro e saída no rodapé. Essa divisão evita que “Sair” cubra “Configurações” em telas de menor altura e preserva a versão compacta e o drawer mobile.
 
 ## Relatórios
 
-A área financeira exporta um arquivo Excel (`.xlsx`) em vez de imprimir a página web. O gerador é carregado somente após a ação do usuário e cria três abas: resumo executivo, pedidos e pagamentos. A planilha preserva valores e datas como tipos nativos, aplica máscaras monetárias, totais, percentuais, cabeçalhos fixos, larguras adequadas e o período selecionado. A geração utiliza `write-excel-file`, escolhida por suportar navegador, múltiplas abas e estilos sem alertas conhecidos no `npm audit`.
+A área financeira exporta um arquivo Excel (`.xlsx`) em vez de imprimir a página web. O resumo inclui vendas, recebimento líquido de estornos, CMV calculado pelas baixas automáticas, margem de contribuição e produtividade real das praças. O gerador cria resumo executivo, pedidos e pagamentos, preserva valores e datas nativos e inclui desempenho da produção.
 
 As listas operacionais de pedidos, mesas, pagamentos e auditoria são exportadas em PDF tabular, sem capturar a página web. O componente compartilhado inclui identidade da unidade, resumo dos filtros e indicadores, cabeçalho repetido, quebra automática de páginas, rodapé com autoria/data e numeração. A geração utiliza `jsPDF` e `jspdf-autotable`, carregados sob demanda para não aumentar o carregamento inicial das telas.
 
@@ -69,7 +81,7 @@ O cabeçalho também oferece um teste local do som de notificações. Pedidos cr
 
 A tela de caixa apresenta a abertura quando não existe turno corrente. O modal acessível seleciona um caixa ativo, recebe o fundo inicial com máscara monetária e mostra sucesso ou erro tratado. A resposta da abertura e o fechamento atualizam imediatamente a chave compartilhada, mantendo página e cabeçalho consistentes sem recarregar o navegador.
 
-O dashboard segue os blocos gerenciais do Stitch: situação detalhada das mesas, Top 5 do dia, receitas por forma de pagamento e alertas vindos dos saldos reais de estoque. O período diário é calculado pela API no fuso configurado na unidade. A rota `/admin/inventory` cadastra itens e estoque mínimo e registra entradas/baixas por ajustes auditados.
+O dashboard segue os blocos gerenciais do Stitch: situação detalhada das mesas, Top 5 do dia, receitas por forma de pagamento e alertas vindos dos saldos reais de estoque. Os alertas têm contenção própria e textos quebráveis, sem ultrapassar a superfície em larguras menores. A rota `/admin/inventory` usa uma tabela operacional com rolagem horizontal contida, separa nome, saldo atual e reservado e mantém as ações legíveis; também cadastra custo e saldo, registra ajustes e mantém fichas técnicas por produto ou sabor/tamanho. Ao enviar um pedido, a Application consome os ingredientes da receita de forma atômica, associa os movimentos aos itens e impede estoque negativo.
 
 ## Tablet do cliente
 
@@ -79,7 +91,7 @@ O layout preserva os tokens creme e terracota, alvos de toque de pelo menos 52 p
 
 Em tablets com largura de até 900 px, as categorias usam uma barra lateral compacta de ícones. O botão `Categorias` expande a navegação sobre o conteúdo sem alterar a grade, e ela volta ao estado compacto ao selecionar uma categoria, tocar fora ou pressionar `Esc`. Em celulares, a mesma navegação funciona como gaveta lateral, preservando toda a largura do cardápio.
 
-O carrinho fica no navegador, separado pelo `tableSessionId`, e não atravessa atendimentos. Ao confirmar, a API recalcula preço e disponibilidade. SignalR atualiza o estado imediatamente e uma reconciliação a cada 60 segundos cobre reconexões; o service worker preserva o shell e o último catálogo sem armazenar respostas autenticadas da API. A espera segue `designs/telaIdle`: fotografia do forno em tela cheia, identificação da mesa e conexão, chamada central e sugestão do chef; o toque abre a escolha de pessoas. Ao concluir o pagamento, limpa o carrinho, apresenta confetes/check animados, QR Code de avaliação, Instagram e contador de 20 segundos antes de voltar à espera sem apagar a credencial do aparelho. Todas as animações respeitam `prefers-reduced-motion`.
+O carrinho fica em armazenamento local, separado pelo `tableSessionId`, e sobrevive ao fechamento do navegador. Uma tentativa ambígua mantém o mesmo `RequestId`, bloqueia alterações e permite repetir exatamente o mesmo envio sem duplicar o pedido; a limpeza ocorre somente após confirmação. O cliente também permite editar pizzas, repetir consumo anterior por identificadores reais, filtrar sabores, ver prazo estimado, sugestões contextuais e estado do chamado de mesa.
 
 ## Delivery externo
 
