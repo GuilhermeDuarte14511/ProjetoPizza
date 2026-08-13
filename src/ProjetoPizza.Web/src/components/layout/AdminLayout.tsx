@@ -13,6 +13,7 @@ import {
   Menu,
   MonitorSmartphone,
   ReceiptText,
+  CalendarClock,
   Search,
   Settings,
   TableProperties,
@@ -40,6 +41,7 @@ const navigation: Array<{ label: string; items: NavigationItem[] }> = [
     items: [
       { to: '/admin/dashboard', label: 'Visão Geral', icon: Gauge },
       { to: '/admin/tables', label: 'Mesas', icon: TableProperties },
+      { to: '/admin/reservations', label: 'Reservas e espera', icon: CalendarClock },
       { to: '/admin/orders', label: 'Pedidos', icon: ClipboardList },
       { to: '/admin/kitchen', label: 'Cozinha', icon: ChefHat },
       { to: '/admin/service-calls', label: 'Chamados', icon: BellRing },

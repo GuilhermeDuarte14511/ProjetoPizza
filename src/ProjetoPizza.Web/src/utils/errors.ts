@@ -25,6 +25,7 @@ const domainTranslations: Array<[RegExp, string]> = [
   [/received amount cannot be lower than payment amount/i, 'O valor recebido não pode ser menor que a parte da conta.'],
   [/payment method does not allow change/i, 'A forma de pagamento selecionada não permite troco.'],
   [/payment method requires an external reference/i, 'Informe a referência ou autorização do pagamento.'],
+  [/configure an online network printer before printing/i, 'Nenhuma impressora de rede está configurada e online. Configure-a em Configurações > Impressoras ou use a impressão pelo navegador.'],
   [/unsupported manual cash movement type/i, 'O tipo de movimentação informado não é permitido.'],
   [/unknown product type/i, 'O tipo de produto informado é inválido.'],
   [/unknown pizza flavor type/i, 'O tipo de sabor informado é inválido.'],

@@ -16,6 +16,9 @@ public sealed record OrderManagementDto(
     DateTimeOffset? DispatchedAt,
     DateTimeOffset? DeliveredAt,
     string? Notes,
+    string? CancellationReason,
+    decimal Subtotal,
+    decimal Discount,
     decimal Total,
     DateTimeOffset CreatedAt,
     DateTimeOffset? PlacedAt,
@@ -29,7 +32,17 @@ public sealed record CustomerDto(
     string Phone,
     DateOnly BirthDate,
     bool IsActive,
+    int LoyaltyPoints,
+    decimal LifetimeSpend,
+    int OrderCount,
+    DateTimeOffset? LastOrderAt,
     DateTimeOffset CreatedAt);
+public sealed record ReservationDto(
+    Guid Id, Guid? CustomerId, string CustomerName, string Phone, int PartySize,
+    DateTimeOffset ScheduledAt, int DurationMinutes, string? Notes, string Status, DateTimeOffset CreatedAt);
+public sealed record WaitlistEntryDto(
+    Guid Id, Guid? CustomerId, string CustomerName, string Phone, int PartySize,
+    int EstimatedWaitMinutes, string? Notes, string Status, DateTimeOffset EnteredAt, DateTimeOffset? NotifiedAt);
 public sealed record CreatedOrderDto(Guid Id, long Number, string Status, decimal Total, OrderReceiptDto Receipt);
 public sealed record CounterCheckoutResultDto(Guid Id, long Number, string Status, decimal Total, OrderReceiptDto Receipt);
 public sealed record OrderReceiptDto(
@@ -174,11 +187,24 @@ public sealed record InventoryItemAdminDto(
     string Sku,
     string UnitOfMeasure,
     decimal MinimumStock,
+    decimal UnitCost,
     decimal CurrentQuantity,
     decimal ReservedQuantity,
     decimal AvailableQuantity,
     bool IsLowStock,
     bool IsActive);
+
+public sealed record RecipeAdminDto(
+    Guid Id,
+    Guid? ProductId,
+    string? ProductName,
+    Guid? PizzaFlavorId,
+    string? PizzaFlavorName,
+    Guid? PizzaSizeId,
+    string? PizzaSizeName,
+    decimal YieldQuantity,
+    IReadOnlyCollection<RecipeItemAdminDto> Items);
+public sealed record RecipeItemAdminDto(Guid InventoryItemId, string InventoryItemName, decimal Quantity, string UnitOfMeasure);
 
 public sealed record CashMovementDto(
     Guid Id,
@@ -206,21 +232,36 @@ public sealed record PaymentDto(
     decimal Amount,
     decimal ReceivedAmount,
     decimal ChangeAmount,
+    decimal RefundedAmount,
     string? ExternalReference,
-    DateTimeOffset? PaidAt);
+    DateTimeOffset? PaidAt,
+    DateTimeOffset? RefundedAt,
+    string? RefundReason);
 
 public sealed record FinancialReportDto(
     DateTimeOffset From,
     DateTimeOffset To,
     decimal GrossSales,
     decimal PaidAmount,
+    decimal FoodCost,
+    decimal ContributionMargin,
+    decimal ContributionMarginPercentage,
     decimal AverageTicket,
     int OrderCount,
+    int CompletedTickets,
+    decimal AveragePreparationMinutes,
+    decimal OnTimeRate,
     IReadOnlyCollection<FinancialChannelDto> Channels,
-    IReadOnlyCollection<FinancialMethodDto> PaymentMethods);
+    IReadOnlyCollection<FinancialMethodDto> PaymentMethods,
+    IReadOnlyCollection<ProductionPerformanceDto> ProductionStations);
 
 public sealed record FinancialChannelDto(string Channel, int Orders, decimal Total);
 public sealed record FinancialMethodDto(string Method, int Payments, decimal Total);
+public sealed record ProductionPerformanceDto(
+    string Station,
+    int Tickets,
+    decimal AveragePreparationMinutes,
+    decimal OnTimeRate);
 
 public sealed record DeviceDto(
     Guid Id,
@@ -417,8 +458,19 @@ public sealed record CheckoutCounterOrderCommand(
 
 public sealed record DispatchDeliveryCommand(string DriverName);
 public sealed record FailDeliveryCommand(string Reason);
+public sealed record CancelOrderCommand(string Reason);
+public sealed record ApplyOrderDiscountCommand(decimal Amount, string Reason);
+public sealed record RefundPaymentCommand(decimal Amount, string Reason);
 
 public sealed record OpenTableCommand(Guid TableId, int GuestCount);
+public sealed record CreateReservationCommand(
+    Guid? CustomerId, string CustomerName, string Phone, int PartySize,
+    DateTimeOffset ScheduledAt, int DurationMinutes, string? Notes, DateOnly? CustomerBirthDate = null);
+public sealed record CreateWaitlistEntryCommand(
+    Guid? CustomerId, string CustomerName, string Phone, int PartySize, int EstimatedWaitMinutes, string? Notes);
+public sealed record AssignTableWaiterCommand(Guid EmployeeId);
+public sealed record LinkTableCommand(Guid TableId);
+public sealed record TransferTableCommand(Guid CurrentTableId, Guid TargetTableId);
 public sealed record RecordPaymentCommand(Guid BillId, Guid PaymentMethodId, decimal Amount, decimal ReceivedAmount, string? ExternalReference);
 public sealed record SplitPaymentPartCommand(
     string Payer,
@@ -462,8 +514,17 @@ public sealed record SaveInventoryItemCommand(
     string Sku,
     string UnitOfMeasure,
     decimal MinimumStock,
+    decimal UnitCost,
     bool IsActive);
 public sealed record AdjustInventoryCommand(decimal QuantityDelta, string Reason);
+public sealed record SaveRecipeCommand(
+    Guid? Id,
+    Guid? ProductId,
+    Guid? PizzaFlavorId,
+    Guid? PizzaSizeId,
+    decimal YieldQuantity,
+    IReadOnlyCollection<SaveRecipeItemCommand> Items);
+public sealed record SaveRecipeItemCommand(Guid InventoryItemId, decimal Quantity, string UnitOfMeasure);
 public sealed record UpdateDeviceCommand(
     string Status,
     int? BatteryPercentage,

@@ -44,9 +44,34 @@ public sealed record TableDetailDto(
     decimal ServiceFeeAmount,
     decimal TotalAmount,
     decimal RemainingAmount,
-    int? RequestedSplitCount);
+    int? RequestedSplitCount,
+    IReadOnlyCollection<TableBillItemDto> BillItems,
+    IReadOnlyCollection<TableReferenceDto> LinkedTables,
+    IReadOnlyCollection<TableOperatorDto> Waiters);
 
-public sealed record TableOrderDto(long Number, string Channel, string Status, decimal Total, DateTimeOffset? PlacedAt);
+public sealed record TableOrderDto(
+    Guid Id,
+    long Number,
+    string Channel,
+    string Status,
+    decimal Subtotal,
+    decimal Discount,
+    decimal ServiceFee,
+    decimal Total,
+    DateTimeOffset? PlacedAt,
+    string? Notes,
+    IReadOnlyCollection<TableOrderItemDto> Items);
+public sealed record TableOrderItemDto(
+    Guid Id,
+    string Name,
+    int Quantity,
+    decimal UnitPrice,
+    decimal TotalPrice,
+    string? Notes,
+    IReadOnlyCollection<string> Details);
+public sealed record TableReferenceDto(Guid Id, string Name, bool IsPrimary);
+public sealed record TableOperatorDto(Guid Id, string Name);
+public sealed record TableBillItemDto(Guid Id, string Name, int Quantity, decimal Total);
 public sealed record CategoryDto(Guid Id, string Name, string Slug, string? Description, bool IsActive, bool IsVisibleOnTablet);
 public sealed record ProductDto(
     Guid Id,
@@ -105,7 +130,10 @@ public sealed record KitchenTicketDto(
     long TicketNumber,
     long OrderNumber,
     string Station,
+    string StationCode,
     string Status,
     DateTimeOffset CreatedAt,
+    DateTimeOffset? StartedAt,
+    int TargetPreparationMinutes,
     int ItemCount,
     string Summary);

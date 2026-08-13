@@ -621,6 +621,20 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("received_by_employee_id");
 
+                    b.Property<string>("RefundReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("refund_reason");
+
+                    b.Property<decimal>("RefundedAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("refunded_amount");
+
+                    b.Property<DateTimeOffset?>("RefundedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("refunded_at");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -1761,11 +1775,28 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<DateTimeOffset?>("LastOrderAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_order_at");
+
+                    b.Property<decimal>("LifetimeSpend")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("lifetime_spend");
+
+                    b.Property<int>("LoyaltyPoints")
+                        .HasColumnType("integer")
+                        .HasColumnName("loyalty_points");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)")
                         .HasColumnName("name");
+
+                    b.Property<int>("OrderCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("order_count");
 
                     b.Property<string>("Phone")
                         .IsRequired()
@@ -2140,6 +2171,77 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                     b.ToTable("dining_areas", "dining");
                 });
 
+            modelBuilder.Entity("ProjetoPizza.Domain.Dining.Reservation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("customer_name");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_minutes");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("notes");
+
+                    b.Property<int>("PartySize")
+                        .HasColumnType("integer")
+                        .HasColumnName("party_size");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)")
+                        .HasColumnName("phone");
+
+                    b.Property<DateTimeOffset>("ScheduledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("scheduled_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("unit_id");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_reservations");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_reservations_customer_id");
+
+                    b.HasIndex("UnitId", "ScheduledAt", "Status")
+                        .HasDatabaseName("ix_reservations_unit_id_scheduled_at_status");
+
+                    b.ToTable("reservations", "dining");
+                });
+
             modelBuilder.Entity("ProjetoPizza.Domain.Dining.RestaurantTable", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2488,6 +2590,77 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                     b.ToTable("waiter_assignments", "dining");
                 });
 
+            modelBuilder.Entity("ProjetoPizza.Domain.Dining.WaitlistEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("customer_name");
+
+                    b.Property<DateTimeOffset>("EnteredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("entered_at");
+
+                    b.Property<int>("EstimatedWaitMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("estimated_wait_minutes");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTimeOffset?>("NotifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("notified_at");
+
+                    b.Property<int>("PartySize")
+                        .HasColumnType("integer")
+                        .HasColumnName("party_size");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("unit_id");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_waitlist_entries");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_waitlist_entries_customer_id");
+
+                    b.HasIndex("UnitId", "Status", "EnteredAt")
+                        .HasDatabaseName("ix_waitlist_entries_unit_id_status_entered_at");
+
+                    b.ToTable("waitlist_entries", "dining");
+                });
+
             modelBuilder.Entity("ProjetoPizza.Domain.Identity.Employee", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2583,6 +2756,11 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("sku");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_cost");
 
                     b.Property<Guid>("UnitId")
                         .HasColumnType("uuid")
@@ -4000,6 +4178,22 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_dining_areas_restaurant_units_unit_id");
                 });
 
+            modelBuilder.Entity("ProjetoPizza.Domain.Dining.Reservation", b =>
+                {
+                    b.HasOne("ProjetoPizza.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_reservations_customers_customer_id");
+
+                    b.HasOne("ProjetoPizza.Domain.Core.RestaurantUnit", null)
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_reservations_restaurant_units_unit_id");
+                });
+
             modelBuilder.Entity("ProjetoPizza.Domain.Dining.RestaurantTable", b =>
                 {
                     b.HasOne("ProjetoPizza.Domain.Dining.DiningArea", null)
@@ -4139,6 +4333,22 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_waiter_assignments_table_sessions_table_session_id");
+                });
+
+            modelBuilder.Entity("ProjetoPizza.Domain.Dining.WaitlistEntry", b =>
+                {
+                    b.HasOne("ProjetoPizza.Domain.Customers.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_waitlist_entries_customers_customer_id");
+
+                    b.HasOne("ProjetoPizza.Domain.Core.RestaurantUnit", null)
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_waitlist_entries_restaurant_units_unit_id");
                 });
 
             modelBuilder.Entity("ProjetoPizza.Domain.Identity.Employee", b =>

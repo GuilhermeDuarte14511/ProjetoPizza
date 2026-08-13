@@ -1,3 +1,4 @@
+using System.Globalization;
 using ProjetoPizza.Application.Abstractions.Persistence;
 using ProjetoPizza.Domain.Billing;
 using ProjetoPizza.Domain.Dining;
@@ -130,15 +131,82 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
 
         if (link is null)
         {
-            return Task.FromResult<TableDetailDto?>(new TableDetailDto(table, null, null, null, [], null, 0, 0, 0, 0, 0, null));
+            return Task.FromResult<TableDetailDto?>(new TableDetailDto(table, null, null, null, [], null, 0, 0, 0, 0, 0, null, [], [], GetWaiters()));
         }
 
         var session = context.TableSessions.Single(candidate => candidate.Id == link.TableSessionId);
-        var orders = context.Orders
+        var employeeNames = context.Employees.ToDictionary(employee => employee.Id, employee => employee.DisplayName);
+        var tableNames = context.RestaurantTables.ToDictionary(item => item.Id, item => item.Name);
+        var linkedTableLinks = context.TableSessionTables
+            .Where(candidate => candidate.TableSessionId == session.Id && candidate.UnlinkedAt == null)
+            .ToArray();
+        var linkedTables = linkedTableLinks
+            .Select(candidate => new TableReferenceDto(
+                candidate.RestaurantTableId.Value,
+                tableNames.GetValueOrDefault(candidate.RestaurantTableId, "Mesa"),
+                candidate.IsPrimary))
+            .OrderBy(candidate => candidate.Name)
+            .ToArray();
+        var sessionOrders = context.Orders
             .Where(order => order.TableSessionId == session.Id)
             .OrderByDescending(order => order.CreatedAt)
-            .Select(order => new TableOrderDto(order.OrderNumber, order.SalesChannel.ToString(), order.Status.ToString(), order.Total.Amount, order.PlacedAt))
             .ToArray();
+        var allOrderIds = sessionOrders.Select(order => order.Id).ToHashSet();
+        var allOrderItems = context.OrderItems.Where(item => allOrderIds.Contains(item.OrderId)).ToArray();
+        var allItemIds = allOrderItems.Select(item => item.Id).ToHashSet();
+        var pizzasByItem = context.OrderItemPizzas
+            .Where(pizza => allItemIds.Contains(pizza.Id))
+            .ToArray()
+            .ToDictionary(pizza => pizza.Id);
+        var flavorsByItem = context.OrderItemPizzaFlavors
+            .Where(flavor => allItemIds.Contains(flavor.OrderItemId))
+            .ToArray()
+            .GroupBy(flavor => flavor.OrderItemId)
+            .ToDictionary(group => group.Key, group => group.OrderBy(flavor => flavor.PartNumber).ToArray());
+        var modifiersByItem = context.OrderItemModifiers
+            .Where(modifier => allItemIds.Contains(modifier.OrderItemId))
+            .ToArray()
+            .GroupBy(modifier => modifier.OrderItemId)
+            .ToDictionary(group => group.Key, group => group.ToArray());
+        var itemsByOrder = allOrderItems.GroupBy(item => item.OrderId).ToDictionary(group => group.Key, group => group.ToArray());
+        var ptBr = CultureInfo.GetCultureInfo("pt-BR");
+        var orders = sessionOrders.Select(order =>
+        {
+            var items = itemsByOrder.GetValueOrDefault(order.Id, [])
+                .Select(item =>
+                {
+                    var details = new List<string>();
+                    if (pizzasByItem.TryGetValue(item.Id, out var pizza))
+                    {
+                        details.Add($"Tamanho: {pizza.SizeNameSnapshot}");
+                        if (flavorsByItem.TryGetValue(item.Id, out var flavors))
+                            details.Add($"Sabores: {string.Join(" / ", flavors.Select(flavor => flavor.FlavorNameSnapshot))}");
+                        if (pizza.CrustSelectionMode == CrustSelectionMode.Split)
+                            details.Add($"Borda: 1/2 {pizza.CrustNameSnapshot} + 1/2 {pizza.SecondCrustNameSnapshot}");
+                        else if (pizza.CrustSelectionMode == CrustSelectionMode.Whole)
+                            details.Add($"Borda: {pizza.CrustNameSnapshot}");
+                    }
+
+                    if (modifiersByItem.TryGetValue(item.Id, out var modifiers))
+                    {
+                        details.AddRange(modifiers.Select(modifier => modifier.ModifierType switch
+                        {
+                            ModifierType.Remove => $"Sem {modifier.NameSnapshot}",
+                            ModifierType.Extra => $"Adicional: {modifier.Quantity:0.##}x {modifier.NameSnapshot} (+ {modifier.TotalPrice.Amount.ToString("C", ptBr)})",
+                            _ => $"{modifier.Quantity:0.##}x {modifier.NameSnapshot}"
+                        }));
+                    }
+
+                    return new TableOrderItemDto(
+                        item.Id.Value, item.ProductNameSnapshot, item.Quantity, item.UnitPrice.Amount,
+                        item.TotalPrice.Amount, item.Notes, details);
+                })
+                .ToArray();
+            return new TableOrderDto(
+                order.Id.Value, order.OrderNumber, order.SalesChannel.ToString(), order.Status.ToString(),
+                order.Subtotal.Amount, order.Discount.Amount, order.ServiceFee.Amount, order.Total.Amount,
+                order.PlacedAt, order.Notes, items);
+        }).ToArray();
         var bill = context.Bills
             .Where(candidate => candidate.TableSessionId == session.Id && candidate.Status != BillStatus.Cancelled)
             .ToArray()
@@ -149,11 +217,22 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
         var serviceFeeAmount = bill?.ServiceFeeAmount.Amount ??
             decimal.Round(subtotal * session.ServiceFeePercentageSnapshot.AsFactor, 2, MidpointRounding.ToEven);
         var total = bill?.TotalAmount.Amount ?? subtotal + serviceFeeAmount;
+        var orderIds = sessionOrders.Where(order => order.Status != OrderStatus.Cancelled).Select(order => order.Id).ToHashSet();
+        var rawItems = allOrderItems.Where(item => orderIds.Contains(item.OrderId)).ToArray();
+        var rawTotal = rawItems.Sum(item => item.TotalPrice.Amount);
+        var billItems = rawItems.Select((item, index) => new TableBillItemDto(
+            item.Id.Value,
+            item.ProductNameSnapshot,
+            item.Quantity,
+            index == rawItems.Length - 1
+                ? total - rawItems.Take(index).Sum(previous => rawTotal == 0 ? 0 : decimal.Round(previous.TotalPrice.Amount / rawTotal * total, 2))
+                : rawTotal == 0 ? 0 : decimal.Round(item.TotalPrice.Amount / rawTotal * total, 2)))
+            .ToArray();
         return Task.FromResult<TableDetailDto?>(new TableDetailDto(
             table,
             session.Id.Value,
             session.SessionNumber,
-            null,
+            session.PrimaryWaiterId.HasValue ? employeeNames.GetValueOrDefault(session.PrimaryWaiterId.Value) : null,
             orders,
             bill?.Id.Value,
             subtotal,
@@ -161,8 +240,17 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
             serviceFeeAmount,
             total,
             bill?.RemainingAmount.Amount ?? total,
-            bill?.RequestedSplitCount));
+            bill?.RequestedSplitCount,
+            billItems,
+            linkedTables,
+            GetWaiters()));
     }
+
+    private TableOperatorDto[] GetWaiters() => context.Employees
+        .Where(employee => employee.IsActive)
+        .OrderBy(employee => employee.DisplayName)
+        .Select(employee => new TableOperatorDto(employee.Id.Value, employee.DisplayName))
+        .ToArray();
 
     public Task<IReadOnlyCollection<CategoryDto>> ListCategoriesAsync(CancellationToken cancellationToken)
     {
@@ -346,8 +434,11 @@ public sealed class AdminQueryService(IProjetoPizzaDbContext context) : IAdminQu
                 ticket.TicketNumber,
                 orders[ticket.OrderId].OrderNumber,
                 stations[ticket.ProductionStationId].Name,
+                stations[ticket.ProductionStationId].Code,
                 ticket.Status.ToString(),
                 ticket.CreatedAt,
+                ticket.StartedAt,
+                stations[ticket.ProductionStationId].TargetPreparationMinutes,
                 ticketItems.GetValueOrDefault(ticket.Id, []).Length,
                 string.Join(" · ", ticketItems.GetValueOrDefault(ticket.Id, []).Select(ticketItem =>
                 {

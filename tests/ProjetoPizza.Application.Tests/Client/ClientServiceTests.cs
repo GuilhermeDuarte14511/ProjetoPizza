@@ -667,11 +667,16 @@ public sealed class ClientServiceTests
         public IQueryable<PizzaFlavorExtra> PizzaFlavorExtras => PizzaFlavorExtraItems.AsQueryable();
         public IQueryable<InventoryItem> InventoryItems => Array.Empty<InventoryItem>().AsQueryable();
         public IQueryable<StockBalance> StockBalances => Array.Empty<StockBalance>().AsQueryable();
+        public IQueryable<StockMovement> StockMovements => Array.Empty<StockMovement>().AsQueryable();
+        public IQueryable<Recipe> Recipes => Array.Empty<Recipe>().AsQueryable();
+        public IQueryable<RecipeItem> RecipeItems => Array.Empty<RecipeItem>().AsQueryable();
         public IQueryable<DiningArea> DiningAreas => DiningAreaItems.AsQueryable();
         public IQueryable<RestaurantTable> RestaurantTables => RestaurantTableItems.AsQueryable();
         public IQueryable<TableSession> TableSessions => TableSessionItems.AsQueryable();
         public IQueryable<TableSessionTable> TableSessionTables =>
             TableSessionItems.SelectMany(session => session.Tables).AsQueryable();
+        public IQueryable<Reservation> Reservations => Array.Empty<Reservation>().AsQueryable();
+        public IQueryable<WaitlistEntry> WaitlistEntries => Array.Empty<WaitlistEntry>().AsQueryable();
         public IQueryable<ServiceCallType> ServiceCallTypes => ServiceCallTypeItems.AsQueryable();
         public IQueryable<ServiceCall> ServiceCalls => ServiceCallItems.AsQueryable();
         public IQueryable<Order> Orders => OrderItemsData.AsQueryable();
@@ -711,6 +716,8 @@ public sealed class ClientServiceTests
             if (entity is KitchenTicketItem ticketItem) KitchenTicketLineItems.Add(ticketItem);
             if (entity is AuditLog auditLog) AuditLogItems.Add(auditLog);
         }
+
+        public void Remove<TEntity>(TEntity entity) where TEntity : class { }
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

@@ -40,13 +40,24 @@ public sealed record ClientBootstrapDto(
     ClientSessionDto Session,
     ClientCatalogDto Catalog,
     IReadOnlyList<ClientServiceCallTypeDto> ServiceCallTypes,
+    IReadOnlyList<ClientServiceCallDto> ServiceCalls,
     IReadOnlyList<ClientOrderDto> Orders,
     ClientBillDto Bill);
 
 public sealed record ClientStateDto(
     ClientSessionDto Session,
+    IReadOnlyList<ClientServiceCallDto> ServiceCalls,
     IReadOnlyList<ClientOrderDto> Orders,
     ClientBillDto Bill);
+
+public sealed record ClientServiceCallDto(
+    Guid Id,
+    Guid ServiceCallTypeId,
+    string TypeName,
+    string Status,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? AcknowledgedAt,
+    DateTimeOffset? CompletedAt);
 
 public sealed record ClientCatalogDto(
     IReadOnlyList<ClientCategoryDto> Categories,
@@ -187,6 +198,7 @@ public sealed record ClientOrderDto(
 
 public sealed record ClientOrderItemDto(
     Guid Id,
+    Guid ProductId,
     string Name,
     int Quantity,
     decimal UnitPrice,
@@ -197,9 +209,15 @@ public sealed record ClientOrderItemDto(
     IReadOnlyList<ClientOrderModifierDto> Modifiers);
 
 public sealed record ClientOrderPizzaDto(
+    Guid SizeId,
     string Size,
-    IReadOnlyList<string> Flavors,
-    string? Crust);
+    IReadOnlyList<ClientOrderPizzaFlavorDto> Flavors,
+    Guid? CrustId,
+    string? Crust,
+    Guid? SecondCrustId,
+    string? SecondCrust);
+
+public sealed record ClientOrderPizzaFlavorDto(Guid Id, string Name);
 
 public sealed record ClientOrderModifierDto(
     string Type,
@@ -207,7 +225,8 @@ public sealed record ClientOrderModifierDto(
     decimal Quantity,
     decimal UnitPrice,
     decimal TotalPrice,
-    Guid? PizzaFlavorId);
+    Guid? PizzaFlavorId,
+    Guid? IngredientId);
 
 public sealed record ClientBillDto(
     Guid? Id,

@@ -41,7 +41,7 @@ export interface TableDetail {
   sessionId?: string
   sessionNumber?: number
   waiter?: string
-  orders: DashboardOrder[]
+  orders: TableOrder[]
   billId?: string
   subtotalAmount: number
   serviceFeePercentage: number
@@ -49,6 +49,31 @@ export interface TableDetail {
   totalAmount: number
   remainingAmount: number
   requestedSplitCount?: number
+  billItems: Array<{ id: string; name: string; quantity: number; total: number }>
+  linkedTables: Array<{ id: string; name: string; isPrimary: boolean }>
+  waiters: Array<{ id: string; name: string }>
+}
+
+export interface TableOrder {
+  id: string
+  number: number
+  channel: string
+  status: string
+  subtotal: number
+  discount: number
+  serviceFee: number
+  total: number
+  placedAt?: string
+  notes?: string
+  items: Array<{
+    id: string
+    name: string
+    quantity: number
+    unitPrice: number
+    totalPrice: number
+    notes?: string
+    details: string[]
+  }>
 }
 
 export interface ServiceCall {
@@ -156,8 +181,11 @@ export interface KitchenTicket {
   ticketNumber: number
   orderNumber: number
   station: string
+  stationCode: string
   status: string
   createdAt: string
+  startedAt?: string
+  targetPreparationMinutes: number
   itemCount: number
   summary?: string
 }
@@ -185,6 +213,9 @@ export interface ManagedOrder {
   dispatchedAt?: string
   deliveredAt?: string
   notes?: string
+  cancellationReason?: string
+  subtotal: number
+  discount: number
   total: number
   createdAt: string
   placedAt?: string
@@ -197,7 +228,38 @@ export interface Customer {
   phone: string
   birthDate: string
   isActive: boolean
+  loyaltyPoints: number
+  lifetimeSpend: number
+  orderCount: number
+  lastOrderAt?: string
   createdAt: string
+}
+
+export interface Reservation {
+  id: string
+  customerId?: string
+  customerName: string
+  phone: string
+  partySize: number
+  scheduledAt: string
+  durationMinutes: number
+  notes?: string
+  customerBirthDate?: string
+  status: string
+  createdAt: string
+}
+
+export interface WaitlistEntry {
+  id: string
+  customerId?: string
+  customerName: string
+  phone: string
+  partySize: number
+  estimatedWaitMinutes: number
+  notes?: string
+  status: string
+  enteredAt: string
+  notifiedAt?: string
 }
 
 export interface AdministrativeOrderCatalog {
@@ -375,11 +437,32 @@ export interface InventoryItem {
   sku: string
   unitOfMeasure: string
   minimumStock: number
+  unitCost: number
   currentQuantity: number
   reservedQuantity: number
   availableQuantity: number
   isLowStock: boolean
   isActive: boolean
+}
+export interface InventoryRecipeItem { inventoryItemId: string; inventoryItemName: string; quantity: number; unitOfMeasure: string }
+export interface InventoryRecipe {
+  id: string
+  productId?: string
+  productName?: string
+  pizzaFlavorId?: string
+  pizzaFlavorName?: string
+  pizzaSizeId?: string
+  pizzaSizeName?: string
+  yieldQuantity: number
+  items: InventoryRecipeItem[]
+}
+export interface SaveInventoryRecipe {
+  id?: string
+  productId?: string
+  pizzaFlavorId?: string
+  pizzaSizeId?: string
+  yieldQuantity: number
+  items: Array<{ inventoryItemId: string; quantity: number; unitOfMeasure: string }>
 }
 export interface DatabaseBackup { fileName: string; createdAt: string; sizeBytes: number; type: string }
 
@@ -392,8 +475,11 @@ export interface Payment {
   amount: number
   receivedAmount: number
   changeAmount: number
+  refundedAmount?: number
   externalReference?: string
   paidAt?: string
+  refundedAt?: string
+  refundReason?: string
 }
 
 export interface FinancialReport {
@@ -401,10 +487,17 @@ export interface FinancialReport {
   to: string
   grossSales: number
   paidAmount: number
+  foodCost: number
+  contributionMargin: number
+  contributionMarginPercentage: number
   averageTicket: number
   orderCount: number
+  completedTickets: number
+  averagePreparationMinutes: number
+  onTimeRate: number
   channels: Array<{ channel: string; orders: number; total: number }>
   paymentMethods: Array<{ method: string; payments: number; total: number }>
+  productionStations: Array<{ station: string; tickets: number; averagePreparationMinutes: number; onTimeRate: number }>
 }
 
 export interface Device {

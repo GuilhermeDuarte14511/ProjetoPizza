@@ -53,6 +53,35 @@ public sealed class PaymentTests
             .Which.Rule.Should().Be("payment.change_not_allowed");
     }
 
+    [Fact]
+    public void Refund_InParts_ShouldTrackRefundedAmountAndStatus()
+    {
+        var payment = new Payment(
+            PaymentId.New(), RestaurantUnitId.New(), BillId.New(), CreateMethod(allowsChange: true),
+            new Money(80), new Money(80), EmployeeId.New());
+
+        payment.Refund(new Money(30), "Cliente desistiu de parte do pedido");
+        payment.Status.Should().Be(PaymentStatus.PartiallyRefunded);
+        payment.RefundedAmount.Amount.Should().Be(30);
+
+        payment.Refund(new Money(50), "Cancelamento integral");
+        payment.Status.Should().Be(PaymentStatus.Refunded);
+        payment.RefundedAmount.Amount.Should().Be(80);
+    }
+
+    [Fact]
+    public void Refund_AboveRemainingAmount_ShouldReject()
+    {
+        var payment = new Payment(
+            PaymentId.New(), RestaurantUnitId.New(), BillId.New(), CreateMethod(allowsChange: true),
+            new Money(80), new Money(80), EmployeeId.New());
+
+        var act = () => payment.Refund(new Money(80.01m), "Valor incorreto");
+
+        act.Should().Throw<BusinessRuleException>()
+            .Which.Rule.Should().Be("payment.invalid_refund");
+    }
+
     private static PaymentMethod CreateMethod(bool allowsChange) =>
         new(PaymentMethodId.New(), RestaurantUnitId.New(), allowsChange ? "CASH" : "PIX", allowsChange ? "Dinheiro" : "Pix", !allowsChange, allowsChange);
 }

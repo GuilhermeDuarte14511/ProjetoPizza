@@ -51,6 +51,8 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     public DbSet<TableSession> TableSessions => Set<TableSession>();
     public DbSet<TableSessionTable> TableSessionTables => Set<TableSessionTable>();
     public DbSet<WaiterAssignment> WaiterAssignments => Set<WaiterAssignment>();
+    public DbSet<Reservation> Reservations => Set<Reservation>();
+    public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
     public DbSet<ServiceCallType> ServiceCallTypes => Set<ServiceCallType>();
     public DbSet<ServiceCall> ServiceCalls => Set<ServiceCall>();
     public DbSet<Order> Orders => Set<Order>();
@@ -96,10 +98,15 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     IQueryable<PizzaFlavorExtra> IProjetoPizzaDbContext.PizzaFlavorExtras => PizzaFlavorExtras;
     IQueryable<InventoryItem> IProjetoPizzaDbContext.InventoryItems => InventoryItems;
     IQueryable<StockBalance> IProjetoPizzaDbContext.StockBalances => StockBalances;
+    IQueryable<StockMovement> IProjetoPizzaDbContext.StockMovements => StockMovements;
+    IQueryable<Recipe> IProjetoPizzaDbContext.Recipes => Recipes;
+    IQueryable<RecipeItem> IProjetoPizzaDbContext.RecipeItems => RecipeItems;
     IQueryable<DiningArea> IProjetoPizzaDbContext.DiningAreas => DiningAreas;
     IQueryable<RestaurantTable> IProjetoPizzaDbContext.RestaurantTables => RestaurantTables;
     IQueryable<TableSession> IProjetoPizzaDbContext.TableSessions => TableSessions;
     IQueryable<TableSessionTable> IProjetoPizzaDbContext.TableSessionTables => TableSessionTables;
+    IQueryable<Reservation> IProjetoPizzaDbContext.Reservations => Reservations;
+    IQueryable<WaitlistEntry> IProjetoPizzaDbContext.WaitlistEntries => WaitlistEntries;
     IQueryable<ServiceCallType> IProjetoPizzaDbContext.ServiceCallTypes => ServiceCallTypes;
     IQueryable<ServiceCall> IProjetoPizzaDbContext.ServiceCalls => ServiceCalls;
     IQueryable<Order> IProjetoPizzaDbContext.Orders => Orders;
@@ -124,6 +131,7 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     IQueryable<AuditLog> IProjetoPizzaDbContext.AuditLogs => AuditLogs;
 
     void IProjetoPizzaDbContext.Add<TEntity>(TEntity entity) => Add(entity);
+    void IProjetoPizzaDbContext.Remove<TEntity>(TEntity entity) => Remove(entity);
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

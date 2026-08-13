@@ -30,4 +30,17 @@ public sealed class StockBalanceTests
             .Which.Rule.Should().Be("stock_balance.insufficient");
         balance.CurrentQuantity.Should().Be(3m);
     }
+
+    [Fact]
+    public void StockMovement_ShouldKeepCostAndOrderItemTrace()
+    {
+        var orderItemId = OrderItemId.New();
+
+        var movement = new StockMovement(
+            StockMovementId.New(), InventoryItemId.New(), StockMovementType.Consumption,
+            1.25m, new Money(8.40m), "Consumo do pedido", EmployeeId.New(), orderItemId);
+
+        movement.UnitCost.Should().Be(new Money(8.40m));
+        movement.OrderItemId.Should().Be(orderItemId);
+    }
 }

@@ -102,9 +102,9 @@ export const mockPizzaRules: PizzaRuleSettings = {
 }
 
 export const mockKitchenTickets: KitchenTicket[] = [
-  { id: 'ticket-1', ticketNumber: 1042, orderNumber: 1042, station: 'Pizzaria', status: 'New', createdAt: new Date().toISOString(), itemCount: 3, summary: 'Pizza Grande 3 sabores' },
-  { id: 'ticket-2', ticketNumber: 1030, orderNumber: 1030, station: 'Pizzaria', status: 'Confirmed', createdAt: new Date(Date.now() - 8 * 60_000).toISOString(), itemCount: 2, summary: '2 Pizzas Médias' },
-  { id: 'ticket-3', ticketNumber: 1035, orderNumber: 1035, station: 'Bar', status: 'Preparing', createdAt: new Date(Date.now() - 14 * 60_000).toISOString(), itemCount: 2, summary: '2 Coca-Cola 2L' },
+  { id: 'ticket-1', ticketNumber: 1042, orderNumber: 1042, station: 'Pizzaria', stationCode: 'PIZZA', status: 'New', createdAt: new Date().toISOString(), targetPreparationMinutes: 15, itemCount: 3, summary: 'Pizza Grande 3 sabores' },
+  { id: 'ticket-2', ticketNumber: 1030, orderNumber: 1030, station: 'Pizzaria', stationCode: 'PIZZA', status: 'Confirmed', createdAt: new Date(Date.now() - 8 * 60_000).toISOString(), targetPreparationMinutes: 15, itemCount: 2, summary: '2 Pizzas Médias' },
+  { id: 'ticket-3', ticketNumber: 1035, orderNumber: 1035, station: 'Bar', stationCode: 'BAR', status: 'Preparing', createdAt: new Date(Date.now() - 14 * 60_000).toISOString(), startedAt: new Date(Date.now() - 12 * 60_000).toISOString(), targetPreparationMinutes: 8, itemCount: 2, summary: '2 Coca-Cola 2L' },
 ]
 
 export function getMockTableDetail(id: string): TableDetail | undefined {
@@ -115,7 +115,23 @@ export function getMockTableDetail(id: string): TableDetail | undefined {
     sessionId: table.status === 'Livre' ? undefined : `73000000-0000-0000-0000-${table.number.toString().padStart(12, '0')}`,
     sessionNumber: table.status === 'Livre' ? undefined : 1000 + table.number,
     waiter: table.status === 'Livre' ? undefined : 'Carlos Mendes',
-    orders: table.status === 'Livre' ? [] : mockDashboard.recentOrders.slice(0, 2),
+    orders: table.status === 'Livre' ? [] : mockDashboard.recentOrders.slice(0, 2).map((order, index) => ({
+      ...order,
+      id: `mock-table-order-${table.number}-${index}`,
+      subtotal: order.total,
+      discount: 0,
+      serviceFee: 0,
+      notes: index === 0 ? 'Massa bem assada.' : undefined,
+      items: [{
+        id: `mock-table-order-item-${table.number}-${index}`,
+        name: index === 0 ? 'Pizza Média · 2 sabores' : 'Refrigerante 2L',
+        quantity: 1,
+        unitPrice: order.total,
+        totalPrice: order.total,
+        notes: index === 0 ? 'Sem cebola.' : undefined,
+        details: index === 0 ? ['Tamanho: Média', 'Sabores: Calabresa / Mussarela'] : [],
+      }],
+    })),
     billId: table.status === 'Conta solicitada' || table.status === 'Pagamento pendente'
       ? `79000000-0000-0000-0000-${table.number.toString().padStart(12, '0')}`
       : undefined,
@@ -125,5 +141,14 @@ export function getMockTableDetail(id: string): TableDetail | undefined {
     totalAmount: table.currentTotal * 1.1,
     remainingAmount: table.currentTotal * 1.1,
     requestedSplitCount: table.status === 'Conta solicitada' ? 3 : undefined,
+    billItems: table.status === 'Livre' ? [] : [
+      { id: `bill-item-${table.number}-1`, name: 'Pizza grande', quantity: 1, total: table.currentTotal * 0.7 },
+      { id: `bill-item-${table.number}-2`, name: 'Bebidas', quantity: 2, total: table.currentTotal * 0.4 },
+    ],
+    linkedTables: table.status === 'Livre' ? [] : [{ id: table.id, name: table.name, isPrimary: true }],
+    waiters: [
+      { id: '22000000-0000-0000-0000-000000000001', name: 'Carlos Mendes' },
+      { id: '22000000-0000-0000-0000-000000000002', name: 'Ana Souza' },
+    ],
   }
 }

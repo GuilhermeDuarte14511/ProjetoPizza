@@ -13,10 +13,12 @@ import {
   LogOut,
   Minus,
   PackageCheck,
+  Pencil,
   Pizza,
   Plus,
   Star,
   ReceiptText,
+  RotateCcw,
   Send,
   Share2,
   ShoppingBag,
@@ -32,10 +34,12 @@ import type {
   ClientBill,
   ClientCartItem,
   ClientOrder,
+  ClientProduct,
+  ClientServiceCall,
   ClientSession,
 } from '../../types/client'
 import { formatCurrency } from '../../utils/money'
-import { clientHeroImage, clientIdleImage } from './clientPresentation'
+import { clientHeroImage, clientIdleImage, getProductImage } from './clientPresentation'
 
 export function ActivationView({
   isSubmitting,
@@ -213,10 +217,15 @@ export function CartView({
   items,
   existingConsumption,
   serviceFeePercentage,
+  estimatedPreparationMinutes,
+  suggestions,
   canSubmit,
+  isLocked,
   blockedMessage,
   isSubmitting,
   onChangeQuantity,
+  onEdit,
+  onAddSuggestion,
   onRemove,
   onContinue,
   onSubmit,
@@ -224,10 +233,15 @@ export function CartView({
   items: ClientCartItem[]
   existingConsumption: number
   serviceFeePercentage: number
+  estimatedPreparationMinutes: number
+  suggestions: ClientProduct[]
   canSubmit: boolean
+  isLocked: boolean
   blockedMessage?: string
   isSubmitting: boolean
   onChangeQuantity: (key: string, quantity: number) => void
+  onEdit: (key: string) => void
+  onAddSuggestion: (product: ClientProduct) => void
   onRemove: (key: string) => void
   onContinue: () => void
   onSubmit: () => void
@@ -280,15 +294,18 @@ export function CartView({
                   )}
                   {item.notes && <p>Observação: {item.notes}</p>}
                   <footer>
-                    <button type="button" className="client-remove-action" onClick={() => onRemove(item.key)}>
-                      <Trash2 aria-hidden="true" /> Remover
-                    </button>
+                    <div className="client-cart-item-actions">
+                      {item.pizza && <button type="button" className="client-edit-action" disabled={isLocked} onClick={() => onEdit(item.key)}><Pencil aria-hidden="true" /> Editar</button>}
+                      <button type="button" className="client-remove-action" disabled={isLocked} onClick={() => onRemove(item.key)}>
+                        <Trash2 aria-hidden="true" /> Remover
+                      </button>
+                    </div>
                     <div className="client-quantity-control">
-                      <button type="button" onClick={() => onChangeQuantity(item.key, item.quantity - 1)} aria-label={`Diminuir quantidade de ${item.name}`}>
+                      <button type="button" disabled={isLocked} onClick={() => onChangeQuantity(item.key, item.quantity - 1)} aria-label={`Diminuir quantidade de ${item.name}`}>
                         <Minus aria-hidden="true" />
                       </button>
                       <strong>{item.quantity}</strong>
-                      <button type="button" onClick={() => onChangeQuantity(item.key, item.quantity + 1)} aria-label={`Aumentar quantidade de ${item.name}`}>
+                      <button type="button" disabled={isLocked} onClick={() => onChangeQuantity(item.key, item.quantity + 1)} aria-label={`Aumentar quantidade de ${item.name}`}>
                         <Plus aria-hidden="true" />
                       </button>
                     </div>
@@ -296,20 +313,27 @@ export function CartView({
                 </div>
               </article>
             ))}
+            {suggestions.length > 0 && (
+              <section className="client-cart-suggestions" aria-labelledby="cart-suggestions-title">
+                <header><h2 id="cart-suggestions-title">Combina com seu pedido</h2><p>Itens rápidos para completar a mesa.</p></header>
+                <div>{suggestions.map((product) => <article key={product.id}><img src={getProductImage(product)} alt="" loading="lazy" /><span><strong>{product.name}</strong><small>{formatCurrency(product.price)}</small></span><button type="button" disabled={isLocked} onClick={() => onAddSuggestion(product)}><Plus aria-hidden="true" /> Adicionar</button></article>)}</div>
+              </section>
+            )}
           </div>
           <aside className="client-order-summary">
             <h2>Resumo do pedido</h2>
             <div><span>Subtotal ({itemCount} itens)</span><strong>{formatCurrency(subtotal)}</strong></div>
             <div className="accent"><span>Taxa de serviço ({serviceFeePercentage}%)</span><strong>{formatCurrency(fee)}</strong></div>
             {existingConsumption > 0 && <small>Consumo atual da mesa: {formatCurrency(existingConsumption)}</small>}
+            {estimatedPreparationMinutes > 0 && <p className="client-preparation-estimate"><Clock3 aria-hidden="true" /><span>Previsão de preparo<strong>{estimatedPreparationMinutes}-{estimatedPreparationMinutes + 5} min</strong></span></p>}
             <div className="client-summary-total"><span>Total a enviar</span><strong>{formatCurrency(subtotal + fee)}</strong></div>
             {!canSubmit && blockedMessage && (
               <p className="client-order-blocked" role="status">{blockedMessage}</p>
             )}
             <button type="button" className="client-primary-action" onClick={onSubmit} disabled={isSubmitting || !canSubmit}>
-              <Send aria-hidden="true" /> {isSubmitting ? 'Enviando...' : 'Confirmar e enviar pedido'}
+              <Send aria-hidden="true" /> {isSubmitting ? 'Enviando...' : isLocked ? 'Verificar e reenviar' : 'Confirmar e enviar pedido'}
             </button>
-            <button type="button" className="client-secondary-action" onClick={onContinue}>Continuar escolhendo</button>
+            <button type="button" className="client-secondary-action" disabled={isLocked} onClick={onContinue}>Continuar escolhendo</button>
           </aside>
         </div>
       )}
@@ -317,7 +341,7 @@ export function CartView({
   )
 }
 
-export function OrdersView({ orders, onMenu, onBill }: { orders: ClientOrder[]; onMenu: () => void; onBill: () => void }) {
+export function OrdersView({ orders, onMenu, onBill, onReorder }: { orders: ClientOrder[]; onMenu: () => void; onBill: () => void; onReorder: (order: ClientOrder) => void }) {
   const total = orders.filter((order) => order.status !== 'Cancelled').reduce((sum, order) => sum + order.total, 0)
   return (
     <section className="client-orders-view">
@@ -372,7 +396,7 @@ export function OrdersView({ orders, onMenu, onBill }: { orders: ClientOrder[]; 
                   </ul>
                   <footer>
                     <small>{order.placedAt ? new Date(order.placedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Agora'}</small>
-                    <strong>{formatCurrency(order.total)}</strong>
+                    <span><strong>{formatCurrency(order.total)}</strong><button type="button" onClick={() => onReorder(order)}><RotateCcw aria-hidden="true" /> Pedir novamente</button></span>
                   </footer>
                 </article>
               )
@@ -390,10 +414,12 @@ export function OrdersView({ orders, onMenu, onBill }: { orders: ClientOrder[]; 
 
 export function ServiceCallView({
   types,
+  calls,
   isSubmitting,
   onSubmit,
 }: {
   types: Array<{ id: string; code: string; name: string }>
+  calls: ClientServiceCall[]
   isSubmitting: boolean
   onSubmit: (typeId: string, details?: string) => void
 }) {
@@ -409,6 +435,12 @@ export function ServiceCallView({
           <p>Escolha um motivo. A equipe receberá o chamado imediatamente.</p>
         </div>
       </header>
+      {calls.length > 0 && (
+        <section className="client-service-status" aria-labelledby="service-status-title">
+          <h2 id="service-status-title">Seus chamados</h2>
+          {calls.map((call) => <div key={call.id}><span><strong>{call.typeName}</strong><small>{new Date(call.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</small></span><b className={`status-${call.status.toLowerCase()}`}>{serviceCallStatus(call.status)}</b></div>)}
+        </section>
+      )}
       <div className="client-service-grid" role="radiogroup" aria-label="Motivo do chamado">
         {types.map((type, index) => {
           const icons = [BellRing, UtensilsCrossed, CreditCard, HelpCircle]
@@ -668,4 +700,13 @@ function serviceCallDescription(code: string) {
     BILL: 'Tenho uma dúvida sobre a conta',
   }
   return descriptions[code] ?? 'Solicitar auxílio da equipe'
+}
+
+function serviceCallStatus(status: string) {
+  const labels: Record<string, string> = {
+    Pending: 'Enviado',
+    Acknowledged: 'Equipe a caminho',
+    Completed: 'Concluído',
+  }
+  return labels[status] ?? status
 }

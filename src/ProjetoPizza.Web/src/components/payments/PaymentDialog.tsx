@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Banknote, CreditCard, QrCode, UsersRound, UserRound } from 'lucide-react'
+import { Banknote, CreditCard, ListChecks, QrCode, UsersRound, UserRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { paymentSchema, type PaymentFormData } from '../../features/admin/formSchemas'
@@ -13,7 +13,7 @@ import { FieldError } from '../ui/FieldError'
 import { Modal } from '../ui/Modal'
 import { useToast } from '../ui/toast'
 
-type PaymentMode = 'single' | 'split'
+type PaymentMode = 'single' | 'split' | 'items'
 
 interface SplitPaymentDraft {
   key: string
@@ -28,6 +28,7 @@ export function PaymentDialog({
   billId,
   remainingAmount,
   requestedSplitCount,
+  billItems = [],
   methods,
   onClose,
   onPaid,
@@ -35,6 +36,7 @@ export function PaymentDialog({
   billId: string
   remainingAmount: number
   requestedSplitCount?: number
+  billItems?: Array<{ id: string; name: string; quantity: number; total: number }>
   methods: PaymentMethod[]
   onClose: () => void
   onPaid: (amount: number) => void
@@ -45,6 +47,7 @@ export function PaymentDialog({
   const [mode, setMode] = useState<PaymentMode>(requestedSplitCount ? 'split' : 'single')
   const [people, setPeople] = useState(initialPeople)
   const [splitPayments, setSplitPayments] = useState<SplitPaymentDraft[]>(() => createSplitPayments(remainingAmount, initialPeople, defaultMethodId))
+  const [itemAssignments, setItemAssignments] = useState<Record<string, number>>(() => Object.fromEntries(billItems.map((item, index) => [item.id, index % initialPeople])))
   const [splitError, setSplitError] = useState('')
   const [saving, setSaving] = useState(false)
   const toast = useToast()
@@ -119,9 +122,35 @@ export function PaymentDialog({
   }
 
   function changePeople(value: number) {
-    const nextPeople = Math.min(50, Math.max(2, Math.trunc(value || 2)))
+    const maximum = mode === 'items' ? Math.max(2, billItems.length) : 50
+    const nextPeople = Math.min(maximum, Math.max(2, Math.trunc(value || 2)))
     setPeople(nextPeople)
-    setSplitPayments((current) => createSplitPayments(remainingAmount, nextPeople, defaultMethodId, current))
+    if (mode === 'items') {
+      const assignments = Object.fromEntries(billItems.map((item, index) => [item.id, index % nextPeople]))
+      setItemAssignments(assignments)
+      setSplitPayments((current) => createItemSplitPayments(billItems, assignments, nextPeople, defaultMethodId, current))
+    } else setSplitPayments((current) => createSplitPayments(remainingAmount, nextPeople, defaultMethodId, current))
+    setSplitError('')
+  }
+
+  function chooseMode(nextMode: PaymentMode) {
+    setMode(nextMode)
+    if (nextMode === 'items') {
+      const nextPeople = Math.min(initialPeople, Math.max(2, billItems.length))
+      const assignments = Object.fromEntries(billItems.map((item, index) => [item.id, index % nextPeople]))
+      setPeople(nextPeople)
+      setItemAssignments(assignments)
+      setSplitPayments((current) => createItemSplitPayments(billItems, assignments, nextPeople, defaultMethodId, current))
+    } else if (nextMode === 'split') {
+      setSplitPayments((current) => createSplitPayments(remainingAmount, people, defaultMethodId, current))
+    }
+    setSplitError('')
+  }
+
+  function assignItem(itemId: string, personIndex: number) {
+    const assignments = { ...itemAssignments, [itemId]: personIndex }
+    setItemAssignments(assignments)
+    setSplitPayments((current) => createItemSplitPayments(billItems, assignments, people, defaultMethodId, current))
     setSplitError('')
   }
 
@@ -134,8 +163,9 @@ export function PaymentDialog({
     <Modal open title="Registrar pagamento" description={`Saldo da conta: ${currency.format(remainingAmount)}`} size="large" isBusy={saving} onClose={onClose}>
       {requestedSplitCount && <div className="payment-request-note" role="status">A mesa solicitou divisão entre <strong>{requestedSplitCount} pessoas</strong>.</div>}
       <div className="payment-mode-tabs" role="tablist" aria-label="Modo de pagamento">
-        <button type="button" role="tab" aria-selected={mode === 'single'} className={mode === 'single' ? 'active' : ''} onClick={() => setMode('single')}><UserRound size={17} /> Pagamento único</button>
-        <button type="button" role="tab" aria-selected={mode === 'split'} className={mode === 'split' ? 'active' : ''} onClick={() => setMode('split')}><UsersRound size={17} /> Dividir por pessoas</button>
+        <button type="button" role="tab" aria-selected={mode === 'single'} className={mode === 'single' ? 'active' : ''} onClick={() => chooseMode('single')}><UserRound size={17} /> Pagamento único</button>
+        <button type="button" role="tab" aria-selected={mode === 'split'} className={mode === 'split' ? 'active' : ''} onClick={() => chooseMode('split')}><UsersRound size={17} /> Dividir por pessoas</button>
+        {billItems.length > 1 && <button type="button" role="tab" aria-selected={mode === 'items'} className={mode === 'items' ? 'active' : ''} onClick={() => chooseMode('items')}><ListChecks size={17} /> Por consumo</button>}
       </div>
 
       {mode === 'single' ? (
@@ -152,9 +182,10 @@ export function PaymentDialog({
       ) : (
         <form onSubmit={(event) => { event.preventDefault(); void submitSplit() }} noValidate>
           <div className="split-payment-heading">
-            <label className="field-label">Quantidade de pessoas<input type="number" min="2" max="50" value={people} onChange={(event) => changePeople(Number(event.target.value))} /></label>
-            <div><span>Valor médio por pessoa</span><strong>{currency.format(remainingAmount / people)}</strong><small>Os centavos são distribuídos automaticamente.</small></div>
+            <label className="field-label">Quantidade de pessoas<input type="number" min="2" max={mode === 'items' ? Math.max(2, billItems.length) : 50} value={people} onChange={(event) => changePeople(Number(event.target.value))} /></label>
+            <div><span>{mode === 'items' ? 'Total da conta' : 'Valor médio por pessoa'}</span><strong>{currency.format(mode === 'items' ? remainingAmount : remainingAmount / people)}</strong><small>{mode === 'items' ? 'Atribua cada item a quem consumiu.' : 'Os centavos são distribuídos automaticamente.'}</small></div>
           </div>
+          {mode === 'items' && <div className="bill-item-allocation" aria-label="Distribuição dos itens da conta">{billItems.map((item) => <label key={item.id}><span><strong>{item.quantity}x {item.name}</strong><small>{currency.format(item.total)}</small></span><select aria-label={`Responsável por ${item.name}`} value={itemAssignments[item.id] ?? 0} onChange={(event) => assignItem(item.id, Number(event.target.value))}>{splitPayments.map((payment, index) => <option value={index} key={payment.key}>{payment.payer}</option>)}</select></label>)}</div>}
           <div className="split-payment-list">
             {splitPayments.map((payment, index) => {
               const selectedMethod = activeMethods.find((item) => item.id === payment.paymentMethodId)
@@ -195,11 +226,34 @@ function createSplitPayments(total: number, people: number, defaultMethodId: str
   }))
 }
 
+function createItemSplitPayments(
+  items: Array<{ id: string; total: number }>,
+  assignments: Record<string, number>,
+  people: number,
+  defaultMethodId: string,
+  current: SplitPaymentDraft[] = [],
+) {
+  const amounts = Array.from({ length: people }, () => 0)
+  items.forEach((item) => { amounts[assignments[item.id] ?? 0] += item.total })
+  return amounts.map((rawAmount, index) => {
+    const amount = Math.round(rawAmount * 100) / 100
+    return {
+      key: current[index]?.key ?? createUuid(),
+      payer: current[index]?.payer ?? `Pessoa ${index + 1}`,
+      paymentMethodId: current[index]?.paymentMethodId ?? defaultMethodId,
+      amount,
+      receivedAmount: current[index]?.receivedAmount === current[index]?.amount ? amount : (current[index]?.receivedAmount ?? amount),
+      externalReference: current[index]?.externalReference ?? '',
+    }
+  })
+}
+
 function validateSplitPayments(payments: SplitPaymentDraft[], methods: PaymentMethod[]) {
   for (const [index, payment] of payments.entries()) {
     const label = payment.payer.trim() || `Pessoa ${index + 1}`
     const method = methods.find((item) => item.id === payment.paymentMethodId)
     if (!payment.payer.trim()) return `Informe o nome da pessoa ${index + 1}.`
+    if (payment.amount <= 0) return `${label} precisa ter ao menos um item atribuído.`
     if (!method) return `Selecione como ${label} pagou.`
     if (payment.receivedAmount < payment.amount) return `O valor recebido de ${label} não cobre a parte da conta.`
     if (method.requiresExternalReference && !payment.externalReference.trim()) return `Informe a referência do pagamento de ${label}.`

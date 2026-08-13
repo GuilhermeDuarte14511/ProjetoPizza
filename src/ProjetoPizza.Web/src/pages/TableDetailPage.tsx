@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, CreditCard, Plus, ReceiptText } from 'lucide-react'
+import { ArrowLeft, CreditCard, Link2, MoveRight, Plus, ReceiptText, UserRoundCog } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useRoute } from 'wouter'
@@ -24,9 +24,12 @@ export function TableDetailPage() {
   const id = params?.id ?? ''
   const { data: detail, setData: setDetail, refresh: refreshDetail } = useAdminQuery(queryKeys.table(id), (signal) => adminService.table(id, signal))
   const { data: methods } = useAdminQuery(queryKeys.paymentMethods, adminService.paymentMethods)
+  const { data: tables } = useAdminQuery(queryKeys.tables, adminService.tables)
   const [isPaymentOpen, setPaymentOpen] = useState(false)
   const [isOpenTableModalOpen, setOpenTableModalOpen] = useState(false)
-  const [busyAction, setBusyAction] = useState<'open' | 'bill'>()
+  const [managementAction, setManagementAction] = useState<'waiter' | 'link' | 'transfer'>()
+  const [selectedManagementId, setSelectedManagementId] = useState('')
+  const [busyAction, setBusyAction] = useState<'open' | 'bill' | 'management'>()
   const toast = useToast()
   const openTableForm = useForm<OpenTableFormData>({
     resolver: zodResolver(openTableSchema),
@@ -67,6 +70,33 @@ export function TableDetailPage() {
     setPaymentOpen(false)
   }
 
+  const availableTables = tables.filter((table) => table.status === 'Livre' && !detail.linkedTables.some((linked) => linked.id === table.id))
+
+  function openManagement(action: 'waiter' | 'link' | 'transfer') {
+    setManagementAction(action)
+    setSelectedManagementId(action === 'waiter' ? (detail.waiters.find((waiter) => waiter.name === detail.waiter)?.id ?? '') : '')
+  }
+
+  async function saveManagement() {
+    if (!detail.sessionId || !managementAction || !selectedManagementId) return
+    setBusyAction('management')
+    try {
+      if (managementAction === 'waiter') await adminService.assignTableWaiter(detail.sessionId, selectedManagementId)
+      if (managementAction === 'link') await adminService.linkTable(detail.sessionId, selectedManagementId)
+      if (managementAction === 'transfer') await adminService.transferTable(detail.sessionId, id, selectedManagementId)
+      await refreshDetail()
+      setManagementAction(undefined)
+      toast.success(
+        managementAction === 'waiter' ? 'Garçom atualizado' : managementAction === 'link' ? 'Mesas unidas' : 'Atendimento transferido',
+        'A alteração já está disponível para a equipe.',
+      )
+    } catch (error) {
+      toast.error('Não foi possível concluir a ação', getUserErrorMessage(error))
+    } finally {
+      setBusyAction(undefined)
+    }
+  }
+
   return (
     <>
       <Link className="back-link" href="/admin/tables"><ArrowLeft size={16} /> Voltar para mesas</Link>
@@ -76,13 +106,34 @@ export function TableDetailPage() {
           <article className="surface-card">
             <div className="card-heading"><div><h2>Pedidos da comanda</h2><p>Itens registrados neste atendimento.</p></div></div>
             {detail.orders.length ? detail.orders.map((order) => (
-              <div className="order-row" key={order.number}><div><strong>Pedido #{order.number}</strong><span>{translateEnum(order.channel)}</span></div><StatusBadge status={order.status} /><strong>{currency.format(order.total)}</strong></div>
+              <article className="table-order-detail" key={order.id}>
+                <header>
+                  <div><strong>Pedido #{order.number}</strong><span>{translateEnum(order.channel)}{order.placedAt ? ` · ${new Date(order.placedAt).toLocaleString('pt-BR')}` : ''}</span></div>
+                  <StatusBadge status={order.status} />
+                </header>
+                <div className="table-order-items">
+                  {order.items.map((item) => <article key={item.id}>
+                    <span className="table-order-quantity">{item.quantity}×</span>
+                    <div><strong>{item.name}</strong>{item.details.map((detailItem) => <small key={detailItem}>{detailItem}</small>)}{item.notes && <small className="table-order-note">Observação: {item.notes}</small>}</div>
+                    <span className="table-order-unit"><small>{currency.format(item.unitPrice)} cada</small><strong>{currency.format(item.totalPrice)}</strong></span>
+                  </article>)}
+                  {!order.items.length && <div className="empty-inline">Este pedido não possui itens registrados.</div>}
+                </div>
+                {order.notes && <p className="table-order-general-note"><strong>Observações do pedido:</strong> {order.notes}</p>}
+                <footer>
+                  <span>Subtotal <strong>{currency.format(order.subtotal)}</strong></span>
+                  {order.discount > 0 && <span>Desconto <strong>- {currency.format(order.discount)}</strong></span>}
+                  {order.serviceFee > 0 && <span>Serviço <strong>{currency.format(order.serviceFee)}</strong></span>}
+                  <span className="table-order-total">Total <strong>{currency.format(order.total)}</strong></span>
+                </footer>
+              </article>
             )) : <div className="empty-inline">Nenhum pedido registrado.</div>}
           </article>
         </div>
         <aside className="detail-sidebar">
           <article className="surface-card summary-card">
             <h2>Resumo</h2>
+            {detail.sessionId && <div className="table-service-context"><span><b>Garçom</b>{detail.waiter ?? 'Não atribuído'}</span><span><b>Mesas</b>{detail.linkedTables.map((table) => table.name).join(', ')}</span></div>}
             <div className="summary-line"><span>Subtotal</span><strong>{currency.format(detail.subtotalAmount)}</strong></div>
             <div className="summary-line"><span>Taxa de serviço ({detail.serviceFeePercentage}%)</span><strong>{currency.format(detail.serviceFeeAmount)}</strong></div>
             <div className="summary-total"><span>Total</span><strong>{currency.format(detail.totalAmount)}</strong></div>
@@ -92,6 +143,9 @@ export function TableDetailPage() {
           <article className="surface-card quick-actions">
             <h2>Ações rápidas</h2>
             {hasPermission('operations:write') && <button disabled={!detail.sessionId || Boolean(detail.billId) || busyAction === 'bill'} onClick={() => void requestBill()}><ReceiptText size={17} /> {busyAction === 'bill' ? 'Solicitando...' : 'Solicitar conta'}</button>}
+            {hasPermission('operations:write') && <button disabled={!detail.sessionId} onClick={() => openManagement('waiter')}><UserRoundCog size={17} /> Trocar garçom</button>}
+            {hasPermission('operations:write') && <button disabled={!detail.sessionId || availableTables.length === 0} onClick={() => openManagement('link')}><Link2 size={17} /> Unir mesa livre</button>}
+            {hasPermission('operations:write') && <button disabled={!detail.sessionId || availableTables.length === 0 || detail.linkedTables.length > 1} onClick={() => openManagement('transfer')}><MoveRight size={17} /> Transferir atendimento</button>}
           </article>
         </aside>
       </section>
@@ -101,7 +155,17 @@ export function TableDetailPage() {
           <div className="modal-footer"><button type="button" className="secondary-button" disabled={busyAction === 'open'} onClick={() => setOpenTableModalOpen(false)}>Cancelar</button><button className="primary-button" disabled={busyAction === 'open'} aria-busy={busyAction === 'open'}><Plus size={16} /> {busyAction === 'open' ? 'Abrindo...' : 'Abrir mesa'}</button></div>
         </form>
       </Modal>}
-      {isPaymentOpen && detail.billId && <PaymentDialog billId={detail.billId} remainingAmount={detail.remainingAmount} requestedSplitCount={detail.requestedSplitCount} methods={methods} onClose={() => setPaymentOpen(false)} onPaid={paymentCompleted} />}
+      {managementAction && <Modal
+        open
+        title={managementAction === 'waiter' ? 'Trocar garçom' : managementAction === 'link' ? 'Unir mesa ao atendimento' : 'Transferir atendimento'}
+        description={managementAction === 'waiter' ? 'Escolha o responsável principal por esta comanda.' : managementAction === 'link' ? 'A mesa escolhida compartilhará a mesma comanda.' : 'A comanda será movida para a mesa escolhida.'}
+        isBusy={busyAction === 'management'}
+        onClose={() => setManagementAction(undefined)}
+      >
+        <div className="modal-body"><label className="field-label">{managementAction === 'waiter' ? 'Garçom responsável' : 'Mesa disponível'}<select autoFocus value={selectedManagementId} onChange={(event) => setSelectedManagementId(event.target.value)}><option value="">Selecione</option>{managementAction === 'waiter' ? detail.waiters.map((waiter) => <option key={waiter.id} value={waiter.id}>{waiter.name}</option>) : availableTables.map((table) => <option key={table.id} value={table.id}>{table.name} · {table.area} · {table.capacity} lugares</option>)}</select></label></div>
+        <div className="modal-footer"><button type="button" className="secondary-button" disabled={busyAction === 'management'} onClick={() => setManagementAction(undefined)}>Cancelar</button><button type="button" className="primary-button" disabled={!selectedManagementId || busyAction === 'management'} onClick={() => void saveManagement()}>{busyAction === 'management' ? 'Salvando...' : 'Confirmar'}</button></div>
+      </Modal>}
+      {isPaymentOpen && detail.billId && <PaymentDialog billId={detail.billId} remainingAmount={detail.remainingAmount} requestedSplitCount={detail.requestedSplitCount} billItems={detail.billItems} methods={methods} onClose={() => setPaymentOpen(false)} onPaid={paymentCompleted} />}
     </>
   )
 }

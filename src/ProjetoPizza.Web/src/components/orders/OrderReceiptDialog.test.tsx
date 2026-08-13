@@ -58,6 +58,14 @@ describe('OrderReceiptDialog', () => {
     print.mockRestore()
   })
 
+  it('identifica pedidos de salão no comprovante e na comanda', () => {
+    render(<OrderReceiptDialog receipt={{ ...receipt, fulfillment: 'DineIn' }} context="preview" onClose={() => undefined} />)
+
+    expect(screen.getByRole('dialog', { name: 'Comprovante do pedido #27' })).toBeInTheDocument()
+    expect(screen.getAllByText('SALÃO')).toHaveLength(2)
+    expect(screen.getByText('A impressão será aberta no navegador deste computador.')).toBeInTheDocument()
+  })
+
   it('envia comprovante e comanda para filas independentes', async () => {
     const user = userEvent.setup()
     const printCustomer = vi.fn().mockResolvedValue(undefined)

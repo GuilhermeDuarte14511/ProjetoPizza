@@ -34,10 +34,15 @@ public interface IProjetoPizzaDbContext
     IQueryable<PizzaFlavorExtra> PizzaFlavorExtras { get; }
     IQueryable<InventoryItem> InventoryItems { get; }
     IQueryable<StockBalance> StockBalances { get; }
+    IQueryable<StockMovement> StockMovements { get; }
+    IQueryable<Recipe> Recipes { get; }
+    IQueryable<RecipeItem> RecipeItems { get; }
     IQueryable<DiningArea> DiningAreas { get; }
     IQueryable<RestaurantTable> RestaurantTables { get; }
     IQueryable<TableSession> TableSessions { get; }
     IQueryable<TableSessionTable> TableSessionTables { get; }
+    IQueryable<Reservation> Reservations { get; }
+    IQueryable<WaitlistEntry> WaitlistEntries { get; }
     IQueryable<ServiceCallType> ServiceCallTypes { get; }
     IQueryable<ServiceCall> ServiceCalls { get; }
     IQueryable<Order> Orders { get; }
@@ -62,5 +67,6 @@ public interface IProjetoPizzaDbContext
     IQueryable<AuditLog> AuditLogs { get; }
 
     void Add<TEntity>(TEntity entity) where TEntity : class;
+    void Remove<TEntity>(TEntity entity) where TEntity : class;
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

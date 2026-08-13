@@ -217,6 +217,31 @@ public sealed class TableSession : AggregateRoot<TableSessionId>
     public void AssignWaiter(EmployeeId employeeId) => PrimaryWaiterId = employeeId;
     public void ChangeGuestCount(int guestCount) => GuestCount = Guard.Positive(guestCount, nameof(guestCount));
 
+    public void LinkTable(RestaurantTable table, EmployeeId employeeId)
+    {
+        EnsureCanReceiveOrders();
+        table.EnsureCanOpenSession();
+        if (_tables.Any(link => link.RestaurantTableId == table.Id && link.UnlinkedAt is null))
+        {
+            throw new BusinessRuleException("table_session.table_already_linked", "The table is already linked to this session.");
+        }
+        _tables.Add(new TableSessionTable(Id, table.Id, false, DateTimeOffset.UtcNow, employeeId, null));
+    }
+
+    public void TransferTable(RestaurantTableId currentTableId, RestaurantTable targetTable, EmployeeId employeeId)
+    {
+        EnsureCanReceiveOrders();
+        targetTable.EnsureCanOpenSession();
+        var current = _tables.SingleOrDefault(link => link.RestaurantTableId == currentTableId && link.UnlinkedAt is null)
+            ?? throw new BusinessRuleException("table_session.table_not_linked", "The source table is not linked to this session.");
+        if (_tables.Any(link => link.RestaurantTableId == targetTable.Id && link.UnlinkedAt is null))
+        {
+            throw new BusinessRuleException("table_session.table_already_linked", "The target table is already linked to this session.");
+        }
+        current.Unlink();
+        _tables.Add(new TableSessionTable(Id, targetTable.Id, current.IsPrimary, DateTimeOffset.UtcNow, employeeId, null));
+    }
+
     public void RequestBill()
     {
         EnsureStatus(TableSessionStatus.Open);
@@ -244,6 +269,17 @@ public sealed class TableSession : AggregateRoot<TableSessionId>
         Status = TableSessionStatus.Closed;
         ClosedAt = DateTimeOffset.UtcNow;
         ClosedByEmployeeId = employeeId;
+    }
+
+    public void ReopenPaymentAfterRefund()
+    {
+        if (Status != TableSessionStatus.Closed)
+        {
+            throw new BusinessRuleException("table_session.refund_reopen", "Only a closed session can be reopened after a refund.");
+        }
+        Status = TableSessionStatus.PaymentPending;
+        ClosedAt = null;
+        ClosedByEmployeeId = null;
     }
 
     public void Cancel(EmployeeId employeeId, string notes)
@@ -306,6 +342,15 @@ public sealed class TableSessionTable
     public DateTimeOffset? UnlinkedAt { get; private set; }
     public EmployeeId? LinkedByEmployeeId { get; private set; }
     public DeviceId? LinkedByDeviceId { get; private set; }
+
+    internal void Unlink()
+    {
+        if (UnlinkedAt.HasValue)
+        {
+            throw new BusinessRuleException("table_session_table.already_unlinked", "The table link is already closed.");
+        }
+        UnlinkedAt = DateTimeOffset.UtcNow;
+    }
 }
 
 public sealed class WaiterAssignment : Entity<WaiterAssignmentId>

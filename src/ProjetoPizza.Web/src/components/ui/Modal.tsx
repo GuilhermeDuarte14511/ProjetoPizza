@@ -37,12 +37,12 @@ export function Modal({
           }}
         >
           <header className="modal-header">
-            <div>
+            <div className="modal-heading">
               <Dialog.Title>{title}</Dialog.Title>
               {description && <Dialog.Description>{description}</Dialog.Description>}
             </div>
             <Dialog.Close asChild>
-              <button type="button" className="icon-button" aria-label="Fechar modal" disabled={isBusy}>
+              <button type="button" className="icon-button modal-close" aria-label="Fechar modal" disabled={isBusy}>
                 <X size={19} />
               </button>
             </Dialog.Close>

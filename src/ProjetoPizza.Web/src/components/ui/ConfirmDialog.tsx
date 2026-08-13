@@ -1,4 +1,5 @@
 import * as AlertDialog from '@radix-ui/react-alert-dialog'
+import { CircleHelp, TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 interface ConfirmDialogProps {
@@ -29,9 +30,14 @@ export function ConfirmDialog({
       {children && <AlertDialog.Trigger asChild>{children}</AlertDialog.Trigger>}
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="modal-backdrop" />
-        <AlertDialog.Content className="confirm-panel">
-          <AlertDialog.Title>{title}</AlertDialog.Title>
-          <AlertDialog.Description>{description}</AlertDialog.Description>
+        <AlertDialog.Content className={`confirm-panel ${tone}`}>
+          <div className="confirm-heading">
+            <span className="confirm-icon" aria-hidden="true">{tone === 'danger' ? <TriangleAlert /> : <CircleHelp />}</span>
+            <div>
+              <AlertDialog.Title>{title}</AlertDialog.Title>
+              <AlertDialog.Description>{description}</AlertDialog.Description>
+            </div>
+          </div>
           <div className="confirm-actions">
             <AlertDialog.Cancel asChild>
               <button className="secondary-button" disabled={busy}>Cancelar</button>

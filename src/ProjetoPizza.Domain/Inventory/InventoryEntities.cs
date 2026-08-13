@@ -17,13 +17,14 @@ public sealed class InventoryItem : AggregateRoot<InventoryItemId>
 {
     private InventoryItem() : base(default) { }
 
-    public InventoryItem(InventoryItemId id, RestaurantUnitId unitId, string name, string sku, string unitOfMeasure, decimal minimumStock) : base(id)
+    public InventoryItem(InventoryItemId id, RestaurantUnitId unitId, string name, string sku, string unitOfMeasure, decimal minimumStock, Money? unitCost = null) : base(id)
     {
         UnitId = unitId;
         Name = Guard.Required(name, nameof(name), 120);
         Sku = Guard.Required(sku, nameof(sku), 50);
         UnitOfMeasure = Guard.Required(unitOfMeasure, nameof(unitOfMeasure), 20);
         MinimumStock = Guard.NonNegative(minimumStock, nameof(minimumStock));
+        UnitCost = unitCost ?? Money.Zero();
         IsActive = true;
     }
 
@@ -32,14 +33,16 @@ public sealed class InventoryItem : AggregateRoot<InventoryItemId>
     public string Sku { get; private set; } = string.Empty;
     public string UnitOfMeasure { get; private set; } = string.Empty;
     public decimal MinimumStock { get; private set; }
+    public Money UnitCost { get; private set; }
     public bool IsActive { get; private set; }
 
-    public void Update(string name, string sku, string unitOfMeasure, decimal minimumStock, bool isActive)
+    public void Update(string name, string sku, string unitOfMeasure, decimal minimumStock, Money unitCost, bool isActive)
     {
         Name = Guard.Required(name, nameof(name), 120);
         Sku = Guard.Required(sku, nameof(sku), 50);
         UnitOfMeasure = Guard.Required(unitOfMeasure, nameof(unitOfMeasure), 20);
         MinimumStock = Guard.NonNegative(minimumStock, nameof(minimumStock));
+        UnitCost = unitCost;
         IsActive = isActive;
     }
 }
@@ -85,7 +88,8 @@ public sealed class StockMovement : Entity<StockMovementId>
         decimal quantity,
         Money unitCost,
         string reason,
-        EmployeeId createdByEmployeeId) : base(id)
+        EmployeeId createdByEmployeeId,
+        OrderItemId? orderItemId = null) : base(id)
     {
         if (quantity <= 0)
         {
@@ -98,6 +102,7 @@ public sealed class StockMovement : Entity<StockMovementId>
         UnitCost = unitCost;
         Reason = Guard.Required(reason, nameof(reason), 300);
         CreatedByEmployeeId = createdByEmployeeId;
+        OrderItemId = orderItemId;
         CreatedAt = DateTimeOffset.UtcNow;
     }
 
@@ -139,6 +144,23 @@ public sealed class Recipe : AggregateRoot<RecipeId>
     public PizzaFlavorId? PizzaFlavorId { get; private set; }
     public PizzaSizeId? PizzaSizeId { get; private set; }
     public decimal YieldQuantity { get; private set; }
+
+    public void Update(decimal yieldQuantity, ProductId? productId = null, ProductVariantId? productVariantId = null, PizzaFlavorId? pizzaFlavorId = null, PizzaSizeId? pizzaSizeId = null)
+    {
+        if (productId is null && productVariantId is null && pizzaFlavorId is null)
+        {
+            throw new BusinessRuleException("recipe.target", "A recipe needs a product, variant, or pizza flavor.");
+        }
+        if (yieldQuantity <= 0)
+        {
+            throw new BusinessRuleException("recipe.yield", "Recipe yield must be greater than zero.");
+        }
+        ProductId = productId;
+        ProductVariantId = productVariantId;
+        PizzaFlavorId = pizzaFlavorId;
+        PizzaSizeId = pizzaSizeId;
+        YieldQuantity = yieldQuantity;
+    }
 }
 
 public sealed class RecipeItem : Entity<RecipeItemId>

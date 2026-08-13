@@ -142,8 +142,8 @@ export const customerSchema = z.object({
   phone: requiredText('O telefone')
     .refine((value) => {
       const digits = value.replace(/\D/g, '')
-      return digits.length >= 8 && digits.length <= 15
-    }, 'Informe um telefone válido.'),
+      return digits.length === 11
+    }, 'Informe um celular com DDD.'),
   birthDate: requiredText('A data de nascimento')
     .refine((value) => {
       const date = new Date(`${value}T00:00:00`)

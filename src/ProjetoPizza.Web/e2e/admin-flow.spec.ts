@@ -1,6 +1,27 @@
 import { expect, test } from '@playwright/test'
 import { stat } from 'node:fs/promises'
 
+test('mantém o botão de exibir senha dentro do campo de login', async ({ page }) => {
+  await page.goto('/login')
+
+  const password = page.getByLabel('Senha', { exact: true })
+  const field = password.locator('..')
+  const toggle = page.getByRole('button', { name: 'Exibir senha' })
+  const fieldBox = await field.boundingBox()
+  const toggleBox = await toggle.boundingBox()
+
+  expect(fieldBox).toBeTruthy()
+  expect(toggleBox).toBeTruthy()
+  expect(toggleBox!.x).toBeGreaterThanOrEqual(fieldBox!.x)
+  expect(toggleBox!.x + toggleBox!.width).toBeLessThanOrEqual(fieldBox!.x + fieldBox!.width + 1)
+  expect(toggleBox!.y).toBeGreaterThanOrEqual(fieldBox!.y)
+  expect(toggleBox!.y + toggleBox!.height).toBeLessThanOrEqual(fieldBox!.y + fieldBox!.height + 1)
+
+  await toggle.click()
+  await expect(password).toHaveAttribute('type', 'text')
+  await expect(page.getByRole('button', { name: 'Ocultar senha' })).toBeVisible()
+})
+
 test('abre produto em modal e valida os campos em português', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
@@ -63,6 +84,12 @@ test('mascara valores e divide a conta por forma de pagamento individual', async
   await page.getByRole('button', { name: 'Entrar no sistema' }).click()
 
   await page.goto('/admin/tables/40000000-0000-0000-0000-000000000012')
+  const firstOrder = page.locator('.table-order-detail').first()
+  await expect(firstOrder).toContainText('Pizza Média · 2 sabores')
+  await expect(firstOrder).toContainText('Tamanho: Média')
+  await expect(firstOrder).toContainText('Sabores: Calabresa / Mussarela')
+  await expect(firstOrder).toContainText('Sem cebola.')
+  await expect(firstOrder).toContainText('R$ 85,90')
   await page.getByRole('button', { name: 'Registrar pagamento' }).click()
 
   const dialog = page.getByRole('dialog', { name: 'Registrar pagamento' })
@@ -116,6 +143,67 @@ test('exporta a lista de pedidos como PDF tabular', async ({ page }) => {
   expect(filePath).toBeTruthy()
   expect((await stat(filePath!)).size).toBeGreaterThan(3_000)
   await expect(page.getByText('Relatório PDF gerado')).toBeVisible()
+})
+
+test('mantém alertas e ações dos pedidos dentro de seus painéis', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
+  await page.getByLabel('Senha', { exact: true }).fill('senha-local')
+  await page.getByRole('button', { name: 'Entrar no sistema' }).click()
+
+  await page.goto('/admin/dashboard')
+  const stockCard = page.locator('.stock-alert-card')
+  await expect(stockCard).toBeVisible()
+  expect(await stockCard.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true)
+
+  await page.goto('/admin/orders')
+  await expect(page.locator('.order-management-card').first()).toBeVisible()
+  expect(await page.locator('.order-management-card').evaluateAll((cards) =>
+    cards.every((card) => card.scrollWidth <= card.clientWidth + 1))).toBe(true)
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true)
+})
+
+test('abre o comprovante histórico e imprime pelo navegador sem impressora configurada', async ({ page }) => {
+  await page.addInitScript(() => {
+    const browserWindow = window as Window & { __browserPrintCalled?: boolean }
+    browserWindow.print = () => { browserWindow.__browserPrintCalled = true }
+  })
+  await page.goto('/login')
+  await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
+  await page.getByLabel('Senha', { exact: true }).fill('senha-local')
+  await page.getByRole('button', { name: 'Entrar no sistema' }).click()
+
+  await page.goto('/admin/orders')
+  await page.locator('.order-management-card').first().getByRole('button', { name: 'Imprimir' }).click()
+
+  const receipt = page.getByRole('dialog', { name: 'Comprovante do pedido #1024' })
+  await expect(receipt.getByText('COMPROVANTE NÃO FISCAL')).toBeVisible()
+  await expect(receipt.getByText('1x Pizza Grande 3 sabores').first()).toBeVisible()
+  await expect(receipt.getByText('SALÃO').first()).toBeVisible()
+  await expect(receipt.getByText('A impressão será aberta no navegador deste computador.')).toBeVisible()
+  await receipt.getByRole('button', { name: 'Imprimir comprovante' }).click()
+  await expect.poll(() => page.evaluate(() => Boolean((window as Window & { __browserPrintCalled?: boolean }).__browserPrintCalled))).toBe(true)
+})
+
+test('busca cliente existente e prepara cadastro de novo cliente na reserva', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
+  await page.getByLabel('Senha', { exact: true }).fill('senha-local')
+  await page.getByRole('button', { name: 'Entrar no sistema' }).click()
+
+  await page.goto('/admin/reservations')
+  await page.getByRole('button', { name: 'Nova reserva' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Nova reserva' })
+  await dialog.getByLabel('Nome do cliente').fill('Cliente Del')
+  await dialog.getByRole('option', { name: /Cliente Delivery/ }).click()
+  await expect(dialog.getByLabel('Telefone')).toHaveValue('(11) 99999-0001')
+  await expect(dialog.getByText('Cliente encontrado')).toBeVisible()
+  await expect(dialog.getByLabel('Data de nascimento')).toHaveCount(0)
+
+  await dialog.getByLabel('Nome do cliente').fill('Novo Cliente')
+  await expect(dialog.getByLabel('Data de nascimento')).toBeVisible()
+  await expect(dialog.getByText('Será salvo ao confirmar a reserva.')).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Cadastrar e reservar' })).toBeDisabled()
 })
 
 test('cria pedido de entrega e apresenta o comprovante térmico', async ({ page }) => {

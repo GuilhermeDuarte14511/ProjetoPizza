@@ -1,6 +1,7 @@
 import { Check, ChefHat, CircleAlert, LoaderCircle, Printer, ReceiptText } from 'lucide-react'
 import { useState } from 'react'
 import type { OrderReceipt } from '../../types/admin'
+import { formatPhone } from '../../utils/phone'
 import { Modal } from '../ui/Modal'
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -8,12 +9,13 @@ type PrintState = 'idle' | 'printing' | 'queued' | 'error'
 
 interface OrderReceiptDialogProps {
   receipt?: OrderReceipt
+  context?: 'confirmation' | 'preview'
   onClose: () => void
   onPrintCustomerReceipt?: () => Promise<void>
   onPrintKitchenCommand?: () => Promise<void>
 }
 
-export function OrderReceiptDialog({ receipt, onClose, onPrintCustomerReceipt, onPrintKitchenCommand }: OrderReceiptDialogProps) {
+export function OrderReceiptDialog({ receipt, context = 'confirmation', onClose, onPrintCustomerReceipt, onPrintKitchenCommand }: OrderReceiptDialogProps) {
   const [customerState, setCustomerState] = useState<PrintState>('idle')
   const [kitchenState, setKitchenState] = useState<PrintState>('idle')
   if (!receipt) return null
@@ -45,8 +47,8 @@ export function OrderReceiptDialog({ receipt, onClose, onPrintCustomerReceipt, o
 
   const isPrinting = customerState === 'printing' || kitchenState === 'printing'
   return (
-    <Modal open title={`Pedido #${receipt.number} confirmado`} description="Pagamento registrado. Escolha os documentos que devem seguir para cada destino." size="large" isBusy={isPrinting} onClose={onClose}>
-      <div className="order-print-success" role="status"><span><Check size={20} /></span><div><strong>Venda concluída com sucesso</strong><p>O comprovante não possui valor fiscal e a comanda da cozinha não exibe preços.</p></div></div>
+    <Modal open title={context === 'preview' ? `Comprovante do pedido #${receipt.number}` : `Pedido #${receipt.number} confirmado`} description={context === 'preview' ? 'Confira os itens e imprima pelo navegador.' : 'Pagamento registrado. Escolha os documentos que devem seguir para cada destino.'} size="large" isBusy={isPrinting} onClose={onClose}>
+      {context === 'confirmation' && <div className="order-print-success" role="status"><span><Check size={20} /></span><div><strong>Venda concluída com sucesso</strong><p>O comprovante não possui valor fiscal e a comanda da cozinha não exibe preços.</p></div></div>}
       <div className="modal-body order-print-workspace">
         <section className="receipt-preview-column" aria-labelledby="customer-receipt-title">
           <div className="print-document-heading"><span><ReceiptText size={18} /></span><div><small>Documento 1</small><h3 id="customer-receipt-title">Comprovante do cliente</h3></div></div>
@@ -58,7 +60,7 @@ export function OrderReceiptDialog({ receipt, onClose, onPrintCustomerReceipt, o
               <div><dt>Data</dt><dd>{new Date(receipt.placedAt).toLocaleString('pt-BR')}</dd></div>
               <div><dt>Cliente</dt><dd>{receipt.customerName}</dd></div>
               {receipt.customerPhone && <div><dt>Telefone</dt><dd>{formatPhone(receipt.customerPhone)}</dd></div>}
-              <div><dt>Atendimento</dt><dd>{receipt.fulfillment === 'Delivery' ? 'ENTREGA' : 'RETIRADA'}</dd></div>
+              <div><dt>Atendimento</dt><dd>{formatFulfillment(receipt.fulfillment)}</dd></div>
               {receipt.deliveryAddress && <div className="wide"><dt>Endereço</dt><dd>{receipt.deliveryAddress}</dd></div>}
             </dl>
             <div className="receipt-divider" />
@@ -82,7 +84,7 @@ export function OrderReceiptDialog({ receipt, onClose, onPrintCustomerReceipt, o
         <section className="kitchen-command-column" aria-labelledby="kitchen-command-title">
           <div className="print-document-heading"><span><ChefHat size={18} /></span><div><small>Documento 2</small><h3 id="kitchen-command-title">Comanda da cozinha</h3></div></div>
           <article className="kitchen-command-preview">
-            <header><div><small>PEDIDO</small><strong>#{receipt.number}</strong></div><span>RETIRADA</span></header>
+            <header><div><small>PEDIDO</small><strong>#{receipt.number}</strong></div><span>{formatFulfillment(receipt.fulfillment)}</span></header>
             <div className="kitchen-command-customer"><small>Cliente</small><strong>{receipt.customerName}</strong></div>
             <div className="kitchen-command-items">{receipt.items.map((item) => <article key={item.id}><strong>{item.quantity}x {item.name}</strong>{item.details.map((detail) => <span key={detail}>{removeKitchenPrice(detail)}</span>)}{item.notes && <b>OBS: {item.notes}</b>}</article>)}</div>
             {receipt.notes && <div className="kitchen-command-notes"><small>OBSERVAÇÕES GERAIS</small><strong>{receipt.notes}</strong></div>}
@@ -95,7 +97,7 @@ export function OrderReceiptDialog({ receipt, onClose, onPrintCustomerReceipt, o
           </div>
         </section>
       </div>
-      <div className="modal-footer receipt-actions"><span className="print-queue-hint">As impressões são enviadas para a fila da impressora térmica configurada.</span><button type="button" className="secondary-button" disabled={isPrinting} onClick={onClose}>Concluir atendimento</button></div>
+      <div className="modal-footer receipt-actions"><span className="print-queue-hint">{onPrintCustomerReceipt ? 'As impressões são enviadas para a fila da impressora térmica configurada.' : 'A impressão será aberta no navegador deste computador.'}</span><button type="button" className="secondary-button" disabled={isPrinting} onClick={onClose}>{context === 'preview' ? 'Fechar' : 'Concluir atendimento'}</button></div>
     </Modal>
   )
 }
@@ -104,12 +106,12 @@ function PrintActionCard({ number, title, description, state, actionLabel, onAct
   return <article className={`print-flow-card ${state}`}><span className="print-step-number">{state === 'queued' ? <Check size={16} /> : number}</span><div><strong>{title}</strong><p>{description}</p>{state === 'error' && <small role="alert"><CircleAlert size={13} /> Não foi possível enviar. Verifique a impressora e tente novamente.</small>}</div><button type="button" className={state === 'queued' ? 'secondary-button' : 'primary-button'} disabled={state === 'printing'} onClick={onAction}>{state === 'printing' ? <><LoaderCircle className="spin" size={16} /> Enviando...</> : state === 'queued' ? <><Check size={16} /> Enfileirado</> : <><Printer size={16} /> {actionLabel}</>}</button></article>
 }
 
-function formatPhone(phone: string) {
-  if (phone.length === 11) return `(${phone.slice(0, 2)}) ${phone.slice(2, 7)}-${phone.slice(7)}`
-  if (phone.length === 10) return `(${phone.slice(0, 2)}) ${phone.slice(2, 6)}-${phone.slice(6)}`
-  return phone
-}
-
 function removeKitchenPrice(detail: string) {
   return detail.replace(/\s*\(\+\s*R\$.*\)$/, '')
+}
+
+function formatFulfillment(fulfillment: string) {
+  if (fulfillment === 'Delivery') return 'ENTREGA'
+  if (fulfillment === 'DineIn') return 'SALÃO'
+  return 'RETIRADA'
 }

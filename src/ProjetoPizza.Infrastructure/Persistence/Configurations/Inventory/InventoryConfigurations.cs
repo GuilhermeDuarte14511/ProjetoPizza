@@ -21,6 +21,7 @@ internal sealed class InventoryItemConfiguration : IEntityTypeConfiguration<Inve
         builder.Property(entity => entity.Sku).HasMaxLength(50);
         builder.Property(entity => entity.UnitOfMeasure).HasMaxLength(20);
         builder.Property(entity => entity.MinimumStock).HasPrecision(18, 4);
+        builder.Property(entity => entity.UnitCost).HasMoneyConversion();
         builder.HasIndex(entity => new { entity.UnitId, entity.Sku }).IsUnique();
         builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
     }

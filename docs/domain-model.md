@@ -11,10 +11,10 @@
 
 - Core: `RestaurantUnit`, `OperationSettings`, `PizzaSettings`.
 - Identity: `Employee`, desacoplado de `IdentityUser`.
-- Customers: `Customer`, perfil reutilizável por unidade.
+- Customers: `Customer`, perfil e fidelidade reutilizáveis por unidade.
 - Catalog: `Category`, `Product`, `PizzaSize`, `PizzaFlavor`, `PizzaCrust`, `Ingredient` e preços/composições.
 - Inventory: `InventoryItem`, `StockBalance`, `StockMovement`, `Recipe`.
-- Dining: `RestaurantTable`, `TableSession`, `ServiceCall`.
+- Dining: `RestaurantTable`, `TableSession`, `Reservation`, `WaitlistEntry`, `ServiceCall`.
 - Ordering: `Order`, `OrderItem` e composição normalizada da pizza.
 - Production: `ProductionStation`, `KitchenTicket`.
 - Billing: `Bill`, divisões, `PaymentMethod`, `Payment`.
@@ -28,7 +28,9 @@
 
 ### Mesas
 
-Uma mesa inativa não inicia atendimento. `TableSession.Open` e `TableSession.OpenFromDevice` exigem pelo menos uma mesa e clientes maiores que zero. Cada abertura registra exatamente um ator: funcionário na operação administrativa ou dispositivo no autoatendimento. Junções usam `TableSessionTable` e preservam a mesma origem. Uma sessão fechada ou cancelada não recebe novos pedidos. A exclusividade de mesa ativa é também verificada na Application/persistência ao criar novos casos de uso de abertura.
+Uma mesa inativa não inicia atendimento. `TableSession.Open` e `TableSession.OpenFromDevice` exigem pelo menos uma mesa e clientes maiores que zero. Junções e transferências usam `TableSessionTable`, encerram o vínculo anterior sem apagar histórico e impedem que o destino pertença a outra sessão ativa. O garçom principal pode ser reatribuído a um funcionário ativo da mesma unidade.
+
+`Reservation` impede horários passados e transições fora do ciclo pendente, confirmado, recepcionado e concluído. `WaitlistEntry` controla espera, aviso, acomodação e cancelamento. Registros finalizados são imutáveis.
 
 ### Dispositivos
 
@@ -50,11 +52,15 @@ Pedidos nascem em `Draft`; itens só são alterados nessa fase. Submeter exige i
 
 ### Clientes
 
-`Customer` pertence a uma unidade, exige nome, telefone com 8 a 15 dígitos e data de nascimento válida de até 120 anos. O telefone é normalizado e sua unicidade por unidade é protegida na Application e no banco. A situação ativa controla a seleção em novos pedidos. O cadastro fornece a base para cashback e cupons de aniversário, sem antecipar regras comerciais ainda não definidas.
+`Customer` pertence a uma unidade, exige nome, telefone com 8 a 15 dígitos e data de nascimento válida de até 120 anos. A situação ativa controla novos pedidos. Pedidos administrativos válidos acumulam um ponto por real inteiro, valor vitalício e contagem; o cancelamento reverte os três indicadores sem permitir valores negativos.
 
 ### Pagamentos
 
-Pagamento deve ser maior que zero. Valor recebido não pode ser menor que o valor pago. Troco só é aceito quando `PaymentMethod.AllowsChange`; referência externa é obrigatória quando configurada. Cancelamentos são estados, nunca exclusão física.
+Pagamento deve ser maior que zero. Valor recebido não pode ser menor que o valor pago. Troco só é aceito quando `PaymentMethod.AllowsChange`; referência externa é obrigatória quando configurada. Estornos parciais ou totais acumulam valor, motivo e data, reabrem conta/sessão quando necessário e geram saída no caixa para dinheiro.
+
+### Estoque e fichas técnicas
+
+`InventoryItem.UnitCost` alimenta CMV e valor do estoque. `Recipe` define rendimento e ingredientes para produto ou sabor/tamanho. No envio, todas as quantidades são planejadas e validadas antes da baixa; falta de saldo rejeita o pedido inteiro. Cada `StockMovement` de consumo aponta para o `OrderItem` responsável.
 
 A divisão por pessoas é persistida em `BillSplit`. Cada parte mantém nome, sequência, total, valor pago, saldo e estado próprios, e cada `Payment` referencia a pessoa correspondente. O caso de uso `POST /api/v1/admin/payments/split` valida de 2 a 50 pessoas, exige que a soma em centavos corresponda ao saldo da conta e grava todas as partes e pagamentos em uma única unidade atômica.
 

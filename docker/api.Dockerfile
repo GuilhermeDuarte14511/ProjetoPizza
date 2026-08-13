@@ -21,7 +21,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl gnupg libgssapi-krb5-2 \
     && curl --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc \
         | gpg --dearmor --output /usr/share/keyrings/postgresql.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+    && . /etc/os-release \
+    && echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
         > /etc/apt/sources.list.d/postgresql.list \
     && apt-get update \
     && apt-get install -y --no-install-recommends postgresql-client-17 \

@@ -17,6 +17,7 @@ internal sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Property(entity => entity.Name).HasMaxLength(120);
         builder.Property(entity => entity.Phone).HasMaxLength(15);
         builder.Property(entity => entity.BirthDate).HasColumnType("date");
+        builder.Property(entity => entity.LifetimeSpend).HasMoneyConversion();
         builder.HasIndex(entity => new { entity.UnitId, entity.Phone }).IsUnique();
         builder.HasIndex(entity => new { entity.UnitId, entity.Name });
         builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
