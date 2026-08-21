@@ -374,6 +374,8 @@ git pull --ff-only origin main
 
 Quando detectar a instalação anterior, o assistente oferece reutilizar as credenciais criptografadas. O banco não é recriado, as migrations são incrementais e os containers são reconstruídos.
 
+O `start-client.ps1` também aplica automaticamente as migrations pendentes antes de iniciar a API. Se uma migration falhar, o sistema não inicia para evitar executar a aplicação com um schema incompatível.
+
 Se o volume do banco existir e o arquivo de credenciais tiver sido perdido, o instalador interrompe sem trocar a senha. Essa proteção evita tornar a base existente inacessível.
 
 ### Dados iniciais

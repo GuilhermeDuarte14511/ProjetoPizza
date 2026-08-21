@@ -99,7 +99,7 @@ O carrinho fica em armazenamento local, separado pelo `tableSessionId`, e sobrev
 
 `/delivery` oferece cardápio, montagem de pizza, checkout sem adquirência, endereço, taxa calculada pelo servidor, cotação de pontos/cupons e rastreio. Telefone e nascimento protegem a consulta do saldo. O admin despacha somente pedidos prontos, informa o entregador e confirma a entrega. O token público é aleatório/idempotente no cliente e somente seu hash é gravado no banco.
 
-Enquanto autenticado, o tablet publica telemetria a cada minuto e em mudanças relevantes. A leitura de bateria usa a Battery Status API quando disponível; em navegadores ou contextos que não a expõem, a API mantém o percentual como desconhecido e ainda registra presença, conectividade, versão e último contato.
+Enquanto autenticado, o tablet publica telemetria a cada 30 segundos e em mudanças relevantes. A leitura de bateria usa a Battery Status API quando disponível; em navegadores ou contextos que não a expõem, a API mantém o percentual como desconhecido e ainda registra presença, conectividade, versão e último contato. O painel administrativo exibe o último heartbeat e só apresenta o dispositivo como online enquanto esse contato tiver até dois minutos.
 
 Chamados enviados pelo tablet possuem uma fila administrativa dedicada. O cabeçalho monitora novos chamados, respeita a configuração de som e direciona para a tela de aceite/conclusão. A tolerância operacional configurada controla o destaque de atraso.
 

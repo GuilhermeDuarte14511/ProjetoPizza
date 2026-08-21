@@ -29,7 +29,7 @@ Todas as referências administrativas inventariadas possuem rota e página concr
 | Estoque | `/admin/inventory` | tabela responsiva de itens, custo unitário, saldo e reservado, alertas, ajustes e fichas técnicas; reserva multicanal no envio, consumo ao iniciar produção e liberação no cancelamento anterior |
 | Pagamentos | `/admin/payments` e modal da comanda | consulta, PDF tabular, recebimento, divisão por pessoas/consumo e estorno total ou parcial com motivo |
 | Relatórios financeiros | `/admin/reports` | período, vendas, CMV, margem de contribuição, produtividade por praça, canais, métodos e Excel gerencial |
-| Tablets | `/admin/devices` | cadastro, vínculo com mesa, QR Code/URL temporários, status, bateria, rede e bloqueio |
+| Tablets | `/admin/devices` | cadastro, vínculo com mesa, QR Code/URL temporários, status por heartbeat, bateria, rede, bloqueio e exclusão segura |
 | Usuários e permissões | `/admin/users` e `/admin/roles` | cadastro/edição de usuários com telefone preservado, perfis, claims e auditoria de alterações de acesso |
 | Auditoria | `/admin/audit` | consulta e busca em português, tradução centralizada de módulo/ação/entidade e PDF tabular |
 

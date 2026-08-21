@@ -93,4 +93,6 @@ Para aplicar a migration e carregar dados de demonstração idempotentes:
 dotnet run --project src/ProjetoPizza.Api -- --seed
 ```
 
-O seed é exclusivo para desenvolvimento e utiliza identificadores fixos. Ele inclui unidade, configurações, clientes, categorias, produtos, pizzas, ingredientes adicionais com preço, estoque, 32 mesas, estações, formas de pagamento, dispositivos e amostras operacionais identificadas com `[DEV]`.
+O seed é exclusivo para desenvolvimento e utiliza identificadores fixos. Ele inclui unidade, configurações, clientes, categorias, 20 sabores de pizza com descrições, imagens, ingredientes removíveis, adicionais por sabor, tamanhos Broto/Média/Grande/Família e bordas recheadas, além de refrigerantes, sucos, água, chá, porções e sobremesas. Também mantém estoque, 32 mesas, estações, formas de pagamento, dispositivos e amostras operacionais identificadas com `[DEV]`. O catálogo expandido é idempotente e não remove pedidos ou registros operacionais existentes.
+
+As imagens de demonstração do catálogo usam URLs diretas do Unsplash, sob a [licença do Unsplash](https://help.unsplash.com/en/articles/2612315-can-i-use-unsplash-images-for-personal-or-commercial-projects). Para produção, substitua-as por fotografias próprias ou por assets licenciados pela unidade.

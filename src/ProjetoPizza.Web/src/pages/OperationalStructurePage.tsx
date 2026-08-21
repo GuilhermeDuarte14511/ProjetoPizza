@@ -1,4 +1,4 @@
-import { Pencil, Plus, Save, Settings2, Trash2 } from 'lucide-react'
+import { BellRing, ChefHat, CreditCard, LayoutGrid, Pencil, Plus, Save, Settings2, Store, Table2, Trash2, type LucideIcon } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, type ReactNode, useState } from 'react'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
@@ -15,6 +15,15 @@ import { getUserErrorMessage } from '../utils/errors'
 type StructureKind = 'area' | 'table' | 'register' | 'payment' | 'station' | 'callType'
 type StructureItem = DiningAreaSetting | RestaurantTableSetting | CashRegister | PaymentMethod | ProductionStationSetting | ServiceCallTypeSetting
 
+const structureLabels: Record<StructureKind, string> = {
+  area: 'área do salão',
+  table: 'mesa',
+  register: 'caixa',
+  payment: 'forma de pagamento',
+  station: 'estação de produção',
+  callType: 'tipo de chamado',
+}
+
 export function OperationalStructurePage() {
   const areasQuery = useAdminQuery(queryKeys.diningAreas, adminService.diningAreas)
   const tablesQuery = useAdminQuery(queryKeys.tableSettings, adminService.tableSettings)
@@ -28,6 +37,8 @@ export function OperationalStructurePage() {
   const [deleting, setDeleting] = useState(false)
   const queryClient = useQueryClient()
   const toast = useToast()
+  const totalRecords = areasQuery.data.length + tablesQuery.data.length + registersQuery.data.length + methodsQuery.data.length + stationsQuery.data.length + callTypesQuery.data.length
+  const activeRecords = areasQuery.data.filter((item) => item.isActive).length + tablesQuery.data.filter((item) => item.isActive).length + registersQuery.data.filter((item) => item.isActive).length + methodsQuery.data.filter((item) => item.isActive).length + stationsQuery.data.filter((item) => item.isActive).length + callTypesQuery.data.filter((item) => item.isActive).length
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -75,33 +86,50 @@ export function OperationalStructurePage() {
   }
 
   return <>
-    <PageHeader title="Estrutura operacional" description="Cadastros necessários para instalar e operar a unidade sem intervenção técnica." />
+    <PageHeader
+      title="Estrutura operacional"
+      description="Organize os cadastros que sustentam o salão, o caixa, a produção e os tablets."
+      actions={<div className="structure-header-summary"><span className="structure-header-dot" /> <strong>{activeRecords} ativos</strong><span>de {totalRecords} cadastros</span></div>}
+    />
+    <section className="structure-overview" aria-label="Resumo da estrutura operacional">
+      <span className="structure-overview-icon" aria-hidden="true"><Settings2 size={19} /></span>
+      <div className="structure-overview-copy"><strong>Configuração da unidade</strong><span>Os dados abaixo aparecem para a equipe na operação diária.</span></div>
+      <div className="structure-overview-metrics"><span><strong>{areasQuery.data.length}</strong><small>áreas</small></span><span><strong>{tablesQuery.data.length}</strong><small>mesas</small></span><span><strong>{registersQuery.data.length}</strong><small>caixas</small></span></div>
+    </section>
     <section className="structure-grid">
-      <StructureCard title="Áreas do salão" onAdd={() => setEditing({ kind: 'area' })}>{areasQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={`Ordem ${item.displayOrder}`} active={item.isActive} onEdit={() => setEditing({ kind: 'area', item })} />)}</StructureCard>
-      <StructureCard title="Mesas" onAdd={() => setEditing({ kind: 'table' })}>{tablesQuery.data.map((item) => <StructureRow key={item.id} title={`${item.name} · nº ${item.number}`} detail={`${item.areaName} · ${item.capacity} lugares`} active={item.isActive} onEdit={() => setEditing({ kind: 'table', item })} onDelete={() => setTableToDelete(item)} />)}</StructureCard>
-      <StructureCard title="Caixas" onAdd={() => setEditing({ kind: 'register' })}>{registersQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={item.code} active={item.isActive} onEdit={() => setEditing({ kind: 'register', item })} />)}</StructureCard>
-      <StructureCard title="Formas de pagamento" onAdd={() => setEditing({ kind: 'payment' })}>{methodsQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={item.code} active={item.isActive} onEdit={() => setEditing({ kind: 'payment', item })} />)}</StructureCard>
-      <StructureCard title="Estações de produção" onAdd={() => setEditing({ kind: 'station' })}>{stationsQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={`${item.code} · meta ${item.targetPreparationMinutes} min`} active={item.isActive} onEdit={() => setEditing({ kind: 'station', item })} />)}</StructureCard>
-      <StructureCard title="Tipos de chamado" onAdd={() => setEditing({ kind: 'callType' })}>{callTypesQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={item.code} active={item.isActive} onEdit={() => setEditing({ kind: 'callType', item })} />)}</StructureCard>
+      <StructureCard title="Áreas do salão" description="Organize a ordem e a disponibilidade do salão." count={areasQuery.data.length} emptyLabel="área" icon={LayoutGrid} onAdd={() => setEditing({ kind: 'area' })}>{areasQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={`Ordem de exibição · ${item.displayOrder}`} active={item.isActive} icon={LayoutGrid} onEdit={() => setEditing({ kind: 'area', item })} />)}</StructureCard>
+      <StructureCard title="Mesas" description="Defina número, capacidade e área de cada mesa." count={tablesQuery.data.length} emptyLabel="mesa" icon={Table2} onAdd={() => setEditing({ kind: 'table' })}>{tablesQuery.data.map((item) => <StructureRow key={item.id} title={`${item.name} · nº ${item.number}`} detail={`${item.areaName} · ${item.capacity} lugares`} active={item.isActive} icon={Table2} onEdit={() => setEditing({ kind: 'table', item })} onDelete={() => setTableToDelete(item)} />)}</StructureCard>
+      <StructureCard title="Caixas" description="Cadastre os pontos de recebimento da unidade." count={registersQuery.data.length} emptyLabel="caixa" icon={Store} onAdd={() => setEditing({ kind: 'register' })}>{registersQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={`Código operacional · ${item.code}`} active={item.isActive} icon={Store} onEdit={() => setEditing({ kind: 'register', item })} />)}</StructureCard>
+      <StructureCard title="Formas de pagamento" description="Escolha como os pedidos podem ser pagos." count={methodsQuery.data.length} emptyLabel="forma de pagamento" icon={CreditCard} onAdd={() => setEditing({ kind: 'payment' })}>{methodsQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={`Código operacional · ${item.code}`} active={item.isActive} icon={CreditCard} onEdit={() => setEditing({ kind: 'payment', item })} />)}</StructureCard>
+      <StructureCard title="Estações de produção" description="Acompanhe metas e pontos de preparo." count={stationsQuery.data.length} emptyLabel="estação" icon={ChefHat} onAdd={() => setEditing({ kind: 'station' })}>{stationsQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={`${item.code} · meta de ${item.targetPreparationMinutes} min`} active={item.isActive} icon={ChefHat} onEdit={() => setEditing({ kind: 'station', item })} />)}</StructureCard>
+      <StructureCard title="Tipos de chamado" description="Atalhos que a equipe pode solicitar no salão." count={callTypesQuery.data.length} emptyLabel="tipo de chamado" icon={BellRing} onAdd={() => setEditing({ kind: 'callType' })}>{callTypesQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={`Código operacional · ${item.code}`} active={item.isActive} icon={BellRing} onEdit={() => setEditing({ kind: 'callType', item })} />)}</StructureCard>
     </section>
     {editing && <StructureModal editing={editing} areas={areasQuery.data} saving={saving} onClose={() => setEditing(undefined)} onSubmit={save} />}
-    <ConfirmDialog open={Boolean(tableToDelete)} title="Excluir mesa?" description="A exclusão é permanente e só será aceita se a mesa nunca tiver participado de um atendimento e não possuir tablet vinculado. Para preservar o histórico, desative mesas já utilizadas." confirmLabel="Excluir mesa" tone="danger" busy={deleting} onOpenChange={(open) => !open && setTableToDelete(undefined)} onConfirm={() => void deleteTable()} />
+    <ConfirmDialog open={Boolean(tableToDelete)} title={`Excluir ${tableToDelete?.name ?? 'mesa'}?`} description="A mesa só pode ser excluída se nunca tiver participado de um atendimento e não possuir tablet vinculado. Se já houver histórico, desative o cadastro." confirmLabel="Excluir mesa" tone="danger" busy={deleting} onOpenChange={(open) => !open && setTableToDelete(undefined)} onConfirm={() => void deleteTable()} />
   </>
 }
 
-function StructureCard({ title, onAdd, children }: { title: string; onAdd: () => void; children: ReactNode }) {
-  return <article className="surface-card structure-card"><div className="card-heading"><div><h2>{title}</h2><p>Cadastro ativo na unidade.</p></div>{hasPermission('admin:write') && <button className="secondary-button" onClick={onAdd}><Plus size={15} /> Adicionar</button>}</div><div className="structure-list">{children}</div></article>
+function StructureCard({ title, description, count, emptyLabel, icon: Icon, onAdd, children }: { title: string; description: string; count: number; emptyLabel: string; icon: LucideIcon; onAdd: () => void; children: ReactNode }) {
+  return <article className="surface-card structure-card">
+    <header className="structure-card-header">
+      <span className="structure-card-icon" aria-hidden="true"><Icon size={18} /></span>
+      <div className="structure-card-heading"><div><h2>{title}</h2><p>{description}</p></div><span className="structure-card-count">{count}</span></div>
+      {hasPermission('admin:write') && <button type="button" className="structure-add-button" onClick={onAdd}><Plus size={15} /> Adicionar</button>}
+    </header>
+    {count > 0 ? <div className="structure-list" role="list">{children}</div> : <div className="structure-empty" role="status"><span className="structure-empty-icon" aria-hidden="true"><Plus size={18} /></span><div><strong>Nenhum {emptyLabel} cadastrado</strong><span>Adicione o primeiro para começar a configurar a unidade.</span></div>{hasPermission('admin:write') && <button type="button" className="structure-empty-action" onClick={onAdd}>Adicionar</button>}</div>}
+  </article>
 }
 
-function StructureRow({ title, detail, active, onEdit, onDelete }: { title: string; detail: string; active: boolean; onEdit: () => void; onDelete?: () => void }) {
-  return <div><Settings2 size={18} /><span><strong>{title}</strong><small>{detail}</small></span><span className={`status-pill ${active ? 'success' : 'neutral'}`}>{active ? 'Ativo' : 'Inativo'}</span>{hasPermission('admin:write') && <><button className="icon-button" aria-label={`Editar ${title}`} onClick={onEdit}><Pencil size={15} /></button>{onDelete && <button className="icon-button danger-icon-button" aria-label={`Excluir ${title}`} onClick={onDelete}><Trash2 size={15} /></button>}</>}</div>
+function StructureRow({ title, detail, active, icon: Icon, onEdit, onDelete }: { title: string; detail: string; active: boolean; icon: LucideIcon; onEdit: () => void; onDelete?: () => void }) {
+  return <div className="structure-row" role="listitem"><span className="structure-row-icon" aria-hidden="true"><Icon size={16} /></span><span className="structure-row-copy"><strong>{title}</strong><small>{detail}</small></span><span className={`status-pill ${active ? 'success' : 'neutral'}`}><span className="status-dot" aria-hidden="true" />{active ? 'Ativo' : 'Inativo'}</span>{hasPermission('admin:write') && <span className="structure-row-actions"><button type="button" className="icon-button" data-tooltip="Editar" aria-label={`Editar ${title}`} onClick={onEdit}><Pencil size={15} /></button>{onDelete && <button type="button" className="icon-button danger-icon-button" data-tooltip="Excluir" aria-label={`Excluir ${title}`} onClick={onDelete}><Trash2 size={15} /></button>}</span>}</div>
 }
 
 function StructureModal({ editing, areas, saving, onClose, onSubmit }: { editing: { kind: StructureKind; item?: StructureItem }; areas: DiningAreaSetting[]; saving: boolean; onClose: () => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
   const item = editing.item
   const field = (name: string) => String((item as unknown as Record<string, unknown> | undefined)?.[name] ?? '')
   const boolean = (name: string, fallback = true) => item ? Boolean((item as unknown as Record<string, unknown>)[name]) : fallback
-  return <Modal open title={item ? 'Editar cadastro' : 'Novo cadastro'} description="As alterações são validadas pelo domínio e registradas na auditoria." isBusy={saving} size="large" onClose={onClose}>
+  const label = structureLabels[editing.kind]
+  return <Modal open title={`${item ? 'Editar' : 'Adicionar'} ${label}`} description="Preencha os dados usados na operação. As alterações são validadas e registradas na auditoria." isBusy={saving} size="large" onClose={onClose}>
     <form onSubmit={onSubmit}><div className="modal-body"><div className="form-grid three-columns">
       {editing.kind === 'table' && <label className="field-label">Área<select name="diningAreaId" defaultValue={field('diningAreaId')} required>{areas.filter((area) => area.isActive || area.id === field('diningAreaId')).map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label>}
       {editing.kind === 'table' && <label className="field-label">Número<input name="number" type="number" min="1" defaultValue={field('number')} required /></label>}
@@ -113,6 +141,6 @@ function StructureModal({ editing, areas, saving, onClose, onSubmit }: { editing
       {editing.kind === 'payment' && <label className="check-label"><input name="requiresExternalReference" type="checkbox" defaultChecked={boolean('requiresExternalReference', false)} /> Exigir referência externa</label>}
       {editing.kind === 'payment' && <label className="check-label"><input name="allowsChange" type="checkbox" defaultChecked={boolean('allowsChange', false)} /> Permitir troco</label>}
       <label className="check-label wide"><input name="isActive" type="checkbox" defaultChecked={boolean('isActive')} /> Cadastro ativo</label>
-    </div></div><div className="modal-footer"><button type="button" className="secondary-button" disabled={saving} onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}><Save size={16} /> {saving ? 'Salvando...' : 'Salvar'}</button></div></form>
+    </div></div><div className="modal-footer"><button type="button" className="secondary-button" disabled={saving} onClick={onClose}>Cancelar</button><button type="submit" className="primary-button" disabled={saving}><Save size={16} /> {saving ? 'Salvando...' : item ? 'Salvar alterações' : 'Adicionar cadastro'}</button></div></form>
   </Modal>
 }

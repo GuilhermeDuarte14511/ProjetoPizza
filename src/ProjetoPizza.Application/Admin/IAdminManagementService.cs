@@ -82,6 +82,7 @@ public interface IAdminManagementService
     Task<PrintBatchResultDto> QueueKitchenCommandAsync(Guid orderId, Guid identityUserId, CancellationToken cancellationToken);
     Task<DeviceProvisioningDto> CreateCustomerTabletAsync(CreateCustomerTabletCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<DeviceProvisioningDto> ProvisionCustomerTabletAsync(Guid id, ProvisionCustomerTabletCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> DeleteCustomerTabletAsync(Guid id, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SaveDiningAreaAsync(SaveDiningAreaCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SaveRestaurantTableAsync(SaveRestaurantTableCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> DeleteRestaurantTableAsync(Guid id, Guid identityUserId, CancellationToken cancellationToken);

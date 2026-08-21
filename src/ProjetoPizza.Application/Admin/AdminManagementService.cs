@@ -26,6 +26,8 @@ public sealed class AdminManagementService(
     IOperationNumberGenerator? numberGenerator = null,
     IMenuImageStorage? menuImageStorage = null) : IAdminManagementService
 {
+    private static readonly TimeSpan TabletHeartbeatTimeout = DevicePresencePolicy.DefaultHeartbeatTimeout;
+
     public Task<IReadOnlyCollection<OrderManagementDto>> ListOrdersAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -938,6 +940,7 @@ public sealed class AdminManagementService(
     public Task<IReadOnlyCollection<DeviceDto>> ListDevicesAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var now = DateTimeOffset.UtcNow;
         var result = context.Devices
             .OrderBy(device => device.Name)
             .ToArray()
@@ -947,7 +950,7 @@ public sealed class AdminManagementService(
                 device.SerialNumber,
                 device.DeviceType.ToString(),
                 device.Platform,
-                device.Status.ToString(),
+                DevicePresencePolicy.ResolveStatus(device, now, TabletHeartbeatTimeout).ToString(),
                 device.BatteryPercentage,
                 device.IsCharging,
                 device.NetworkStatus,
@@ -3184,6 +3187,36 @@ public sealed class AdminManagementService(
         AddAudit(device.UnitId, employee.Id, "Devices", "Provision", nameof(Device), device.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return result;
+    }
+
+    public async Task<CommandResultDto> DeleteCustomerTabletAsync(
+        Guid id,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var deviceId = new DeviceId(id);
+        var device = context.Devices.SingleOrDefault(candidate =>
+            candidate.Id == deviceId &&
+            candidate.DeviceType == DeviceType.CustomerTablet)
+            ?? throw new BusinessRuleException("device.not_found", "Customer tablet does not exist.");
+
+        var hasHistory = context.DeviceSessions.Any(session => session.DeviceId == deviceId) ||
+            context.TableSessions.Any(session => session.OpenedByDeviceId == deviceId) ||
+            context.TableSessionTables.Any(link => link.LinkedByDeviceId == deviceId) ||
+            context.ServiceCalls.Any(call => call.RequestedByDeviceId == deviceId) ||
+            context.Orders.Any(order => order.CreatedByDeviceId == deviceId);
+        if (hasHistory)
+        {
+            throw new BusinessRuleException(
+                "device.delete_history",
+                "This tablet has operational history and cannot be deleted. Block it or unlink it instead.");
+        }
+
+        context.Remove(device);
+        AddAudit(device.UnitId, employee.Id, "Devices", "Delete", nameof(Device), device.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(device.Id.Value, "Deleted");
     }
 
     private DeviceProvisioningDto CreateProvisioning(Device device)

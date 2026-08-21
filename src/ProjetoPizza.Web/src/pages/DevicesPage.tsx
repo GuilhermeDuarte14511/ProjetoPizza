@@ -9,11 +9,12 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Trash2,
   UnlockKeyhole,
   Wifi,
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { Modal } from '../components/ui/Modal'
 import { PageHeader } from '../components/ui/PageHeader'
@@ -40,12 +41,26 @@ const emptyDraft: TabletDraft = {
   linkedTableId: '',
 }
 
+function formatLastHeartbeat(value?: string) {
+  if (!value) return 'Nunca enviou heartbeat'
+
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000))
+  if (elapsedSeconds < 10) return 'Heartbeat agora'
+  if (elapsedSeconds < 60) return `Heartbeat há ${elapsedSeconds}s`
+
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60)
+  if (elapsedMinutes < 60) return `Heartbeat há ${elapsedMinutes}min`
+
+  return `Último heartbeat: ${new Date(value).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`
+}
+
 export function DevicesPage() {
   const { data: devices, setData: setDevices, refresh: refreshDevices, isRefreshing } = useAdminQuery(queryKeys.devices, adminService.devices)
   const { data: tables } = useAdminQuery(queryKeys.tables, adminService.tables)
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState<string>()
   const [pendingDevice, setPendingDevice] = useState<Device>()
+  const [pendingDeleteDevice, setPendingDeleteDevice] = useState<Device>()
   const [provisioningMode, setProvisioningMode] = useState<ProvisioningMode>()
   const [selectedDevice, setSelectedDevice] = useState<Device>()
   const [draft, setDraft] = useState<TabletDraft>(emptyDraft)
@@ -63,6 +78,14 @@ export function DevicesPage() {
   const activationUrl = provisioning
     ? `${window.location.origin}/mesa#provisioningToken=${encodeURIComponent(provisioning.activationToken)}`
     : ''
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void refreshDevices()
+    }, 15_000)
+
+    return () => window.clearInterval(interval)
+  }, [refreshDevices])
 
   async function toggleLock(device: Device) {
     setBusy(device.id)
@@ -84,6 +107,23 @@ export function DevicesPage() {
       toast.success('Dispositivos atualizados', 'A lista foi sincronizada.')
     } catch (error) {
       toast.error('Não foi possível atualizar os dispositivos', getUserErrorMessage(error))
+    }
+  }
+
+  async function deleteCustomerTablet() {
+    if (!pendingDeleteDevice) return
+
+    const device = pendingDeleteDevice
+    setBusy(device.id)
+    try {
+      await adminService.deleteCustomerTablet(device.id)
+      setDevices((current) => current.filter((item) => item.id !== device.id))
+      setPendingDeleteDevice(undefined)
+      toast.success('Tablet excluído', `${device.name} foi removido da unidade.`)
+    } catch (error) {
+      toast.error('Não foi possível excluir o tablet', getUserErrorMessage(error))
+    } finally {
+      setBusy(undefined)
     }
   }
 
@@ -166,11 +206,11 @@ export function DevicesPage() {
         description="Cadastre, vincule às mesas e monitore os dispositivos do atendimento."
         actions={(
           <>
-            <button className="secondary-button" disabled={isRefreshing} onClick={() => void refresh()}>
+            <button type="button" className="secondary-button" disabled={isRefreshing} onClick={() => void refresh()}>
               <RefreshCw className={isRefreshing ? 'spin' : ''} size={16} /> {isRefreshing ? 'Atualizando...' : 'Atualizar'}
             </button>
             {hasPermission('admin:write') && (
-              <button className="primary-button" onClick={openCreateTablet}>
+              <button type="button" className="primary-button" onClick={openCreateTablet}>
                 <Plus size={16} /> Adicionar novo tablet
               </button>
             )}
@@ -202,18 +242,33 @@ export function DevicesPage() {
             </span>
             <span className={`status-pill ${device.status === 'Online' ? 'success' : device.status === 'Blocked' ? 'danger' : 'warning'}`}>{translateEnum(device.status)}</span>
             <span className="cell-title">{device.isCharging ? <BatteryCharging size={17} /> : <Battery size={17} />} {device.batteryPercentage == null ? '—' : `${device.batteryPercentage}%`}</span>
-            <span><Wifi size={15} /> {device.networkStatus ?? 'Sem rede'}<small>{device.ipAddress}</small></span>
+            <span>
+              <Wifi size={15} /> {device.status === 'Online' ? device.networkStatus ?? 'Online' : 'Sem heartbeat ativo'}
+              <small>{formatLastHeartbeat(device.lastSeenAt)}</small>
+              <small>Rede reportada: {device.networkStatus ?? '—'} · origem: {device.ipAddress ?? '—'}</small>
+            </span>
             {hasPermission('admin:write') && (
               <span className="table-actions">
                 {device.type === 'CustomerTablet' && (
-                  <button className="secondary-button" disabled={device.isLocked} onClick={() => openLinkTablet(device)}>
+                  <button type="button" className="secondary-button" disabled={device.isLocked} onClick={() => openLinkTablet(device)}>
                     <Link2 size={15} /> Vincular
                   </button>
                 )}
-                <button className="secondary-button" disabled={busy === device.id} onClick={() => device.isLocked ? void toggleLock(device) : setPendingDevice(device)}>
+                <button type="button" className="secondary-button" disabled={busy === device.id} onClick={() => device.isLocked ? void toggleLock(device) : setPendingDevice(device)}>
                   {device.isLocked ? <UnlockKeyhole size={15} /> : <LockKeyhole size={15} />}
                   {device.isLocked ? 'Desbloquear' : 'Bloquear'}
                 </button>
+                {device.type === 'CustomerTablet' && (
+                  <button
+                    type="button"
+                    className="secondary-button danger-button"
+                    disabled={busy === device.id}
+                    onClick={() => setPendingDeleteDevice(device)}
+                    title="Excluir tablet"
+                  >
+                    <Trash2 size={15} /> Excluir
+                  </button>
+                )}
               </span>
             )}
           </div>
@@ -321,6 +376,17 @@ export function DevicesPage() {
         onConfirm={() => {
           if (pendingDevice) void toggleLock(pendingDevice).finally(() => setPendingDevice(undefined))
         }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDeleteDevice)}
+        title="Excluir tablet?"
+        description={`O ${pendingDeleteDevice?.name ?? 'tablet'} será removido do cadastro. Essa ação só é permitida quando o dispositivo ainda não possui histórico operacional.`}
+        confirmLabel="Excluir tablet"
+        tone="danger"
+        busy={Boolean(pendingDeleteDevice && busy === pendingDeleteDevice.id)}
+        onOpenChange={(open) => !open && setPendingDeleteDevice(undefined)}
+        onConfirm={() => void deleteCustomerTablet()}
       />
     </>
   )

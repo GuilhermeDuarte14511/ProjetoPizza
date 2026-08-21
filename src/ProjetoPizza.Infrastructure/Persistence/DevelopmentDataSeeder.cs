@@ -32,6 +32,7 @@ public sealed class DevelopmentDataSeeder(
         await SeedIdentityAsync(cancellationToken);
         if (await context.RestaurantUnits.AnyAsync(unit => unit.Id == UnitId, cancellationToken))
         {
+            await EnsureDevelopmentCatalogAsync(cancellationToken);
             await EnsureDevelopmentPizzaExtrasAsync(cancellationToken);
             await EnsureDevelopmentTabletLinksAsync(cancellationToken);
             return;
@@ -113,6 +114,230 @@ public sealed class DevelopmentDataSeeder(
         AddOperationalSamples(tables, products, stations, callTypes, devices, phoneCustomer);
 
         await context.SaveChangesAsync(cancellationToken);
+        await EnsureDevelopmentCatalogAsync(cancellationToken);
+        await EnsureDevelopmentPizzaExtrasAsync(cancellationToken);
+    }
+
+    private async Task EnsureDevelopmentCatalogAsync(CancellationToken cancellationToken)
+    {
+        var categories = await context.Categories
+            .Where(category => category.UnitId == UnitId)
+            .ToDictionaryAsync(category => category.Slug, cancellationToken);
+        var ingredients = await EnsureDevelopmentIngredientsAsync(cancellationToken);
+        var products = await context.Products
+            .Where(product => product.UnitId == UnitId)
+            .ToDictionaryAsync(product => product.Id, cancellationToken);
+        var flavors = await context.PizzaFlavors
+            .Where(flavor => flavor.UnitId == UnitId)
+            .ToDictionaryAsync(flavor => flavor.Id, cancellationToken);
+        var productImages = await context.ProductImages
+            .Where(image => products.Keys.Contains(image.ProductId))
+            .ToDictionaryAsync(image => image.ProductId, cancellationToken);
+
+        foreach (var definition in CreateDevelopmentProductDefinitions(categories))
+        {
+            if (!products.TryGetValue(definition.Id, out var product))
+            {
+                product = new Product(
+                    definition.Id,
+                    UnitId,
+                    definition.CategoryId,
+                    definition.Sku,
+                    definition.Name,
+                    definition.ProductType,
+                    new Money(definition.BasePrice));
+                context.Products.Add(product);
+                products[definition.Id] = product;
+            }
+
+            product.ChangeCategory(definition.CategoryId);
+            product.ChangePrice(new Money(definition.BasePrice));
+            product.UpdateInformation(definition.Name, definition.Description, definition.PreparationTimeMinutes);
+            product.SetActive(true);
+            product.SetAvailable(true);
+            if (definition.IsFeatured) product.MarkAsFeatured();
+
+            if (productImages.TryGetValue(product.Id, out var image))
+            {
+                image.Update(definition.ImageUrl, $"Foto de {definition.Name}", isPrimary: true);
+            }
+            else
+            {
+                image = new ProductImage(
+                    new ProductImageId(Guid.Parse(
+                        $"6A000000-0000-0000-0000-{definition.Id.Value.ToString().Split('-').Last()}")),
+                    product.Id,
+                    definition.ImageUrl,
+                    $"Foto de {definition.Name}");
+                image.Update(definition.ImageUrl, $"Foto de {definition.Name}", isPrimary: true);
+                context.ProductImages.Add(image);
+                productImages[product.Id] = image;
+            }
+        }
+
+        foreach (var definition in CreateDevelopmentFlavorDefinitions(categories))
+        {
+            if (!flavors.TryGetValue(definition.Id, out var flavor))
+            {
+                flavor = new PizzaFlavor(
+                    definition.Id,
+                    UnitId,
+                    definition.CategoryId,
+                    definition.Name,
+                    definition.FlavorType);
+                context.PizzaFlavors.Add(flavor);
+                flavors[definition.Id] = flavor;
+            }
+
+            flavor.Update(
+                definition.Name,
+                definition.Description,
+                definition.FlavorType,
+                definition.IsPremium,
+                definition.IsVegetarian,
+                isActive: true,
+                isAvailable: true,
+                soldOutReason: null);
+            flavor.SetImage(definition.ImageUrl);
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+
+        var sizes = await context.PizzaSizes
+            .Where(size => size.UnitId == UnitId && size.IsActive)
+            .OrderBy(size => size.DisplayOrder)
+            .ToArrayAsync(cancellationToken);
+        var prices = (await context.PizzaFlavorPrices
+            .Where(price => flavors.Keys.Contains(price.PizzaFlavorId))
+            .ToListAsync(cancellationToken))
+            .ToDictionary(price => (price.PizzaFlavorId, price.PizzaSizeId));
+        var ingredientLinks = (await context.PizzaFlavorIngredients
+                .Where(link => flavors.Keys.Contains(link.PizzaFlavorId))
+                .Select(link => new { link.PizzaFlavorId, link.IngredientId })
+                .ToListAsync(cancellationToken))
+            .Select(link => (link.PizzaFlavorId, link.IngredientId))
+            .ToHashSet();
+        var extraLinks = (await context.PizzaFlavorExtras
+                .Where(link => flavors.Keys.Contains(link.PizzaFlavorId))
+                .Select(link => new { link.PizzaFlavorId, link.IngredientId })
+                .ToListAsync(cancellationToken))
+            .Select(link => (link.PizzaFlavorId, link.IngredientId))
+            .ToHashSet();
+
+        foreach (var definition in CreateDevelopmentFlavorDefinitions(categories))
+        {
+            var flavor = flavors[definition.Id];
+            for (var sizeIndex = 0; sizeIndex < sizes.Length; sizeIndex++)
+            {
+                var size = sizes[sizeIndex];
+                var key = (flavor.Id, size.Id);
+                if (!prices.ContainsKey(key))
+                {
+                    var priceId = new PizzaFlavorPriceId(Guid.Parse(
+                        $"64000000-0000-0000-0000-{(1000 + definition.Number * 10 + sizeIndex):D12}"));
+                    var price = new PizzaFlavorPrice(
+                        priceId,
+                        flavor.Id,
+                        size.Id,
+                        size.BasePrice,
+                        new Money(definition.AdditionalPrice));
+                    context.PizzaFlavorPrices.Add(price);
+                    prices[key] = price;
+                }
+            }
+
+            for (var ingredientIndex = 0; ingredientIndex < definition.Ingredients.Length; ingredientIndex++)
+            {
+                var ingredientName = definition.Ingredients[ingredientIndex];
+                if (!ingredients.TryGetValue(ingredientName, out var ingredient)) continue;
+                var ingredientKey = (flavor.Id, ingredient.Id);
+                if (ingredientLinks.Add(ingredientKey))
+                {
+                    context.PizzaFlavorIngredients.Add(new PizzaFlavorIngredient(
+                        flavor.Id,
+                        ingredient.Id,
+                        quantity: ingredient.Name.Contains("Camarão", StringComparison.Ordinal) ? 100 : 80,
+                        unitOfMeasure: "g",
+                        displayOrder: ingredientIndex));
+                }
+            }
+
+            var extraNames = definition.FlavorType == PizzaFlavorType.Sweet
+                ? new[] { "Chocolate", "Morango", "Banana", "Coco", "Doce de Leite" }
+                : new[] { "Mussarela", "Catupiry", "Bacon", "Calabresa Fatiada", "Tomate", "Cebola", "Azeitona", "Milho", "Champignon", "Palmito", "Pepperoni", "Frango Desfiado", "Presunto", "Cheddar" };
+            foreach (var extraName in extraNames)
+            {
+                if (!ingredients.TryGetValue(extraName, out var ingredient)) continue;
+                var extraKey = (flavor.Id, ingredient.Id);
+                if (extraLinks.Add(extraKey))
+                {
+                    context.PizzaFlavorExtras.Add(new PizzaFlavorExtra(
+                        flavor.Id,
+                        ingredient.Id,
+                        ingredient.ExtraPrice,
+                        maxQuantity: ingredient.MaxExtraQuantity));
+                }
+            }
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<Dictionary<string, Ingredient>> EnsureDevelopmentIngredientsAsync(CancellationToken cancellationToken)
+    {
+        var definitions = CreateDevelopmentIngredientDefinitions();
+        var inventoryItems = await context.InventoryItems
+            .Where(item => item.UnitId == UnitId)
+            .ToDictionaryAsync(item => item.Id, cancellationToken);
+        var ingredients = await context.Ingredients
+            .Where(ingredient => ingredient.UnitId == UnitId)
+            .ToDictionaryAsync(ingredient => ingredient.Name, StringComparer.OrdinalIgnoreCase, cancellationToken);
+
+        foreach (var definition in definitions)
+        {
+            var inventoryId = new InventoryItemId(definition.InventoryId);
+            if (!inventoryItems.TryGetValue(inventoryId, out var inventoryItem))
+            {
+                inventoryItem = new InventoryItem(
+                    inventoryId,
+                    UnitId,
+                    definition.Name,
+                    definition.Sku,
+                    "g",
+                    definition.MinimumStock);
+                context.InventoryItems.Add(inventoryItem);
+                inventoryItems[inventoryId] = inventoryItem;
+            }
+
+            inventoryItem.Update(
+                definition.Name,
+                definition.Sku,
+                "g",
+                definition.MinimumStock,
+                Money.Zero(),
+                isActive: true);
+
+            var ingredientId = new IngredientId(definition.Id);
+            if (!ingredients.TryGetValue(definition.Name, out var ingredient))
+            {
+                ingredient = new Ingredient(ingredientId, UnitId, definition.Name, inventoryId);
+                context.Ingredients.Add(ingredient);
+                ingredients[definition.Name] = ingredient;
+            }
+
+            ingredient.Update(
+                definition.Name,
+                definition.Description,
+                isActive: true,
+                definition.IsAllergen,
+                definition.IsAllergen ? definition.AllergenDescription : null,
+                isAvailableAsExtra: true,
+                new Money(definition.ExtraPrice),
+                definition.MaxExtraQuantity);
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+        return ingredients;
     }
 
     private async Task EnsureDevelopmentTabletLinksAsync(CancellationToken cancellationToken)
@@ -264,6 +489,147 @@ public sealed class DevelopmentDataSeeder(
             item.Item2,
             index)).ToArray();
     }
+
+    private static DevelopmentFlavorDefinition[] CreateDevelopmentFlavorDefinitions(
+        IReadOnlyDictionary<string, Category> categories) =>
+    [
+        new(1, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000001")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000001")), categories["pizzas-tradicionais"].Id, "Margherita", PizzaFlavorType.Savory, false, true, 0, "Molho de tomate artesanal, mussarela, tomate fresco e manjericão.", "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Tomate", "Manjericão"]),
+        new(2, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000002")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000002")), categories["pizzas-tradicionais"].Id, "Calabresa", PizzaFlavorType.Savory, false, false, 2, "Mussarela derretida, calabresa fatiada, cebola roxa e azeitonas.", "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Calabresa Fatiada", "Cebola", "Azeitona"]),
+        new(3, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000003")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000003")), categories["pizzas-especiais"].Id, "Quatro Queijos", PizzaFlavorType.Savory, true, false, 5, "Mussarela, Catupiry, cheddar e parmesão em uma combinação cremosa.", "https://images.unsplash.com/photo-1593504049359-74330189a345?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Catupiry", "Cheddar", "Parmesão"]),
+        new(4, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000004")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000007")), categories["pizzas-doces"].Id, "Chocolate com Morango", PizzaFlavorType.Sweet, false, true, 6, "Chocolate cremoso, morangos frescos e um toque delicado de leite condensado.", "https://images.unsplash.com/photo-1579751626657-72bc17010498?auto=format&fit=crop&w=900&q=80", ["Chocolate", "Morango", "Leite Condensado"]),
+        new(5, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000005")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000008")), categories["pizzas-especiais"].Id, "Frango com Catupiry", PizzaFlavorType.Savory, false, false, 5, "Frango desfiado temperado, Catupiry cremoso, mussarela e milho.", "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Frango Desfiado", "Catupiry", "Milho"]),
+        new(6, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000006")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000009")), categories["pizzas-tradicionais"].Id, "Portuguesa", PizzaFlavorType.Savory, false, false, 5, "Presunto, ovo, ervilha, cebola, pimentão, azeitona e mussarela.", "https://images.unsplash.com/photo-1579751626657-72bc17010498?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Presunto", "Ovo", "Ervilha", "Cebola", "Pimentão", "Azeitona"]),
+        new(7, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000007")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000010")), categories["pizzas-especiais"].Id, "Pepperoni", PizzaFlavorType.Savory, true, false, 7, "Pepperoni levemente picante, mussarela e molho de tomate artesanal.", "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Pepperoni", "Tomate"]),
+        new(8, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000008")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000011")), categories["pizzas-especiais"].Id, "Bacon e Milho", PizzaFlavorType.Savory, false, false, 5, "Bacon crocante, milho verde, cebola caramelizada e mussarela.", "https://images.unsplash.com/photo-1593504049359-74330189a345?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Bacon", "Milho", "Cebola"]),
+        new(9, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000009")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000012")), categories["pizzas-tradicionais"].Id, "Napolitana", PizzaFlavorType.Savory, false, false, 3, "Mussarela, tomate, presunto, parmesão e orégano.", "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Tomate", "Presunto", "Parmesão"]),
+        new(10, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000010")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000013")), categories["pizzas-especiais"].Id, "Vegetariana", PizzaFlavorType.Savory, false, true, 4, "Mussarela, tomate, milho, champignon, palmito, brócolis e pimentão.", "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Tomate", "Milho", "Champignon", "Palmito", "Brócolis", "Pimentão"]),
+        new(11, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000011")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000014")), categories["pizzas-especiais"].Id, "Carne Seca com Catupiry", PizzaFlavorType.Savory, true, false, 8, "Carne seca desfiada, Catupiry, mussarela e cebola dourada.", "https://images.unsplash.com/photo-1593504049359-74330189a345?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Carne Seca", "Catupiry", "Cebola"]),
+        new(12, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000012")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000015")), categories["pizzas-especiais"].Id, "Lombo Canadense", PizzaFlavorType.Savory, false, false, 6, "Lombo canadense, mussarela, Catupiry e tomate fresco.", "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Lombo Canadense", "Catupiry", "Tomate"]),
+        new(13, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000013")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000016")), categories["pizzas-especiais"].Id, "Palmito com Alho-poró", PizzaFlavorType.Savory, false, true, 6, "Palmito macio, alho-poró, Catupiry e mussarela.", "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Palmito", "Alho-poró", "Catupiry"]),
+        new(14, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000014")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000017")), categories["pizzas-especiais"].Id, "Camarão Cremoso", PizzaFlavorType.Savory, true, false, 12, "Camarões salteados, Catupiry, mussarela e tomate em molho cremoso.", "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Camarão", "Catupiry", "Tomate"]),
+        new(15, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000015")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000018")), categories["pizzas-especiais"].Id, "Mexicana", PizzaFlavorType.Savory, true, false, 7, "Calabresa, bacon, pimentão, cebola e pimenta jalapeño.", "https://images.unsplash.com/photo-1579751626657-72bc17010498?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Calabresa Fatiada", "Bacon", "Pimentão", "Cebola", "Pimenta Jalapeño"]),
+        new(16, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000016")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000019")), categories["pizzas-especiais"].Id, "Brócolis com Bacon", PizzaFlavorType.Savory, false, false, 5, "Brócolis, bacon crocante, Catupiry e mussarela.", "https://images.unsplash.com/photo-1593504049359-74330189a345?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Brócolis", "Bacon", "Catupiry"]),
+        new(17, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000017")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000020")), categories["pizzas-tradicionais"].Id, "Atum", PizzaFlavorType.Savory, false, false, 4, "Atum, cebola, azeitona, tomate e mussarela.", "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Atum", "Cebola", "Azeitona", "Tomate"]),
+        new(18, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000018")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000021")), categories["pizzas-doces"].Id, "Romeu e Julieta", PizzaFlavorType.Sweet, false, true, 5, "Mussarela cremosa e goiabada artesanal em equilíbrio perfeito.", "https://images.unsplash.com/photo-1579751626657-72bc17010498?auto=format&fit=crop&w=900&q=80", ["Mussarela", "Goiabada"]),
+        new(19, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000019")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000022")), categories["pizzas-doces"].Id, "Banana com Canela", PizzaFlavorType.Sweet, false, true, 4, "Banana caramelizada, açúcar, canela e leite condensado.", "https://images.unsplash.com/photo-1579751626657-72bc17010498?auto=format&fit=crop&w=900&q=80", ["Banana", "Canela", "Leite Condensado"]),
+        new(20, new PizzaFlavorId(Guid.Parse("63000000-0000-0000-0000-000000000020")), new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000023")), categories["pizzas-doces"].Id, "Prestígio", PizzaFlavorType.Sweet, false, true, 5, "Chocolate cremoso, coco ralado e leite condensado.", "https://images.unsplash.com/photo-1593504049359-74330189a345?auto=format&fit=crop&w=900&q=80", ["Chocolate", "Coco", "Leite Condensado"])
+    ];
+
+    private static DevelopmentProductDefinition[] CreateDevelopmentProductDefinitions(
+        IReadOnlyDictionary<string, Category> categories)
+    {
+        var flavors = CreateDevelopmentFlavorDefinitions(categories);
+        var products = flavors.Select(flavor => new DevelopmentProductDefinition(
+            flavor.ProductId,
+            flavor.CategoryId,
+            $"PIZ-{NormalizeSku(flavor.Name)}",
+            $"Pizza {flavor.Name}",
+            ProductType.Pizza,
+            32 + flavor.AdditionalPrice,
+            flavor.Description,
+            flavor.FlavorType == PizzaFlavorType.Sweet ? 25 : 30,
+            flavor.ImageUrl,
+            flavor.Number <= 3));
+
+        return products.Concat([
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000004")), categories["bebidas"].Id, "BEB-COCA2", "Coca-Cola 2 L", ProductType.Beverage, 14, "Refrigerante cola de 2 litros, servido bem gelado.", 2, "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=80", false),
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000024")), categories["bebidas"].Id, "BEB-GUARA2", "Guaraná 2 L", ProductType.Beverage, 12, "Refrigerante de guaraná de 2 litros para compartilhar.", 2, "https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?auto=format&fit=crop&w=900&q=80", false),
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000025")), categories["bebidas"].Id, "BEB-LARANJA", "Refrigerante de Laranja Lata", ProductType.Beverage, 6, "Lata de refrigerante de laranja, servida gelada.", 2, "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=80", false),
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000026")), categories["bebidas"].Id, "BEB-LIMAO", "Refrigerante de Limão Lata", ProductType.Beverage, 6, "Lata de refrigerante de limão, servida gelada.", 2, "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=80", false),
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000027")), categories["bebidas"].Id, "BEB-AGUA", "Água Mineral 500 ml", ProductType.Beverage, 4, "Água mineral sem gás para acompanhar a refeição.", 1, "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?auto=format&fit=crop&w=900&q=80", false),
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000028")), categories["bebidas"].Id, "BEB-SUCO-LAR", "Suco Natural de Laranja", ProductType.Beverage, 9, "Suco natural de laranja, preparado na hora.", 5, "https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=900&q=80", false),
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000029")), categories["bebidas"].Id, "BEB-SUCO-UVA", "Suco Integral de Uva", ProductType.Beverage, 9, "Suco integral de uva servido gelado.", 3, "https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=900&q=80", false),
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000030")), categories["bebidas"].Id, "BEB-SUCO-MAR", "Suco de Maracujá", ProductType.Beverage, 9, "Suco refrescante de maracujá preparado na hora.", 5, "https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=900&q=80", false),
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000031")), categories["bebidas"].Id, "BEB-CHA", "Chá Gelado de Pêssego", ProductType.Beverage, 8, "Chá gelado de pêssego com toque frutado.", 3, "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=80", false),
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000005")), categories["porcoes"].Id, "POR-FRIT", "Batata Frita Especial", ProductType.Portion, 32, "Batata frita crocante com cheddar e bacon.", 15, "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=80", false),
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000032")), categories["porcoes"].Id, "POR-ALHO", "Pão de Alho com Queijo", ProductType.Portion, 18, "Pães de alho assados com cobertura de queijo cremoso.", 12, "https://images.unsplash.com/photo-1573140401552-3fab0b24306f?auto=format&fit=crop&w=900&q=80", false),
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000006")), categories["sobremesas"].Id, "SOB-TIRA", "Tiramisu", ProductType.Dessert, 24.90m, "Camadas delicadas de café, creme e cacau.", 8, "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=900&q=80", false),
+            new(new ProductId(Guid.Parse("61000000-0000-0000-0000-000000000033")), categories["sobremesas"].Id, "SOB-BROWNIE", "Brownie com Calda de Chocolate", ProductType.Dessert, 22, "Brownie macio servido com calda cremosa de chocolate.", 8, "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=900&q=80", false)
+        ]).ToArray();
+    }
+
+    private static DevelopmentIngredientDefinition[] CreateDevelopmentIngredientDefinitions() =>
+    [
+        new(Guid.Parse("68000000-0000-0000-0000-000000000001"), Guid.Parse("67000000-0000-0000-0000-000000000001"), "Mussarela", "INS-MUSS", "Porção adicional de mussarela.", 6, 5000, true, "Contém leite e derivados."),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000002"), Guid.Parse("67000000-0000-0000-0000-000000000002"), "Tomate", "INS-TOMA", "Tomate fresco fatiado.", 3, 2000, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000003"), Guid.Parse("67000000-0000-0000-0000-000000000003"), "Calabresa Fatiada", "INS-CALA", "Calabresa fatiada e temperada.", 7, 3000, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000004"), Guid.Parse("67000000-0000-0000-0000-000000000004"), "Bacon", "INS-BACO", "Bacon crocante em cubos.", 8, 2500, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000005"), Guid.Parse("67000000-0000-0000-0000-000000000005"), "Cebola", "INS-CEBO", "Cebola fatiada.", 3, 1500, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000006"), Guid.Parse("67000000-0000-0000-0000-000000000006"), "Catupiry", "INS-CATU", "Porção adicional de Catupiry.", 8, 3000, true, "Contém leite e derivados."),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000007"), Guid.Parse("67000000-0000-0000-0000-000000000007"), "Presunto", "INS-PRES", "Presunto cozido fatiado.", 6, 2500, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000008"), Guid.Parse("67000000-0000-0000-0000-000000000008"), "Milho", "INS-MILH", "Milho verde.", 3, 1800, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000009"), Guid.Parse("67000000-0000-0000-0000-000000000009"), "Ervilha", "INS-ERVI", "Ervilha tenra.", 3, 1200, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000010"), Guid.Parse("67000000-0000-0000-0000-000000000010"), "Azeitona", "INS-AZEI", "Azeitonas fatiadas.", 3, 1200, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000011"), Guid.Parse("67000000-0000-0000-0000-000000000011"), "Pimentão", "INS-PIME", "Pimentão colorido fatiado.", 3, 1200, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000012"), Guid.Parse("67000000-0000-0000-0000-000000000012"), "Champignon", "INS-CHAM", "Cogumelos champignon fatiados.", 5, 1000, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000013"), Guid.Parse("67000000-0000-0000-0000-000000000013"), "Frango Desfiado", "INS-FRAN", "Frango desfiado temperado.", 8, 2800, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000014"), Guid.Parse("67000000-0000-0000-0000-000000000014"), "Pepperoni", "INS-PEPP", "Pepperoni fatiado.", 9, 1800, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000015"), Guid.Parse("67000000-0000-0000-0000-000000000015"), "Palmito", "INS-PALM", "Palmito macio em rodelas.", 6, 1600, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000016"), Guid.Parse("67000000-0000-0000-0000-000000000016"), "Brócolis", "INS-BROC", "Brócolis cozido no vapor.", 5, 1400, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000017"), Guid.Parse("67000000-0000-0000-0000-000000000017"), "Carne Seca", "INS-CARS", "Carne seca desfiada.", 10, 2000, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000018"), Guid.Parse("67000000-0000-0000-0000-000000000018"), "Camarão", "INS-CAMA", "Camarão limpo e temperado.", 14, 1200, true, "Contém crustáceos."),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000019"), Guid.Parse("67000000-0000-0000-0000-000000000019"), "Chocolate", "INS-CHOC", "Chocolate cremoso.", 7, 1800, true, "Pode conter leite e derivados."),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000020"), Guid.Parse("67000000-0000-0000-0000-000000000020"), "Morango", "INS-MORA", "Morangos frescos.", 6, 1200, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000021"), Guid.Parse("67000000-0000-0000-0000-000000000021"), "Banana", "INS-BANA", "Banana em rodelas.", 4, 1200, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000022"), Guid.Parse("67000000-0000-0000-0000-000000000022"), "Coco", "INS-COCO", "Coco ralado.", 4, 900, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000023"), Guid.Parse("67000000-0000-0000-0000-000000000023"), "Doce de Leite", "INS-DL", "Doce de leite cremoso.", 7, 1000, true, "Contém leite e derivados."),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000024"), Guid.Parse("67000000-0000-0000-0000-000000000024"), "Cheddar", "INS-CHED", "Cheddar cremoso.", 8, 1600, true, "Contém leite e derivados."),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000025"), Guid.Parse("67000000-0000-0000-0000-000000000025"), "Alho-poró", "INS-ALHO", "Alho-poró fatiado.", 4, 900, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000026"), Guid.Parse("67000000-0000-0000-0000-000000000026"), "Manjericão", "INS-MANJ", "Folhas frescas de manjericão.", 2, 500, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000027"), Guid.Parse("67000000-0000-0000-0000-000000000027"), "Parmesão", "INS-PARM", "Parmesão ralado.", 7, 900, true, "Contém leite e derivados."),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000028"), Guid.Parse("67000000-0000-0000-0000-000000000028"), "Ovo", "INS-OVO", "Ovo cozido fatiado.", 3, 900, true, "Contém ovo."),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000029"), Guid.Parse("67000000-0000-0000-0000-000000000029"), "Lombo Canadense", "INS-LOMB", "Lombo canadense fatiado.", 7, 1200, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000030"), Guid.Parse("67000000-0000-0000-0000-000000000030"), "Pimenta Jalapeño", "INS-JALA", "Pimenta jalapeño fatiada.", 3, 500, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000031"), Guid.Parse("67000000-0000-0000-0000-000000000031"), "Atum", "INS-ATUM", "Atum em lascas.", 8, 1200, true, "Contém peixe."),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000032"), Guid.Parse("67000000-0000-0000-0000-000000000032"), "Goiabada", "INS-GOIA", "Goiabada cremosa.", 5, 900, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000033"), Guid.Parse("67000000-0000-0000-0000-000000000033"), "Canela", "INS-CANE", "Canela em pó.", 2, 400, false, null),
+        new(Guid.Parse("68000000-0000-0000-0000-000000000034"), Guid.Parse("67000000-0000-0000-0000-000000000034"), "Leite Condensado", "INS-LCON", "Leite condensado cremoso.", 5, 1000, true, "Contém leite e derivados.")
+    ];
+
+    private static string NormalizeSku(string value) => new(value
+        .ToUpperInvariant()
+        .Normalize(System.Text.NormalizationForm.FormD)
+        .Where(character => character is >= 'A' and <= 'Z' || character is >= '0' and <= '9')
+        .ToArray());
+
+    private sealed record DevelopmentFlavorDefinition(
+        int Number,
+        PizzaFlavorId Id,
+        ProductId ProductId,
+        CategoryId CategoryId,
+        string Name,
+        PizzaFlavorType FlavorType,
+        bool IsPremium,
+        bool IsVegetarian,
+        decimal AdditionalPrice,
+        string Description,
+        string ImageUrl,
+        string[] Ingredients);
+
+    private sealed record DevelopmentProductDefinition(
+        ProductId Id,
+        CategoryId CategoryId,
+        string Sku,
+        string Name,
+        ProductType ProductType,
+        decimal BasePrice,
+        string Description,
+        int PreparationTimeMinutes,
+        string ImageUrl,
+        bool IsFeatured,
+        int ImageOrder = 0);
+
+    private sealed record DevelopmentIngredientDefinition(
+        Guid Id,
+        Guid InventoryId,
+        string Name,
+        string Sku,
+        string Description,
+        decimal ExtraPrice,
+        decimal MinimumStock,
+        bool IsAllergen,
+        string? AllergenDescription,
+        int MaxExtraQuantity = 3);
 
     private static Product[] CreateProducts(IReadOnlyList<Category> categories) =>
     [

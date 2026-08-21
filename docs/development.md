@@ -70,7 +70,7 @@ npm run dev
 
 A interface usa `VITE_API_URL` quando definido. Nesse modo, falhas de autenticação removem a sessão e o acesso administrativo exige JWT. Sem essa variável, as páginas usam mocks tipados e centralizados sem iniciar requisições de rede, permitindo trabalho visual isolado.
 
-O seed cria o usuário `admin@projetopizza.local`. A senha é obrigatoriamente lida de `DevelopmentSeed__AdminPassword`; nenhuma senha padrão fica no código.
+O seed cria o usuário `admin@projetopizza.local`. A senha é obrigatoriamente lida de `DevelopmentSeed__AdminPassword`; nenhuma senha padrão fica no código. O catálogo de desenvolvimento inclui 20 sabores de pizza, descrições, imagens, ingredientes removíveis, adicionais, tamanhos Broto/Média/Grande/Família, bordas recheadas, refrigerantes, sucos, água, chá, porções e sobremesas. A expansão é idempotente e pode ser reaplicada sem apagar pedidos.
 
 O tablet do cliente fica em `http://localhost:5173/mesa`. No seed de desenvolvimento, `DEV-TABLET-002` vincula a Mesa 2 e `DEV-TABLET-003` vincula a Mesa 3. Sem atendimento ativo, o aparelho permanece na espera animada e pode abrir uma nova comanda informando a quantidade de pessoas. Por padrão, o envio de pedidos exige um turno de caixa aberto. Esses códigos são massa local e não devem ser reutilizados em produção.
 
@@ -98,13 +98,14 @@ O fluxo preferencial está em `/admin/devices`: use **Adicionar novo tablet** ou
 - `POST /api/v1/client/logout` para revogar a credencial persistente do aparelho
 - `POST /api/v1/admin/devices/tablets` para cadastrar e provisionar um tablet
 - `POST /api/v1/admin/devices/{id}/provision` para vincular novamente e renovar o link
+- `DELETE /api/v1/admin/devices/{id}` para excluir um tablet que ainda não possui histórico operacional
 - `GET /api/v1/client/bootstrap`
 - `POST /api/v1/client/orders`
 - `POST /api/v1/client/service-calls`
 - `POST /api/v1/client/bill-requests`
 
 Os endpoints administrativos exigem bearer token. `AdminAccess`/`AdminWrite` e `OperationsAccess`/`OperationsWrite` verificam claims específicas; o login possui limite de tentativas por IP.
-Após a ativação, os endpoints do cliente exigem o token opaco no cabeçalho `X-Device-Session`. O navegador o mantém no armazenamento persistente do tablet, enquanto a API persiste somente seu hash e continua sendo a autoridade de revogação. A ativação também possui limite de tentativas por IP.
+Após a ativação, os endpoints do cliente exigem o token opaco no cabeçalho `X-Device-Session`. O navegador o mantém no armazenamento persistente do tablet, enquanto a API persiste somente seu hash e continua sendo a autoridade de revogação. A ativação também possui limite de tentativas por IP. O painel atualiza a presença a cada 15 segundos; tablets autenticados enviam heartbeat a cada 30 segundos e são marcados como offline após dois minutos sem contato.
 
 Para habilitar os destinos sociais da tela final, configure no build do Web:
 

@@ -286,7 +286,7 @@ export function ClientTabletPage() {
       sendTelemetry()
     })
 
-    const interval = window.setInterval(sendTelemetry, 60_000)
+    const interval = window.setInterval(sendTelemetry, 30_000)
     window.addEventListener('online', sendTelemetry)
     window.addEventListener('offline', sendTelemetry)
     document.addEventListener('visibilitychange', handleVisibility)

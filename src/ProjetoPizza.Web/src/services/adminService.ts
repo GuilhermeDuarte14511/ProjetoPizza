@@ -555,6 +555,8 @@ export const adminService = {
           activationToken: createUuid().replaceAll('-', ''),
           expiresAt: new Date(Date.now() + 30 * 60_000).toISOString(),
         }),
+  deleteCustomerTablet: (id: string): Promise<void> =>
+    isApiConfigured ? deleteJson<void>(`/api/v1/admin/devices/${id}`) : Promise.resolve(),
   saveUser: (command: Partial<AdminUser> & { password?: string; phone?: string }): Promise<string> =>
     isApiConfigured
       ? command.id ? putJson<string, typeof command>(`/api/v1/admin/users/${command.id}`, command) : postJson<string, typeof command>('/api/v1/admin/users', command)

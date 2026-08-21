@@ -639,6 +639,13 @@ public static class AdminEndpoints
             CancellationToken cancellationToken) =>
             service.ProvisionCustomerTabletAsync(id, command, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
+        group.MapDelete("/devices/{id:guid}", (
+            Guid id,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.DeleteCustomerTabletAsync(id, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
     }
 
     private static void MapIdentityEndpoints(RouteGroupBuilder group)

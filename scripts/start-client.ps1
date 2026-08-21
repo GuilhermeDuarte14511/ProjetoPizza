@@ -74,6 +74,16 @@ Wait-DockerEngine -DockerPath $docker
     --env-file $runtimeEnvironmentPath `
     --file $composeFile `
     --profile client `
+    run --rm api --migrate
+if ($LASTEXITCODE -ne 0) {
+    throw "Não foi possível aplicar as migrations do PostgreSQL."
+}
+
+& $docker compose `
+    --project-name $metadata.composeProjectName `
+    --env-file $runtimeEnvironmentPath `
+    --file $composeFile `
+    --profile client `
     up -d
 if ($LASTEXITCODE -ne 0) {
     throw "Não foi possível iniciar os containers do ProjetoPizza."

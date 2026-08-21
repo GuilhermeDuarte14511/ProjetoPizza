@@ -38,7 +38,7 @@ Os arquivos em `designs` são somente referência. As variantes `*_atualizada` o
 - O carrinho usa armazenamento local isolado pela sessão da mesa, sobrevive ao fechamento do navegador e só é limpo após envio confirmado ou encerramento operacional da comanda.
 - As mudanças chegam por SignalR autenticado pela sessão opaca do dispositivo. Uma reconciliação a cada 60 segundos substitui o polling de 8 segundos; durante falha de rede, o shell, o último catálogo e o carrinho continuam disponíveis e nenhuma resposta autenticada é gravada pelo service worker.
 - Após o bootstrap inicial, a atualização periódica usa `/api/v1/client/state`; o catálogo completo não é transferido a cada ciclo.
-- A telemetria usa `POST /api/v1/client/telemetry` com a mesma credencial do aparelho. O envio ocorre a cada minuto, ao recuperar visibilidade e em mudanças de bateria ou conectividade; a ausência da Battery Status API resulta em percentual desconhecido.
+- A telemetria usa `POST /api/v1/client/telemetry` com a mesma credencial do aparelho. O envio ocorre a cada 30 segundos, ao recuperar visibilidade e em mudanças de bateria ou conectividade; a ausência da Battery Status API resulta em percentual desconhecido. O painel administrativo considera o aparelho online somente até dois minutos após o último heartbeat.
 
 ## Integração operacional
 
