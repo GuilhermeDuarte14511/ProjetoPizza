@@ -33,6 +33,7 @@ import { type CSSProperties, type FormEvent, useEffect, useRef, useState } from 
 import type {
   ClientBill,
   ClientCartItem,
+  ClientLoyaltyQuote,
   ClientOrder,
   ClientProduct,
   ClientServiceCall,
@@ -229,6 +230,9 @@ export function CartView({
   onRemove,
   onContinue,
   onSubmit,
+  loyalty,
+  onLoyaltyChange,
+  onApplyLoyalty,
 }: {
   items: ClientCartItem[]
   existingConsumption: number
@@ -245,6 +249,9 @@ export function CartView({
   onRemove: (key: string) => void
   onContinue: () => void
   onSubmit: () => void
+  loyalty: { phone: string; birthDate: string; couponCode: string; points: number; quote?: ClientLoyaltyQuote }
+  onLoyaltyChange: (value: { phone: string; birthDate: string; couponCode: string; points: number }) => void
+  onApplyLoyalty: () => void
 }) {
   const subtotal = items.reduce((total, item) => total + item.unitPrice * item.quantity, 0)
   const fee = Math.round(subtotal * serviceFeePercentage) / 100
@@ -326,11 +333,12 @@ export function CartView({
             <div className="accent"><span>Taxa de serviço ({serviceFeePercentage}%)</span><strong>{formatCurrency(fee)}</strong></div>
             {existingConsumption > 0 && <small>Consumo atual da mesa: {formatCurrency(existingConsumption)}</small>}
             {estimatedPreparationMinutes > 0 && <p className="client-preparation-estimate"><Clock3 aria-hidden="true" /><span>Previsão de preparo<strong>{estimatedPreparationMinutes}-{estimatedPreparationMinutes + 5} min</strong></span></p>}
-            <div className="client-summary-total"><span>Total a enviar</span><strong>{formatCurrency(subtotal + fee)}</strong></div>
+            <details className="client-loyalty-ticket"><summary><Star aria-hidden="true" /><span><strong>Clube Forno 27</strong><small>{loyalty.quote ? `${loyalty.quote.customerName} · ${loyalty.quote.points} pontos` : 'Usar cupom ou pontos'}</small></span></summary><div><label>Telefone<input inputMode="tel" value={loyalty.phone} onChange={(event) => onLoyaltyChange({ ...loyalty, phone: event.target.value })} /></label><label>Nascimento<input type="date" value={loyalty.birthDate} onChange={(event) => onLoyaltyChange({ ...loyalty, birthDate: event.target.value })} /></label><label>Cupom<input value={loyalty.couponCode} maxLength={40} onChange={(event) => onLoyaltyChange({ ...loyalty, couponCode: event.target.value.toUpperCase() })} /></label><label>Pontos<input type="number" min="0" max={loyalty.quote?.points} value={loyalty.points} onChange={(event) => onLoyaltyChange({ ...loyalty, points: Math.max(0, event.target.valueAsNumber || 0) })} /></label><button type="button" onClick={onApplyLoyalty} disabled={isSubmitting}>Aplicar benefícios</button>{loyalty.quote && <p>Economia confirmada: <strong>{formatCurrency(loyalty.quote.totalBenefits)}</strong></p>}</div></details>
+            <div className="client-summary-total"><span>Total a enviar</span><strong>{formatCurrency(Math.max(0, subtotal + fee - (loyalty.quote?.totalBenefits ?? 0)))}</strong></div>
             {!canSubmit && blockedMessage && (
               <p className="client-order-blocked" role="status">{blockedMessage}</p>
             )}
-            <button type="button" className="client-primary-action" onClick={onSubmit} disabled={isSubmitting || !canSubmit}>
+            <button type="button" className="client-primary-action" onClick={onSubmit} disabled={isSubmitting || !canSubmit || Boolean((loyalty.couponCode || loyalty.points) && !loyalty.quote)}>
               <Send aria-hidden="true" /> {isSubmitting ? 'Enviando...' : isLocked ? 'Verificar e reenviar' : 'Confirmar e enviar pedido'}
             </button>
             <button type="button" className="client-secondary-action" disabled={isLocked} onClick={onContinue}>Continuar escolhendo</button>

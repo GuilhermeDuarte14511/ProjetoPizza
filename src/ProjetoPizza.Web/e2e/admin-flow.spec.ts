@@ -22,6 +22,51 @@ test('mantém o botão de exibir senha dentro do campo de login', async ({ page 
   await expect(page.getByRole('button', { name: 'Ocultar senha' })).toBeVisible()
 })
 
+test('administra fidelidade e cupons sem estouro horizontal', async ({ page }, testInfo) => {
+  await page.goto('/login')
+  await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
+  await page.getByLabel('Senha', { exact: true }).fill('senha-local')
+  await page.getByRole('button', { name: 'Entrar no sistema' }).click()
+
+  await page.goto('/admin/loyalty')
+  await expect(page.getByRole('heading', { name: 'Fidelidade' })).toBeVisible()
+  await expect(page.getByText('PONTOS EM CIRCULAÇÃO')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+
+  await page.getByRole('button', { name: 'Novo cupom' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Novo cupom' })
+  await dialog.getByLabel('Código').fill('VOLTE10')
+  await dialog.getByLabel('Nome da campanha').fill('Volte sempre')
+  await dialog.getByRole('button', { name: 'Salvar cupom' }).click()
+  await expect(page.getByText('VOLTE10', { exact: true })).toBeVisible()
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+  await page.screenshot({ path: testInfo.outputPath('fidelidade.png'), fullPage: true })
+})
+
+test('consulta a central do cliente e registra ajuste justificado no mobile', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
+  await page.getByLabel('Senha', { exact: true }).fill('senha-local')
+  await page.getByRole('button', { name: 'Entrar no sistema' }).click()
+
+  await page.goto('/admin/customers')
+  await page.getByRole('button', { name: /Ver detalhes de/ }).click()
+  const customerCenter = page.getByRole('dialog', { name: 'Central do cliente' })
+  await expect(customerCenter.getByText('Passaporte do cliente')).toBeVisible()
+  await expect(customerCenter.getByText(/Não é saldo sacável/)).toBeVisible()
+
+  await customerCenter.getByRole('button', { name: 'Ajustar pontos' }).click()
+  const adjustment = page.getByRole('dialog', { name: 'Ajustar pontos' })
+  await adjustment.getByPlaceholder('Ex.: 50 ou -25').fill('25')
+  await adjustment.getByPlaceholder('Ex.: Correção de pontos da comanda 1047').fill('Correção da comanda 1047')
+  await adjustment.getByRole('button', { name: 'Confirmar ajuste' }).click()
+  await expect(page.getByText('Saldo ajustado')).toBeVisible()
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect.poll(() => customerCenter.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+  await expect(customerCenter.getByRole('button', { name: 'Ajustar pontos' })).toBeVisible()
+})
+
 test('abre produto em modal e valida os campos em português', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
@@ -204,6 +249,25 @@ test('busca cliente existente e prepara cadastro de novo cliente na reserva', as
   await expect(dialog.getByLabel('Data de nascimento')).toBeVisible()
   await expect(dialog.getByText('Será salvo ao confirmar a reserva.')).toBeVisible()
   await expect(dialog.getByRole('button', { name: 'Cadastrar e reservar' })).toBeDisabled()
+})
+
+test('busca global encontra pedidos e expõe a gestão de mesas', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByLabel('Usuário ou e-mail', { exact: true }).fill('admin@local.test')
+  await page.getByLabel('Senha', { exact: true }).fill('senha-local')
+  await page.getByRole('button', { name: 'Entrar no sistema' }).click()
+
+  await page.getByLabel('Busca global').fill('1024')
+  await page.getByLabel('Busca global').press('Enter')
+  await expect(page).toHaveURL(/\/admin\/search\?q=1024/)
+  await expect(page.getByRole('heading', { name: 'Busca global' })).toBeVisible()
+  await expect(page.getByText('Pedido #1024')).toBeVisible()
+
+  await page.goto('/admin/tables')
+  await page.getByRole('link', { name: 'Adicionar ou excluir' }).click()
+  await expect(page.getByRole('heading', { name: 'Estrutura operacional' })).toBeVisible()
+  await page.locator('.structure-card', { hasText: 'Mesas' }).getByRole('button', { name: 'Adicionar' }).click()
+  await expect(page.getByRole('dialog', { name: 'Novo cadastro' }).getByLabel('Capacidade')).toBeVisible()
 })
 
 test('cria pedido de entrega e apresenta o comprovante térmico', async ({ page }) => {

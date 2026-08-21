@@ -34,6 +34,7 @@ import {
   completeClientTableSession,
   createClientServiceCall,
   getClientBootstrap,
+  getClientLoyaltyQuote,
   getCachedClientBootstrap,
   getClientState,
   getClientSessionToken,
@@ -47,6 +48,7 @@ import { apiBaseUrl, ApiError } from '../api/httpClient'
 import type {
   ClientBootstrap,
   ClientCartItem,
+  ClientLoyaltyQuote,
   ClientOrder,
   ClientProduct,
   SubmitClientOrder,
@@ -70,6 +72,12 @@ export function ClientTabletPage() {
   const [builderProduct, setBuilderProduct] = useState<ClientProduct>()
   const [editingCartItem, setEditingCartItem] = useState<ClientCartItem>()
   const [cart, setCart] = useState<ClientCartItem[]>([])
+  const [loyaltyPhone, setLoyaltyPhone] = useState('')
+  const [loyaltyBirthDate, setLoyaltyBirthDate] = useState('')
+  const [couponCode, setCouponCode] = useState('')
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0)
+  const [loyaltyQuote, setLoyaltyQuote] = useState<ClientLoyaltyQuote>()
+  const [loyaltyQuoteTotal, setLoyaltyQuoteTotal] = useState(0)
   const [isMutating, setIsMutating] = useState(false)
   const [lastOrderNumber, setLastOrderNumber] = useState(0)
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
@@ -296,6 +304,7 @@ export function ClientTabletPage() {
 
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0)
   const cartTotal = cart.reduce((total, item) => total + item.quantity * item.unitPrice, 0)
+  const validLoyaltyQuote = loyaltyQuoteTotal === cartTotal ? loyaltyQuote : undefined
   const cartEstimatedMinutes = cart.reduce((estimate, item) => {
     const product = bootstrap?.catalog.products.find((candidate) => candidate.id === item.productId)
     return Math.max(estimate, product?.preparationTimeMinutes ?? 0)
@@ -588,12 +597,16 @@ export function ClientTabletPage() {
         })),
       } : undefined,
     }))
-    const fingerprint = JSON.stringify(orderItems)
+    const fingerprint = JSON.stringify({ orderItems, loyaltyPhone, loyaltyBirthDate, couponCode, loyaltyPoints })
     const storedDraft = loadClientOrderDraft(activeTableSessionId)
     const requestId = storedDraft?.fingerprint === fingerprint ? storedDraft.requestId : createUuid()
     const payload: SubmitClientOrder = {
       requestId,
       items: orderItems,
+      customerPhone: loyaltyQuote ? loyaltyPhone : undefined,
+      customerBirthDate: loyaltyQuote ? loyaltyBirthDate : undefined,
+      couponCode: couponCode || undefined,
+      loyaltyPoints,
     }
     saveClientOrderDraft(activeTableSessionId, {
       requestId,
@@ -629,6 +642,16 @@ export function ClientTabletPage() {
     } finally {
       setIsMutating(false)
     }
+  }
+
+  async function applyLoyaltyBenefits() {
+    if (!loyaltyPhone || !loyaltyBirthDate) { toast.info('Identifique-se', 'Informe telefone e data de nascimento.'); return }
+    setIsMutating(true)
+    try {
+      setLoyaltyQuote(await getClientLoyaltyQuote({ phone: loyaltyPhone, birthDate: loyaltyBirthDate, orderAmount: cartTotal, couponCode: couponCode || undefined, loyaltyPoints }))
+      setLoyaltyQuoteTotal(cartTotal)
+      toast.success('Benefícios aplicados', 'O desconto foi validado com segurança.')
+    } catch (error) { setLoyaltyQuote(undefined); toast.error('Não foi possível aplicar', getUserErrorMessage(error)) } finally { setIsMutating(false) }
   }
 
   async function sendServiceCall(typeId: string, details?: string) {
@@ -749,6 +772,9 @@ export function ClientTabletPage() {
                 ? 'O carrinho está salvo. Conecte-se à rede para enviar o pedido.'
                 : orderBlockedMessage}
             isSubmitting={isMutating}
+            loyalty={{ phone: loyaltyPhone, birthDate: loyaltyBirthDate, couponCode, points: loyaltyPoints, quote: validLoyaltyQuote }}
+            onLoyaltyChange={(next) => { setLoyaltyPhone(next.phone); setLoyaltyBirthDate(next.birthDate); setCouponCode(next.couponCode); setLoyaltyPoints(next.points); setLoyaltyQuote(undefined) }}
+            onApplyLoyalty={() => void applyLoyaltyBenefits()}
             onChangeQuantity={changeQuantity}
             onEdit={editPizza}
             onAddSuggestion={addStandardProduct}

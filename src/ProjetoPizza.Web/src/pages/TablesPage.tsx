@@ -1,4 +1,4 @@
-import { Plus, Search, UsersRound } from 'lucide-react'
+import { Plus, Search, Settings2, UsersRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { useAdminQuery } from '../hooks/useAdminQuery'
@@ -7,6 +7,7 @@ import { queryKeys } from '../lib/queryKeys'
 import { PageHeader } from '../components/ui/PageHeader'
 import { PdfExportButton } from '../components/ui/PdfExportButton'
 import { StatusBadge } from '../components/ui/StatusBadge'
+import { ViewTransitionLink } from '../components/ui/ViewTransitionLink'
 import { adminService } from '../services/adminService'
 import { hasPermission } from '../services/authSession'
 import type { TableVisualStatus } from '../types/admin'
@@ -63,6 +64,7 @@ export function TablesPage() {
         description="Gerencie a ocupação e o atendimento do salão principal."
         actions={<>
           <PdfExportButton exporting={exporting} onClick={exportTables} label="Exportar mesas em PDF" />
+          {hasPermission('admin:write') && <ViewTransitionLink className="secondary-button" href="/admin/settings/structure"><Settings2 size={16} /> Adicionar ou excluir</ViewTransitionLink>}
           {hasPermission('operations:write') &&
             <button
               className="primary-button"

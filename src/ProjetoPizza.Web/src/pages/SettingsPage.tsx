@@ -250,7 +250,7 @@ function BackupSettings() {
       <div><h2>Backup físico do PostgreSQL</h2><p>Gera um arquivo no formato custom do PostgreSQL, adequado para restauração com pg_restore. A rotina automática respeita o intervalo e a retenção configurados no servidor.</p></div>
       {hasPermission('admin:write') && <button className="primary-button" disabled={creatingBackup} aria-busy={creatingBackup} onClick={() => void createDatabaseBackup()}><Database size={16} /> {creatingBackup ? 'Executando pg_dump...' : 'Criar backup agora'}</button>}
       <div className="responsive-table wide"><table><thead><tr><th>Arquivo</th><th>Tipo</th><th>Criação</th><th>Tamanho</th><th aria-label="Ações" /></tr></thead><tbody>
-        {backups.map((backup) => <tr key={backup.fileName}><td><strong>{backup.fileName}</strong></td><td>{backup.type}</td><td>{new Date(backup.createdAt).toLocaleString('pt-BR')}</td><td>{formatBytes(backup.sizeBytes)}</td><td><button className="secondary-button" onClick={() => void downloadBackup(backup.fileName)}><Download size={15} /> Baixar</button></td></tr>)}
+        {backups.map((backup) => <tr key={backup.fileName}><td><strong>{backup.fileName}</strong></td><td>{translateEnum(backup.type)}</td><td>{new Date(backup.createdAt).toLocaleString('pt-BR')}</td><td>{formatBytes(backup.sizeBytes)}</td><td><button className="secondary-button" onClick={() => void downloadBackup(backup.fileName)}><Download size={15} /> Baixar</button></td></tr>)}
       </tbody></table></div>
       {!backups.length && <div className="empty-inline">Nenhum backup físico disponível.</div>}
     </article>

@@ -239,6 +239,10 @@ export interface ClientCartItem {
 export interface SubmitClientOrder {
   requestId: string
   notes?: string
+  customerPhone?: string
+  customerBirthDate?: string
+  couponCode?: string
+  loyaltyPoints?: number
   items: Array<{
     productId: string
     quantity: number
@@ -257,3 +261,4 @@ export interface SubmitClientOrder {
     }
   }>
 }
+export interface ClientLoyaltyQuote { customerName: string; points: number; expiresAt?: string; couponDiscount: number; loyaltyDiscount: number; totalBenefits: number }

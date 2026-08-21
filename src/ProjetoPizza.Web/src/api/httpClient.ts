@@ -80,6 +80,10 @@ export function putJson<TResponse, TBody>(path: string, body: TBody, signal?: Ab
   return requestJson<TResponse>(path, { method: 'PUT', body: JSON.stringify(body) }, signal)
 }
 
+export function deleteJson<TResponse>(path: string, signal?: AbortSignal) {
+  return requestJson<TResponse>(path, { method: 'DELETE' }, signal)
+}
+
 export async function getBlob(path: string, signal?: AbortSignal) {
   const token = getAccessToken()
   const response = await fetch(`${apiBaseUrl}${path}`, {

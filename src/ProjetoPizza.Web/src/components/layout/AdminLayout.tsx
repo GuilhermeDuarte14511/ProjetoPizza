@@ -9,6 +9,7 @@ import {
   CreditCard,
   Gauge,
   History,
+  Award,
   LogOut,
   Menu,
   MonitorSmartphone,
@@ -61,6 +62,7 @@ const navigation: Array<{ label: string; items: NavigationItem[] }> = [
       { to: '/admin/catalog/products', label: 'Cardápio', icon: BookOpen, permission: 'admin:read' },
       { to: '/admin/devices', label: 'Tablets', icon: MonitorSmartphone, permission: 'admin:read' },
       { to: '/admin/customers', label: 'Clientes', icon: UserRound },
+      { to: '/admin/loyalty', label: 'Fidelidade', icon: Award, permission: 'admin:read' },
       { to: '/admin/inventory', label: 'Estoque', icon: Boxes, permission: 'admin:read' },
       { to: '/admin/users', label: 'Usuários', icon: Users, permission: 'admin:read' },
       { to: '/admin/audit', label: 'Auditoria', icon: History, permission: 'admin:read' },
@@ -123,8 +125,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     event.preventDefault()
     const query = globalSearch.trim()
     if (!query) return
-    const destination = /^mesa\s*/i.test(query) ? '/admin/tables' : '/admin/orders'
-    runViewTransition(() => navigate(`${destination}?search=${encodeURIComponent(query.replace(/^mesa\s*/i, ''))}`))
+    runViewTransition(() => navigate(`/admin/search?q=${encodeURIComponent(query)}`))
   }
 
   function signOut() {

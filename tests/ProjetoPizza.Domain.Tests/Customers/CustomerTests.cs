@@ -7,7 +7,7 @@ namespace ProjetoPizza.Domain.Tests.Customers;
 public sealed class CustomerTests
 {
     [Fact]
-    public void Purchase_should_accumulate_and_cancellation_should_reverse_loyalty()
+    public void Purchase_should_accumulate_and_cancellation_should_reverse_customer_statistics()
     {
         var customer = new Customer(
             CustomerId.New(), RestaurantUnitId.New(), "Ana Souza", "11999998877", new DateOnly(1992, 5, 18));
@@ -50,6 +50,36 @@ public sealed class CustomerTests
 
         act.Should().Throw<BusinessRuleException>()
             .Which.Rule.Should().Be("customer.birth_date");
+    }
+
+    [Fact]
+    public void AdjustLoyaltyPoints_ShouldCreditAndDebitWithoutAllowingNegativeBalance()
+    {
+        var customer = new Customer(
+            CustomerId.New(), RestaurantUnitId.New(), "Ana Souza", "11999998877", new DateOnly(1992, 5, 18));
+        var expiration = DateTimeOffset.UtcNow.AddDays(90);
+
+        customer.AdjustLoyaltyPoints(120, expiration);
+        customer.AdjustLoyaltyPoints(-35, expiration);
+
+        customer.LoyaltyPoints.Should().Be(85);
+        customer.LoyaltyPointsExpireAt.Should().Be(expiration);
+        var action = () => customer.AdjustLoyaltyPoints(-86, expiration);
+        action.Should().Throw<BusinessRuleException>().Which.Rule.Should().Be("loyalty.balance");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1000001)]
+    [InlineData(-1000001)]
+    public void AdjustLoyaltyPoints_WithUnsupportedAmount_ShouldReject(int points)
+    {
+        var customer = new Customer(
+            CustomerId.New(), RestaurantUnitId.New(), "Ana Souza", "11999998877", new DateOnly(1992, 5, 18));
+
+        var action = () => customer.AdjustLoyaltyPoints(points, DateTimeOffset.UtcNow.AddDays(90));
+
+        action.Should().Throw<BusinessRuleException>().Which.Rule.Should().Be("loyalty.adjustment");
     }
 
     [Theory]

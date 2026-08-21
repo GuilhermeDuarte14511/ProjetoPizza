@@ -10,7 +10,7 @@ O PostgreSQL é compartilhado por todo o monólito, com um único `ProjetoPizzaD
 | `identity` | Usuários, papéis e colaboradores | `users`, `roles`, tabelas auxiliares do Identity, `employees` |
 | `customers` | Cadastro de clientes | `customers` |
 | `catalog` | Cardápio e composição de pizza | `categories`, `products`, `product_variants`, `product_images`, `pizza_sizes`, `pizza_flavors`, `pizza_flavor_prices`, `pizza_crusts`, `pizza_crust_prices`, `ingredients`, `pizza_flavor_ingredients` |
-| `inventory` | Estoque e fichas técnicas | `inventory_items`, `stock_balances`, `stock_movements`, `recipes`, `recipe_items` |
+| `inventory` | Estoque e fichas técnicas | `inventory_items`, `stock_balances`, `stock_movements`, `inventory_reservations`, `recipes`, `recipe_items` |
 | `dining` | Salão, mesas e atendimento | `dining_areas`, `restaurant_tables`, `table_sessions`, `table_session_tables`, `waiter_assignments`, `reservations`, `waitlist_entries`, `service_call_types`, `service_calls` |
 | `ordering` | Pedido e itens | `orders`, `order_items`, `order_item_pizzas`, `order_item_pizza_flavors`, `order_item_modifiers` |
 | `production` | Produção da cozinha | `production_stations`, `kitchen_tickets`, `kitchen_ticket_items` |
@@ -47,6 +47,8 @@ erDiagram
     PRODUCT ||--o{ RECIPE : define
     RECIPE ||--|{ RECIPE_ITEM : consome
     INVENTORY_ITEM ||--o{ STOCK_MOVEMENT : movimenta
+    INVENTORY_ITEM ||--o{ INVENTORY_RESERVATION : reserva
+    ORDER_ITEM ||--o{ INVENTORY_RESERVATION : origina
 ```
 
 Uma mesa não armazena o estado visual `Livre`, `Ocupada`, `Chamando`, `Conta solicitada` ou `Pagamento pendente`. A projeção é calculada com a sessão ativa, chamados pendentes e situação da conta, evitando estados duplicados e contraditórios.
@@ -60,12 +62,12 @@ Uma mesa não armazena o estado visual `Livre`, `Ocupada`, `Chamando`, `Conta so
 - `dining.table_sessions.opened_by_device_id` e `dining.table_session_tables.linked_by_device_id` registram comandas iniciadas pelo tablet. As colunas equivalentes de funcionário tornam-se opcionais, mas o Domain exige exatamente um ator de abertura/vínculo.
 - `catalog.pizza_crust_prices` mantém, por tamanho, o valor da borda inteira (`additional_price`) e de uma meia borda (`half_additional_price`).
 - `ordering.order_item_pizzas` preserva o modo da borda (`None`, `Whole` ou `Split`) e os snapshots das duas metades, garantindo que pedidos antigos não mudem quando o catálogo for alterado.
-- `customers.customers` normaliza telefone e mantém `loyalty_points`, `lifetime_spend`, `order_count` e `last_order_at` para a fidelidade transacional.
-- `dining.reservations` e `dining.waitlist_entries` preservam contato, quantidade, horários/previsões, estado e vínculo opcional com cliente. No fluxo administrativo de nova reserva, um cadastro existente é vinculado ou um novo cliente é criado na mesma transação da reserva. Índices por unidade, estado e data atendem a agenda operacional.
-- `inventory.inventory_items.unit_cost` armazena o custo corrente. Movimentos de consumo preservam o custo em snapshot e o item do pedido, permitindo CMV histórico mesmo após alteração de preço.
+- `customers.customers` normaliza telefone e mantém o saldo/validade de pontos e estatísticas de compra. `loyalty_settings`, `promotion_coupons` e `loyalty_transactions` preservam, respectivamente, política por unidade, campanhas e razão imutável.
+- `dining.reservations` e `dining.waitlist_entries` preservam contato, quantidade, horários/previsões, estado, vínculo opcional com cliente e, após a acomodação, `table_session_id` e `seated_at`. Cliente, sessão e registro de recepção são coordenados transacionalmente. Índices por unidade, estado e data atendem a agenda operacional.
+- `inventory.inventory_items.unit_cost` armazena o custo corrente. `inventory.inventory_reservations` vincula item do pedido, ingrediente, quantidade, custo em snapshot e estado `Reserved`, `Consumed` ou `Released`; o índice único por pedido/ingrediente impede duplicidade. Movimentos de consumo preservam o mesmo custo e o item do pedido, permitindo CMV histórico mesmo após alteração de preço.
 - `billing.payments` mantém valor estornado, data e motivo sem apagar o recebimento original.
 - `ordering.orders.customer_id` referencia o cadastro, enquanto `customer_name_snapshot` e `delivery_address_snapshot` preservam os dados operacionais do pedido mesmo após uma edição do cliente.
-- Agregados operacionais usam a coluna de sistema PostgreSQL `xmin` como token de concorrência otimista.
+- Agregados operacionais, inclusive saldos e reservas de estoque, usam a coluna de sistema PostgreSQL `xmin` como token de concorrência otimista. Conflitos retornam HTTP 409 para que a interface atualize os dados antes de repetir a operação.
 - A Application impõe regras que dependem de leitura, como impedir associação simultânea de uma mesa a duas sessões abertas; o banco preserva a estrutura e o caso de uso coordena a transação.
 - `cash_shifts.active_slot` é uma coluna calculada: vale `1` apenas para estados `Open` ou `Closing`. O índice único `ix_cash_shifts_single_active` impede duas aberturas simultâneas, inclusive em concorrência entre requisições.
 - O campo `table_session_tables.unlinked_at` mantém o histórico de agrupamento e desagrupamento de mesas.

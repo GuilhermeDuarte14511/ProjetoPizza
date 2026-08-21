@@ -12,7 +12,7 @@ export function AuditPage() {
   const { data: logs } = useAdminQuery(queryKeys.audit, adminService.audit)
   const [search, setSearch] = useState('')
   const { exportPdf, exporting } = usePdfTableExport()
-  const visible = useMemo(() => logs.filter((log) => `${log.module} ${log.action} ${log.entityType} ${log.entityDescription ?? ''} ${log.employee ?? ''}`.toLowerCase().includes(search.toLowerCase())), [logs, search])
+  const visible = useMemo(() => logs.filter((log) => `${log.module} ${translateEnum(log.module)} ${log.action} ${translateEnum(log.action)} ${log.entityType} ${translateEnum(log.entityType)} ${log.entityDescription ?? ''} ${log.employee ?? ''}`.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR'))), [logs, search])
 
   function exportAudit() {
     void exportPdf({

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using ProjetoPizza.Domain.SharedKernel;
 
@@ -17,6 +18,7 @@ public sealed class GlobalExceptionHandler(
         {
             BusinessRuleException => (StatusCodes.Status422UnprocessableEntity, "Regra de negócio violada", exception.Message),
             DomainException => (StatusCodes.Status400BadRequest, "Requisição inválida", exception.Message),
+            DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Dados alterados", "Os dados foram modificados por outra operação. Atualize a tela e tente novamente."),
             _ => (StatusCodes.Status500InternalServerError, "Erro interno", "Ocorreu um erro inesperado.")
         };
 

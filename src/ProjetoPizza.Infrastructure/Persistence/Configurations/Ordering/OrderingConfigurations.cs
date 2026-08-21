@@ -33,6 +33,11 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(entity => entity.ServiceFee).HasMoneyConversion();
         builder.Property(entity => entity.DeliveryFee).HasMoneyConversion();
         builder.Property(entity => entity.Discount).HasMoneyConversion();
+        builder.Property(entity => entity.ManualDiscount).HasMoneyConversion();
+        builder.Property(entity => entity.CouponDiscount).HasMoneyConversion();
+        builder.Property(entity => entity.LoyaltyDiscount).HasMoneyConversion();
+        builder.Property(entity => entity.CouponCode).HasMaxLength(40);
+        builder.Property(entity => entity.PromotionCouponId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new PromotionCouponId(value.Value) : null);
         builder.Property(entity => entity.Total).HasMoneyConversion();
         builder.Property(entity => entity.Notes).HasMaxLength(1000);
         builder.Property(entity => entity.DeliveryAddressSnapshot).HasMaxLength(500);
@@ -49,6 +54,7 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.HasOne<Employee>().WithMany().HasForeignKey(entity => entity.CreatedByEmployeeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Device>().WithMany().HasForeignKey(entity => entity.CreatedByDeviceId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Customer>().WithMany().HasForeignKey(entity => entity.CustomerId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<PromotionCoupon>().WithMany().HasForeignKey(entity => entity.PromotionCouponId).OnDelete(DeleteBehavior.Restrict);
         builder.Navigation(entity => entity.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Property<uint>("xmin").IsRowVersion();
     }

@@ -12,6 +12,7 @@ Fundação full stack de uma plataforma de gestão para pizzaria, construída co
 - Painel React responsivo, jornada do tablet em `/mesa` e pedido externo com rastreio em `/delivery`.
 - Cadastros administrativos em modais acessíveis, feedback por toast, erros HTTP tratados, enums localizados em português e transições com suporte a movimento reduzido.
 - Fluxos operacionais para mesas, clientes, pedidos presenciais/telefone, cozinha, catálogo, pagamentos, caixa, dispositivos, usuários, perfis e configurações.
+- Fidelidade multicanal com regras por unidade, razão de pontos, resgate seguro e cupons promocionais no admin, tablet e delivery.
 - Pedidos administrativos e externos para retirada/entrega, checkout atômico de balcão, despacho com entregador, rastreio, comprovante sem valor fiscal e comanda de cozinha em filas ESC/POS TCP independentes.
 - Jornada do cliente com SignalR, fallback de 60 segundos, shell offline, cardápio com imagens, carrinho persistido, acompanhamento, chamado e solicitação de conta.
 - POC navegável do ciclo completo do tablet em `poc/tablet-flow-demo.html`, incluindo espera, pedido, acompanhamento e encerramento.

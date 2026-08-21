@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ProjetoPizza.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using ProjetoPizza.Infrastructure.Persistence;
 namespace ProjetoPizza.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ProjetoPizzaDbContext))]
-    partial class ProjetoPizzaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260820190535_AddInventoryReservationsAndDiningSeating")]
+    partial class AddInventoryReservationsAndDiningSeating
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1788,10 +1791,6 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("loyalty_points");
 
-                    b.Property<DateTimeOffset?>("LoyaltyPointsExpireAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("loyalty_points_expire_at");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -1833,206 +1832,6 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_customers_unit_id_phone");
 
                     b.ToTable("customers", "customers");
-                });
-
-            modelBuilder.Entity("ProjetoPizza.Domain.Customers.LoyaltySettings", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_enabled");
-
-                    b.Property<decimal>("MaximumRedemptionPercentage")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)")
-                        .HasColumnName("maximum_redemption_percentage");
-
-                    b.Property<int>("MinimumRedemptionPoints")
-                        .HasColumnType("integer")
-                        .HasColumnName("minimum_redemption_points");
-
-                    b.Property<decimal>("PointsPerCurrencyUnit")
-                        .HasPrecision(10, 4)
-                        .HasColumnType("numeric(10,4)")
-                        .HasColumnName("points_per_currency_unit");
-
-                    b.Property<int>("PointsValidityDays")
-                        .HasColumnType("integer")
-                        .HasColumnName("points_validity_days");
-
-                    b.Property<decimal>("RedemptionValuePerPoint")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("redemption_value_per_point");
-
-                    b.Property<Guid>("UnitId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("unit_id");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id")
-                        .HasName("pk_loyalty_settings");
-
-                    b.HasIndex("UnitId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_loyalty_settings_unit_id");
-
-                    b.ToTable("loyalty_settings", "customers");
-                });
-
-            modelBuilder.Entity("ProjetoPizza.Domain.Customers.LoyaltyTransaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<int>("BalanceAfter")
-                        .HasColumnType("integer")
-                        .HasColumnName("balance_after");
-
-                    b.Property<Guid>("CustomerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("customer_id");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("description");
-
-                    b.Property<decimal>("Discount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("discount");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("occurred_at");
-
-                    b.Property<Guid?>("OrderId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("order_id");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("integer")
-                        .HasColumnName("points");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("type");
-
-                    b.Property<Guid>("UnitId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("unit_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_loyalty_transactions");
-
-                    b.HasIndex("CustomerId", "OccurredAt")
-                        .HasDatabaseName("ix_loyalty_transactions_customer_id_occurred_at");
-
-                    b.HasIndex("OrderId", "Type")
-                        .IsUnique()
-                        .HasDatabaseName("ix_loyalty_transactions_order_id_type");
-
-                    b.ToTable("loyalty_transactions", "customers");
-                });
-
-            modelBuilder.Entity("ProjetoPizza.Domain.Customers.PromotionCoupon", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("code");
-
-                    b.Property<string>("DiscountType")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("discount_type");
-
-                    b.Property<DateTimeOffset>("EndsAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("ends_at");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
-
-                    b.Property<decimal?>("MaximumDiscountAmount")
-                        .HasPrecision(12, 2)
-                        .HasColumnType("numeric(12,2)")
-                        .HasColumnName("maximum_discount_amount");
-
-                    b.Property<decimal>("MinimumOrderAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("minimum_order_amount");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)")
-                        .HasColumnName("name");
-
-                    b.Property<DateTimeOffset>("StartsAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("starts_at");
-
-                    b.Property<int>("TimesRedeemed")
-                        .HasColumnType("integer")
-                        .HasColumnName("times_redeemed");
-
-                    b.Property<Guid>("UnitId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("unit_id");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<int?>("UsageLimit")
-                        .HasColumnType("integer")
-                        .HasColumnName("usage_limit");
-
-                    b.Property<decimal>("Value")
-                        .HasPrecision(12, 2)
-                        .HasColumnType("numeric(12,2)")
-                        .HasColumnName("value");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id")
-                        .HasName("pk_promotion_coupons");
-
-                    b.HasIndex("UnitId", "Code")
-                        .IsUnique()
-                        .HasDatabaseName("ix_promotion_coupons_unit_id_code");
-
-                    b.ToTable("promotion_coupons", "customers");
                 });
 
             modelBuilder.Entity("ProjetoPizza.Domain.Devices.Device", b =>
@@ -3310,16 +3109,6 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("cancelled_at");
 
-                    b.Property<string>("CouponCode")
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("coupon_code");
-
-                    b.Property<decimal>("CouponDiscount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("coupon_discount");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -3390,20 +3179,6 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(30)")
                         .HasColumnName("fulfillment_type");
 
-                    b.Property<decimal>("LoyaltyDiscount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("loyalty_discount");
-
-                    b.Property<int>("LoyaltyPointsRedeemed")
-                        .HasColumnType("integer")
-                        .HasColumnName("loyalty_points_redeemed");
-
-                    b.Property<decimal>("ManualDiscount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("manual_discount");
-
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
@@ -3422,10 +3197,6 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("PlacedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("placed_at");
-
-                    b.Property<Guid?>("PromotionCouponId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("promotion_coupon_id");
 
                     b.Property<string>("SalesChannel")
                         .IsRequired()
@@ -3487,9 +3258,6 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                     b.HasIndex("DeliveryTrackingTokenHash")
                         .IsUnique()
                         .HasDatabaseName("ix_orders_delivery_tracking_token_hash");
-
-                    b.HasIndex("PromotionCouponId")
-                        .HasDatabaseName("ix_orders_promotion_coupon_id");
 
                     b.HasIndex("TableSessionId")
                         .HasDatabaseName("ix_orders_table_session_id");
@@ -4427,42 +4195,6 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_customers_restaurant_units_unit_id");
                 });
 
-            modelBuilder.Entity("ProjetoPizza.Domain.Customers.LoyaltySettings", b =>
-                {
-                    b.HasOne("ProjetoPizza.Domain.Core.RestaurantUnit", null)
-                        .WithMany()
-                        .HasForeignKey("UnitId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_loyalty_settings_restaurant_units_unit_id");
-                });
-
-            modelBuilder.Entity("ProjetoPizza.Domain.Customers.LoyaltyTransaction", b =>
-                {
-                    b.HasOne("ProjetoPizza.Domain.Customers.Customer", null)
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_loyalty_transactions_customers_customer_id");
-
-                    b.HasOne("ProjetoPizza.Domain.Ordering.Order", null)
-                        .WithMany()
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_loyalty_transactions_orders_order_id");
-                });
-
-            modelBuilder.Entity("ProjetoPizza.Domain.Customers.PromotionCoupon", b =>
-                {
-                    b.HasOne("ProjetoPizza.Domain.Core.RestaurantUnit", null)
-                        .WithMany()
-                        .HasForeignKey("UnitId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_promotion_coupons_restaurant_units_unit_id");
-                });
-
             modelBuilder.Entity("ProjetoPizza.Domain.Devices.Device", b =>
                 {
                     b.HasOne("ProjetoPizza.Domain.Dining.RestaurantTable", null)
@@ -4860,12 +4592,6 @@ namespace ProjetoPizza.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_orders_customers_customer_id");
-
-                    b.HasOne("ProjetoPizza.Domain.Customers.PromotionCoupon", null)
-                        .WithMany()
-                        .HasForeignKey("PromotionCouponId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_orders_promotion_coupons_promotion_coupon_id");
 
                     b.HasOne("ProjetoPizza.Domain.Dining.TableSession", null)
                         .WithMany()

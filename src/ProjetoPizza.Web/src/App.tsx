@@ -17,6 +17,7 @@ const CategoriesPage = lazy(() => import('./pages/CategoriesPage').then((module)
 const CrustsPage = lazy(() => import('./pages/CrustsPage').then((module) => ({ default: module.CrustsPage })))
 const CustomersPage = lazy(() => import('./pages/CustomersPage').then((module) => ({ default: module.CustomersPage })))
 const ReservationsPage = lazy(() => import('./pages/ReservationsPage').then((module) => ({ default: module.ReservationsPage })))
+const GlobalSearchPage = lazy(() => import('./pages/GlobalSearchPage').then((module) => ({ default: module.GlobalSearchPage })))
 const IngredientsPage = lazy(() => import('./pages/IngredientsPage').then((module) => ({ default: module.IngredientsPage })))
 const InventoryPage = lazy(() => import('./pages/InventoryPage').then((module) => ({ default: module.InventoryPage })))
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((module) => ({ default: module.DashboardPage })))
@@ -24,6 +25,7 @@ const DevicesPage = lazy(() => import('./pages/DevicesPage').then((module) => ({
 const DeliveryPage = lazy(() => import('./pages/DeliveryPage').then((module) => ({ default: module.DeliveryPage })))
 const FinancialReportsPage = lazy(() => import('./pages/FinancialReportsPage').then((module) => ({ default: module.FinancialReportsPage })))
 const KitchenPage = lazy(() => import('./pages/KitchenPage').then((module) => ({ default: module.KitchenPage })))
+const LoyaltyPage = lazy(() => import('./pages/LoyaltyPage').then((module) => ({ default: module.LoyaltyPage })))
 const LoginPage = lazy(() => import('./pages/LoginPage').then((module) => ({ default: module.LoginPage })))
 const NewOrderPage = lazy(() => import('./pages/NewOrderPage').then((module) => ({ default: module.NewOrderPage })))
 const OrdersPage = lazy(() => import('./pages/OrdersPage').then((module) => ({ default: module.OrdersPage })))
@@ -74,6 +76,7 @@ export function App() {
             <Route path="/login"><LoginPage /></Route>
             <Route path="/admin"><Redirect to="/admin/dashboard" /></Route>
             <Route path="/admin/dashboard"><AdminPage><DashboardPage /></AdminPage></Route>
+            <Route path="/admin/search"><AdminPage><GlobalSearchPage /></AdminPage></Route>
             <Route path="/admin/tables"><AdminPage><TablesPage /></AdminPage></Route>
             <Route path="/admin/tables/:id"><AdminPage><TableDetailPage /></AdminPage></Route>
             <Route path="/admin/orders/new"><AdminPage><NewOrderPage /></AdminPage></Route>
@@ -92,6 +95,7 @@ export function App() {
             <Route path="/admin/reports"><AdminPage><FinancialReportsPage /></AdminPage></Route>
             <Route path="/admin/devices"><AdminPage><DevicesPage /></AdminPage></Route>
             <Route path="/admin/customers"><AdminPage><CustomersPage /></AdminPage></Route>
+            <Route path="/admin/loyalty"><AdminPage><LoyaltyPage /></AdminPage></Route>
             <Route path="/admin/reservations"><AdminPage><ReservationsPage /></AdminPage></Route>
             <Route path="/admin/inventory"><AdminPage><InventoryPage /></AdminPage></Route>
             <Route path="/admin/users"><AdminPage><UsersPage tab="users" /></AdminPage></Route>

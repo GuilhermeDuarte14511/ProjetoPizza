@@ -4,6 +4,7 @@ import type {
   ClientBill,
   ClientBootstrap,
   ClientOrder,
+  ClientLoyaltyQuote,
   ClientState,
   ClientTelemetry,
   StartClientTableSession,
@@ -147,6 +148,10 @@ export function submitClientOrder(order: SubmitClientOrder) {
     method: 'POST',
     body: JSON.stringify(order),
   })
+}
+
+export function getClientLoyaltyQuote(command: { phone: string; birthDate: string; orderAmount: number; couponCode?: string; loyaltyPoints?: number }) {
+  return clientRequest<ClientLoyaltyQuote>('/api/v1/client/loyalty/lookup', { method: 'POST', body: JSON.stringify(command) })
 }
 
 export function createClientServiceCall(serviceCallTypeId: string, details?: string) {

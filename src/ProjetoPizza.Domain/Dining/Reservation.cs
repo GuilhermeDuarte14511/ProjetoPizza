@@ -39,6 +39,8 @@ public sealed class Reservation : AggregateRoot<ReservationId>
     public string? Notes { get; private set; }
     public ReservationStatus Status { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
+    public TableSessionId? TableSessionId { get; private set; }
+    public DateTimeOffset? SeatedAt { get; private set; }
 
     public void Transition(ReservationStatus status)
     {
@@ -47,12 +49,28 @@ public sealed class Reservation : AggregateRoot<ReservationId>
         var valid = (Status, status) switch
         {
             (ReservationStatus.Pending, ReservationStatus.Confirmed or ReservationStatus.Cancelled) => true,
-            (ReservationStatus.Confirmed, ReservationStatus.Seated or ReservationStatus.Cancelled or ReservationStatus.NoShow) => true,
+            (ReservationStatus.Confirmed, ReservationStatus.Cancelled or ReservationStatus.NoShow) => true,
             (ReservationStatus.Seated, ReservationStatus.Completed) => true,
             _ => false,
         };
         if (!valid) throw new BusinessRuleException("reservation.transition", "Invalid reservation status transition.");
         Status = status;
+    }
+
+    public void Seat(TableSessionId tableSessionId)
+    {
+        EnsureCanSeat();
+        TableSessionId = tableSessionId;
+        SeatedAt = DateTimeOffset.UtcNow;
+        Status = ReservationStatus.Seated;
+    }
+
+    public void EnsureCanSeat()
+    {
+        if (Status != ReservationStatus.Confirmed)
+        {
+            throw new BusinessRuleException("reservation.seat", "Only a confirmed reservation can be seated.");
+        }
     }
 }
 
@@ -85,6 +103,8 @@ public sealed class WaitlistEntry : AggregateRoot<WaitlistEntryId>
     public WaitlistStatus Status { get; private set; }
     public DateTimeOffset EnteredAt { get; private set; }
     public DateTimeOffset? NotifiedAt { get; private set; }
+    public TableSessionId? TableSessionId { get; private set; }
+    public DateTimeOffset? SeatedAt { get; private set; }
 
     public void Transition(WaitlistStatus status)
     {
@@ -92,12 +112,28 @@ public sealed class WaitlistEntry : AggregateRoot<WaitlistEntryId>
             throw new BusinessRuleException("waitlist.finished", "A finished waitlist entry cannot be changed.");
         var valid = (Status, status) switch
         {
-            (WaitlistStatus.Waiting, WaitlistStatus.Notified or WaitlistStatus.Cancelled or WaitlistStatus.Seated) => true,
-            (WaitlistStatus.Notified, WaitlistStatus.Seated or WaitlistStatus.Cancelled) => true,
+            (WaitlistStatus.Waiting, WaitlistStatus.Notified or WaitlistStatus.Cancelled) => true,
+            (WaitlistStatus.Notified, WaitlistStatus.Cancelled) => true,
             _ => false,
         };
         if (!valid) throw new BusinessRuleException("waitlist.transition", "Invalid waitlist status transition.");
         Status = status;
         if (status == WaitlistStatus.Notified) NotifiedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Seat(TableSessionId tableSessionId)
+    {
+        EnsureCanSeat();
+        TableSessionId = tableSessionId;
+        SeatedAt = DateTimeOffset.UtcNow;
+        Status = WaitlistStatus.Seated;
+    }
+
+    public void EnsureCanSeat()
+    {
+        if (Status is not (WaitlistStatus.Waiting or WaitlistStatus.Notified))
+        {
+            throw new BusinessRuleException("waitlist.seat", "Only a waiting customer can be seated.");
+        }
     }
 }

@@ -20,6 +20,9 @@ public interface IProjetoPizzaDbContext
     IQueryable<PizzaSettings> PizzaSettings { get; }
     IQueryable<Employee> Employees { get; }
     IQueryable<Customer> Customers { get; }
+    IQueryable<LoyaltySettings> LoyaltySettings => Array.Empty<LoyaltySettings>().AsQueryable();
+    IQueryable<LoyaltyTransaction> LoyaltyTransactions => Array.Empty<LoyaltyTransaction>().AsQueryable();
+    IQueryable<PromotionCoupon> PromotionCoupons => Array.Empty<PromotionCoupon>().AsQueryable();
     IQueryable<Category> Categories { get; }
     IQueryable<Product> Products { get; }
     IQueryable<ProductExtra> ProductExtras { get; }
@@ -35,6 +38,7 @@ public interface IProjetoPizzaDbContext
     IQueryable<InventoryItem> InventoryItems { get; }
     IQueryable<StockBalance> StockBalances { get; }
     IQueryable<StockMovement> StockMovements { get; }
+    IQueryable<InventoryReservation> InventoryReservations { get; }
     IQueryable<Recipe> Recipes { get; }
     IQueryable<RecipeItem> RecipeItems { get; }
     IQueryable<DiningArea> DiningAreas { get; }

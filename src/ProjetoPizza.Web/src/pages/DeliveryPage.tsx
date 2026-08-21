@@ -1,4 +1,4 @@
-import { ArrowLeft, LoaderCircle, MapPin, Minus, Plus, ShoppingBag, Trash2, Truck } from 'lucide-react'
+import { ArrowLeft, Award, LoaderCircle, MapPin, Minus, Plus, ShoppingBag, Ticket, Trash2, Truck } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MenuView } from '../features/client/MenuView'
 import { PizzaBuilder, type PizzaBuilderResult } from '../features/client/PizzaBuilder'
@@ -6,7 +6,7 @@ import { getProductImage } from '../features/client/clientPresentation'
 import { createUuid } from '../lib/uuid'
 import { deliveryService } from '../services/deliveryService'
 import type { ClientCartItem, ClientProduct } from '../types/client'
-import type { DeliveryCatalog, DeliveryTracking } from '../types/delivery'
+import type { DeliveryCatalog, DeliveryLoyaltyQuote, DeliveryTracking } from '../types/delivery'
 import { formatCurrency } from '../utils/money'
 import { getUserErrorMessage } from '../utils/errors'
 
@@ -23,6 +23,11 @@ export function DeliveryPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const requestId = useRef(createUuid())
+  const checkoutForm = useRef<HTMLFormElement>(null)
+  const [couponCode, setCouponCode] = useState('')
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0)
+  const [loyaltyQuote, setLoyaltyQuote] = useState<DeliveryLoyaltyQuote>()
+  const [quotedGrossTotal, setQuotedGrossTotal] = useState(0)
 
   useEffect(() => {
     deliveryService.catalog().then(setCatalog).catch((reason) => setError(getUserErrorMessage(reason))).finally(() => setLoading(false))
@@ -37,7 +42,19 @@ export function DeliveryPage() {
     return () => { cancelled = true; window.clearInterval(timer) }
   }, [screen, trackingToken])
 
-  const total = useMemo(() => cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0) + (catalog?.deliveryFee ?? 0), [cart, catalog])
+  const grossTotal = useMemo(() => cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0) + (catalog?.deliveryFee ?? 0), [cart, catalog])
+  const validLoyaltyQuote = quotedGrossTotal === grossTotal ? loyaltyQuote : undefined
+  const total = Math.max(0, grossTotal - (validLoyaltyQuote?.totalBenefits ?? 0))
+  const benefitsPending = Boolean(couponCode || loyaltyPoints) && !validLoyaltyQuote
+
+  async function quoteBenefits() {
+    const form = checkoutForm.current
+    if (!form) return
+    const values = new FormData(form)
+    setError(undefined)
+    try { setLoyaltyQuote(await deliveryService.loyaltyQuote({ phone: String(values.get('phone') ?? ''), birthDate: String(values.get('birthDate') ?? ''), orderAmount: grossTotal, couponCode: couponCode || undefined, loyaltyPoints })); setQuotedGrossTotal(grossTotal) }
+    catch (reason) { setLoyaltyQuote(undefined); setError(getUserErrorMessage(reason)) }
+  }
 
   function addProduct(product: ClientProduct) {
     setCart((current) => {
@@ -73,6 +90,8 @@ export function DeliveryPage() {
         birthDate: String(form.get('birthDate') ?? ''),
         address: String(form.get('address') ?? ''),
         notes: String(form.get('notes') ?? '') || undefined,
+        couponCode: couponCode || undefined,
+        loyaltyPoints,
         items: cart.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
@@ -121,8 +140,10 @@ export function DeliveryPage() {
       {screen === 'menu' ? <MenuView products={catalog.catalog.products} categoryName="Cardápio para entrega" isFeatured onAddProduct={addProduct} onBuildPizza={setBuilderProduct} /> : (
         <section className="delivery-checkout"><button className="secondary-button" onClick={() => setScreen('menu')}><ArrowLeft /> Continuar escolhendo</button><h1>Finalizar delivery</h1>
           <div className="delivery-cart-list">{cart.map((item) => <article key={item.key}><img src={item.imageUrl} alt="" /><div><strong>{item.name}</strong><small>{item.pizza?.flavorNames.join(' / ')}</small></div><button onClick={() => changeQuantity(item.key, -1)}><Minus /></button><span>{item.quantity}</span><button onClick={() => changeQuantity(item.key, 1)}><Plus /></button><strong>{formatCurrency(item.unitPrice * item.quantity)}</strong><button aria-label={`Remover ${item.name}`} onClick={() => changeQuantity(item.key, -item.quantity)}><Trash2 /></button></article>)}</div>
-          <div className="delivery-total"><span>Taxa de entrega</span><strong>{formatCurrency(catalog.deliveryFee)}</strong><span>Total</span><strong>{formatCurrency(total)}</strong></div>
-          <form className="delivery-form" onSubmit={submit}><label>Nome<input name="customerName" required maxLength={120} /></label><label>Telefone<input name="phone" required inputMode="tel" /></label><label>Data de nascimento<input name="birthDate" required type="date" /></label><label className="wide">Endereço completo<textarea name="address" required maxLength={500} rows={3} /></label><label className="wide">Observações<textarea name="notes" maxLength={1000} rows={2} /></label><button className="primary-button wide" disabled={!cart.length || submitting}>{submitting ? 'Enviando…' : `Confirmar pedido · ${formatCurrency(total)}`}</button></form>
+          <div className="delivery-total"><span>Taxa de entrega</span><strong>{formatCurrency(catalog.deliveryFee)}</strong>{validLoyaltyQuote && <><span>Benefícios</span><strong>- {formatCurrency(validLoyaltyQuote.totalBenefits)}</strong></>}<span>Total</span><strong>{formatCurrency(total)}</strong></div>
+          <form ref={checkoutForm} className="delivery-form" onSubmit={submit}><label>Nome<input name="customerName" required maxLength={120} /></label><label>Telefone<input name="phone" required inputMode="tel" /></label><label>Data de nascimento<input name="birthDate" required type="date" /></label>
+            <details className="delivery-loyalty wide"><summary><Award /><span><strong>Clube Forno 27</strong><small>{validLoyaltyQuote ? `${validLoyaltyQuote.customerName}, você tem ${validLoyaltyQuote.points} pontos` : 'Usar cupom ou pontos'}</small></span></summary><div><label><Ticket /> Cupom<input value={couponCode} maxLength={40} onChange={(event) => { setCouponCode(event.target.value.toUpperCase()); setLoyaltyQuote(undefined) }} placeholder="EX.: VOLTE10" /></label><label><Award /> Pontos<input type="number" min="0" max={validLoyaltyQuote?.points} value={loyaltyPoints} onChange={(event) => { setLoyaltyPoints(Math.max(0, event.target.valueAsNumber || 0)); setLoyaltyQuote(undefined) }} /></label><button type="button" className="secondary-button" onClick={() => void quoteBenefits()}>Aplicar benefícios</button></div></details>
+            <label className="wide">Endereço completo<textarea name="address" required maxLength={500} rows={3} /></label><label className="wide">Observações<textarea name="notes" maxLength={1000} rows={2} /></label><button className="primary-button wide" disabled={!cart.length || submitting || benefitsPending}>{submitting ? 'Enviando…' : benefitsPending ? 'Aplique os benefícios para continuar' : `Confirmar pedido · ${formatCurrency(total)}`}</button></form>
         </section>
       )}
       {builderProduct && <PizzaBuilder product={builderProduct} catalog={catalog.catalog.pizza} onCancel={() => setBuilderProduct(undefined)} onAdd={addPizza} />}

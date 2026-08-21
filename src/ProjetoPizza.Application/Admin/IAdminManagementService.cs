@@ -6,6 +6,8 @@ public interface IAdminManagementService
     Task<OrderReceiptDto?> GetOrderReceiptAsync(Guid id, CancellationToken cancellationToken);
     Task<AdministrativeOrderCatalogDto> GetOrderCatalogAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<CustomerDto>> ListCustomersAsync(CancellationToken cancellationToken);
+    Task<CustomerDetailDto?> GetCustomerDetailAsync(Guid id, CancellationToken cancellationToken);
+    Task<LoyaltyDashboardDto> GetLoyaltyDashboardAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<ReservationDto>> ListReservationsAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<WaitlistEntryDto>> ListWaitlistAsync(CancellationToken cancellationToken);
     Task<IReadOnlyCollection<PizzaCrustDto>> ListPizzaCrustsAsync(CancellationToken cancellationToken);
@@ -42,10 +44,15 @@ public interface IAdminManagementService
     Task<CommandResultDto> SavePizzaFlavorAsync(SavePizzaFlavorCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SavePizzaFlavorImageAsync(Guid flavorId, Stream content, string contentType, string fileName, Guid identityUserId, CancellationToken cancellationToken);
     Task<CustomerDto> SaveCustomerAsync(SaveCustomerCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CustomerDetailDto> AdjustCustomerLoyaltyPointsAsync(Guid id, AdjustCustomerLoyaltyPointsCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task UpdateLoyaltySettingsAsync(UpdateLoyaltySettingsCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> SavePromotionCouponAsync(SavePromotionCouponCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<ReservationDto> CreateReservationAsync(CreateReservationCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> TransitionReservationAsync(Guid id, string transition, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> SeatReservationAsync(Guid id, SeatDiningEntryCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<WaitlistEntryDto> CreateWaitlistEntryAsync(CreateWaitlistEntryCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> TransitionWaitlistEntryAsync(Guid id, string transition, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> SeatWaitlistEntryAsync(Guid id, SeatDiningEntryCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CreatedOrderDto> CreateOrderAsync(CreateAdministrativeOrderCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CounterCheckoutResultDto> CheckoutCounterOrderAsync(CheckoutCounterOrderCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> OpenTableAsync(OpenTableCommand command, Guid identityUserId, CancellationToken cancellationToken);
@@ -77,6 +84,7 @@ public interface IAdminManagementService
     Task<DeviceProvisioningDto> ProvisionCustomerTabletAsync(Guid id, ProvisionCustomerTabletCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SaveDiningAreaAsync(SaveDiningAreaCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SaveRestaurantTableAsync(SaveRestaurantTableCommand command, Guid identityUserId, CancellationToken cancellationToken);
+    Task<CommandResultDto> DeleteRestaurantTableAsync(Guid id, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SaveCashRegisterAsync(SaveCashRegisterCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SavePaymentMethodAsync(SavePaymentMethodCommand command, Guid identityUserId, CancellationToken cancellationToken);
     Task<CommandResultDto> SaveProductionStationAsync(SaveProductionStationCommand command, Guid identityUserId, CancellationToken cancellationToken);

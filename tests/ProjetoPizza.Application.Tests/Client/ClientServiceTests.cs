@@ -668,6 +668,7 @@ public sealed class ClientServiceTests
         public IQueryable<InventoryItem> InventoryItems => Array.Empty<InventoryItem>().AsQueryable();
         public IQueryable<StockBalance> StockBalances => Array.Empty<StockBalance>().AsQueryable();
         public IQueryable<StockMovement> StockMovements => Array.Empty<StockMovement>().AsQueryable();
+        public IQueryable<InventoryReservation> InventoryReservations => Array.Empty<InventoryReservation>().AsQueryable();
         public IQueryable<Recipe> Recipes => Array.Empty<Recipe>().AsQueryable();
         public IQueryable<RecipeItem> RecipeItems => Array.Empty<RecipeItem>().AsQueryable();
         public IQueryable<DiningArea> DiningAreas => DiningAreaItems.AsQueryable();

@@ -151,6 +151,7 @@ public sealed class AdminQueryServiceTests
         public IQueryable<InventoryItem> InventoryItems => InventoryItemItems.AsQueryable();
         public IQueryable<StockBalance> StockBalances => StockBalanceItems.AsQueryable();
         public IQueryable<StockMovement> StockMovements => Array.Empty<StockMovement>().AsQueryable();
+        public IQueryable<InventoryReservation> InventoryReservations => Array.Empty<InventoryReservation>().AsQueryable();
         public IQueryable<Recipe> Recipes => Array.Empty<Recipe>().AsQueryable();
         public IQueryable<RecipeItem> RecipeItems => Array.Empty<RecipeItem>().AsQueryable();
         public IQueryable<DiningArea> DiningAreas => DiningAreaItems.AsQueryable();

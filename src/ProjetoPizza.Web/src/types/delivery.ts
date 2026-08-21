@@ -26,3 +26,4 @@ export interface DeliveryTracking {
   total: number
   items: Array<Pick<ClientOrderItem, 'name' | 'quantity' | 'status'>>
 }
+export interface DeliveryLoyaltyQuote { customerName: string; points: number; expiresAt?: string; couponDiscount: number; loyaltyDiscount: number; totalBenefits: number }

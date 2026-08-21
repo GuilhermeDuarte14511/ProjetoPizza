@@ -28,6 +28,9 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     public DbSet<PizzaSettings> PizzaSettings => Set<PizzaSettings>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<LoyaltySettings> LoyaltySettings => Set<LoyaltySettings>();
+    public DbSet<LoyaltyTransaction> LoyaltyTransactions => Set<LoyaltyTransaction>();
+    public DbSet<PromotionCoupon> PromotionCoupons => Set<PromotionCoupon>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductExtra> ProductExtras => Set<ProductExtra>();
@@ -44,6 +47,7 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
     public DbSet<StockBalance> StockBalances => Set<StockBalance>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<InventoryReservation> InventoryReservations => Set<InventoryReservation>();
     public DbSet<Recipe> Recipes => Set<Recipe>();
     public DbSet<RecipeItem> RecipeItems => Set<RecipeItem>();
     public DbSet<DiningArea> DiningAreas => Set<DiningArea>();
@@ -85,6 +89,9 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     IQueryable<PizzaSettings> IProjetoPizzaDbContext.PizzaSettings => PizzaSettings;
     IQueryable<Employee> IProjetoPizzaDbContext.Employees => Employees;
     IQueryable<Customer> IProjetoPizzaDbContext.Customers => Customers;
+    IQueryable<LoyaltySettings> IProjetoPizzaDbContext.LoyaltySettings => LoyaltySettings;
+    IQueryable<LoyaltyTransaction> IProjetoPizzaDbContext.LoyaltyTransactions => LoyaltyTransactions;
+    IQueryable<PromotionCoupon> IProjetoPizzaDbContext.PromotionCoupons => PromotionCoupons;
     IQueryable<Product> IProjetoPizzaDbContext.Products => Products;
     IQueryable<ProductExtra> IProjetoPizzaDbContext.ProductExtras => ProductExtras;
     IQueryable<ProductImage> IProjetoPizzaDbContext.ProductImages => ProductImages;
@@ -99,6 +106,7 @@ public sealed class ProjetoPizzaDbContext(DbContextOptions<ProjetoPizzaDbContext
     IQueryable<InventoryItem> IProjetoPizzaDbContext.InventoryItems => InventoryItems;
     IQueryable<StockBalance> IProjetoPizzaDbContext.StockBalances => StockBalances;
     IQueryable<StockMovement> IProjetoPizzaDbContext.StockMovements => StockMovements;
+    IQueryable<InventoryReservation> IProjetoPizzaDbContext.InventoryReservations => InventoryReservations;
     IQueryable<Recipe> IProjetoPizzaDbContext.Recipes => Recipes;
     IQueryable<RecipeItem> IProjetoPizzaDbContext.RecipeItems => RecipeItems;
     IQueryable<DiningArea> IProjetoPizzaDbContext.DiningAreas => DiningAreas;

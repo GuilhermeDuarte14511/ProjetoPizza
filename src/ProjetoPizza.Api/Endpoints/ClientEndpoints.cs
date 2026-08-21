@@ -37,6 +37,13 @@ public static class ClientEndpoints
             CancellationToken cancellationToken) =>
             service.GetStateAsync(GetSession(httpContext), cancellationToken));
 
+        sessionGroup.MapPost("/loyalty/lookup", async (ClientLoyaltyLookupCommand command, HttpContext httpContext,
+            IClientQueryService service, CancellationToken cancellationToken) =>
+        {
+            var result = await service.LookupLoyaltyAsync(GetSession(httpContext), command, cancellationToken);
+            return result is null ? Results.NotFound() : Results.Ok(result);
+        });
+
         sessionGroup.MapPost("/telemetry", async (
             UpdateClientTelemetryRequest request,
             HttpContext httpContext,

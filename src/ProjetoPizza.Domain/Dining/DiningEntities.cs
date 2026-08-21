@@ -216,6 +216,9 @@ public sealed class TableSession : AggregateRoot<TableSessionId>
 
     public void AssignWaiter(EmployeeId employeeId) => PrimaryWaiterId = employeeId;
     public void ChangeGuestCount(int guestCount) => GuestCount = Guard.Positive(guestCount, nameof(guestCount));
+    public void SetNotes(string? notes) => Notes = string.IsNullOrWhiteSpace(notes)
+        ? null
+        : Guard.Required(notes, nameof(notes), 500);
 
     public void LinkTable(RestaurantTable table, EmployeeId employeeId)
     {

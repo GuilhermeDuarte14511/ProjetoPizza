@@ -3,6 +3,9 @@ namespace ProjetoPizza.Domain.SharedKernel;
 public readonly record struct RestaurantUnitId(Guid Value) { public static RestaurantUnitId New() => new(Guid.NewGuid()); }
 public readonly record struct EmployeeId(Guid Value) { public static EmployeeId New() => new(Guid.NewGuid()); }
 public readonly record struct CustomerId(Guid Value) { public static CustomerId New() => new(Guid.NewGuid()); }
+public readonly record struct LoyaltySettingsId(Guid Value) { public static LoyaltySettingsId New() => new(Guid.NewGuid()); }
+public readonly record struct LoyaltyTransactionId(Guid Value) { public static LoyaltyTransactionId New() => new(Guid.NewGuid()); }
+public readonly record struct PromotionCouponId(Guid Value) { public static PromotionCouponId New() => new(Guid.NewGuid()); }
 public readonly record struct CategoryId(Guid Value) { public static CategoryId New() => new(Guid.NewGuid()); }
 public readonly record struct ProductId(Guid Value) { public static ProductId New() => new(Guid.NewGuid()); }
 public readonly record struct ProductVariantId(Guid Value) { public static ProductVariantId New() => new(Guid.NewGuid()); }
@@ -16,6 +19,7 @@ public readonly record struct IngredientId(Guid Value) { public static Ingredien
 public readonly record struct InventoryItemId(Guid Value) { public static InventoryItemId New() => new(Guid.NewGuid()); }
 public readonly record struct StockBalanceId(Guid Value) { public static StockBalanceId New() => new(Guid.NewGuid()); }
 public readonly record struct StockMovementId(Guid Value) { public static StockMovementId New() => new(Guid.NewGuid()); }
+public readonly record struct InventoryReservationId(Guid Value) { public static InventoryReservationId New() => new(Guid.NewGuid()); }
 public readonly record struct RecipeId(Guid Value) { public static RecipeId New() => new(Guid.NewGuid()); }
 public readonly record struct RecipeItemId(Guid Value) { public static RecipeItemId New() => new(Guid.NewGuid()); }
 public readonly record struct DiningAreaId(Guid Value) { public static DiningAreaId New() => new(Guid.NewGuid()); }

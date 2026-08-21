@@ -1,4 +1,4 @@
-import { BellRing, CalendarClock, Check, Clock3, Plus, Search, UserCheck, UserPlus, UserRoundCheck, UsersRound, X } from 'lucide-react'
+import { BellRing, CalendarClock, Check, Clock3, Plus, Search, TableProperties, UserCheck, UserPlus, UserRoundCheck, UsersRound, X } from 'lucide-react'
 import { type KeyboardEvent, useId, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Modal } from '../components/ui/Modal'
@@ -16,6 +16,7 @@ import { formatPhone } from '../utils/phone'
 
 type Tab = 'reservations' | 'waitlist'
 type NewEntry = 'reservation' | 'waitlist'
+type SeatingTarget = { kind: 'reservation'; item: Reservation } | { kind: 'waitlist'; item: WaitlistEntry }
 
 const initialDraft = {
   customerId: undefined as string | undefined, customerName: '', phone: '', birthDate: '', partySize: 2, scheduledAt: '', durationMinutes: 90,
@@ -26,12 +27,15 @@ export function ReservationsPage() {
   const reservationsQuery = useAdminQuery(queryKeys.reservations, adminService.reservations)
   const waitlistQuery = useAdminQuery(queryKeys.waitlist, adminService.waitlist)
   const customersQuery = useAdminQuery(queryKeys.customers, adminService.customers)
+  const tablesQuery = useAdminQuery(queryKeys.tables, adminService.tables)
   const [tab, setTab] = useState<Tab>('reservations')
   const [creating, setCreating] = useState<NewEntry>()
   const [draft, setDraft] = useState(initialDraft)
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false)
   const [activeSuggestion, setActiveSuggestion] = useState(0)
   const [busy, setBusy] = useState(false)
+  const [seating, setSeating] = useState<SeatingTarget>()
+  const [selectedTableIds, setSelectedTableIds] = useState<string[]>([])
   const customerListId = useId()
   const toast = useToast()
   const reservations = useMemo(() => [...reservationsQuery.data].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)), [reservationsQuery.data])
@@ -46,6 +50,10 @@ export function ReservationsPage() {
   const selectedCustomer = draft.customerId
     ? customersQuery.data.find((customer) => customer.id === draft.customerId)
     : undefined
+  const freeTables = tablesQuery.data.filter((table) => table.status === 'Livre')
+  const selectedCapacity = freeTables
+    .filter((table) => selectedTableIds.includes(table.id))
+    .reduce((total, table) => total + table.capacity, 0)
 
   function openCreate(kind: NewEntry) {
     const nextHour = new Date(Date.now() + 60 * 60_000)
@@ -155,6 +163,43 @@ export function ReservationsPage() {
     } catch (error) { toast.error('Não foi possível atualizar a fila', getUserErrorMessage(error)) } finally { setBusy(false) }
   }
 
+  function openSeating(target: SeatingTarget) {
+    setSelectedTableIds([])
+    setSeating(target)
+  }
+
+  function toggleTable(tableId: string) {
+    setSelectedTableIds((current) => current.includes(tableId)
+      ? current.filter((id) => id !== tableId)
+      : [...current, tableId])
+  }
+
+  async function confirmSeating() {
+    if (!seating || selectedCapacity < seating.item.partySize) return
+    setBusy(true)
+    try {
+      const result = seating.kind === 'reservation'
+        ? await adminService.seatReservation(seating.item.id, selectedTableIds)
+        : await adminService.seatWaitlistEntry(seating.item.id, selectedTableIds)
+      if (seating.kind === 'reservation') {
+        reservationsQuery.setData((current) => current.map((item) => item.id === seating.item.id
+          ? { ...item, status: 'Seated', tableSessionId: result.id, seatedAt: new Date().toISOString() }
+          : item))
+      } else {
+        waitlistQuery.setData((current) => current.map((item) => item.id === seating.item.id
+          ? { ...item, status: 'Seated', tableSessionId: result.id, seatedAt: new Date().toISOString() }
+          : item))
+      }
+      await tablesQuery.refresh()
+      toast.success('Cliente acomodado', 'A comanda foi aberta e as mesas selecionadas ficaram vinculadas ao atendimento.')
+      setSeating(undefined)
+    } catch (error) {
+      toast.error('Não foi possível acomodar', getUserErrorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <>
       <PageHeader title="Reservas e lista de espera" description="Organize chegadas, previsões e ocupação do salão em um só fluxo." actions={hasPermission('operations:write') && <button className="primary-button" onClick={() => openCreate(tab === 'reservations' ? 'reservation' : 'waitlist')}><Plus size={16} /> {tab === 'reservations' ? 'Nova reserva' : 'Adicionar à fila'}</button>} />
@@ -169,7 +214,7 @@ export function ReservationsPage() {
           <time dateTime={item.scheduledAt}><strong>{new Date(item.scheduledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</strong><small>{new Date(item.scheduledAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</small></time>
           <div><h2>{item.customerName}</h2><span>{formatPhone(item.phone)} · {item.partySize} pessoas · {item.durationMinutes} min</span>{item.notes && <small>{item.notes}</small>}</div>
           <StatusBadge status={item.status} />
-          {hasPermission('operations:write') && <div className="reservation-actions">{item.status === 'Pending' && <button disabled={busy} onClick={() => void transitionReservation(item, 'Confirmed')}><Check size={15} /> Confirmar</button>}{item.status === 'Confirmed' && <button disabled={busy} onClick={() => void transitionReservation(item, 'Seated')}><UserRoundCheck size={15} /> Recepcionar</button>}{item.status === 'Seated' && <button disabled={busy} onClick={() => void transitionReservation(item, 'Completed')}><Check size={15} /> Concluir</button>}{(item.status === 'Pending' || item.status === 'Confirmed') && <button className="danger-text" disabled={busy} aria-label={`Cancelar reserva de ${item.customerName}`} onClick={() => void transitionReservation(item, 'Cancelled')}><X size={15} /></button>}</div>}
+          {hasPermission('operations:write') && <div className="reservation-actions">{item.status === 'Pending' && <button disabled={busy} onClick={() => void transitionReservation(item, 'Confirmed')}><Check size={15} /> Confirmar</button>}{item.status === 'Confirmed' && <button disabled={busy} onClick={() => openSeating({ kind: 'reservation', item })}><UserRoundCheck size={15} /> Acomodar</button>}{item.status === 'Seated' && <button disabled={busy} onClick={() => void transitionReservation(item, 'Completed')}><Check size={15} /> Concluir</button>}{(item.status === 'Pending' || item.status === 'Confirmed') && <button className="danger-text" disabled={busy} aria-label={`Cancelar reserva de ${item.customerName}`} onClick={() => void transitionReservation(item, 'Cancelled')}><X size={15} /></button>}</div>}
         </article>)}
         {!reservations.length && <EmptyState icon={<CalendarClock />} title="Agenda livre" description="As novas reservas aparecerão aqui em ordem de horário." />}
       </section> : <section id="waitlist-panel" role="tabpanel" aria-labelledby="waitlist-tab" className="surface-card reservation-list waitlist-list">
@@ -178,7 +223,7 @@ export function ReservationsPage() {
           <div><h2>{item.customerName}</h2><span>{formatPhone(item.phone)} · {item.partySize} pessoas</span>{item.notes && <small>{item.notes}</small>}</div>
           <span className="wait-estimate"><small>Previsão</small><strong>{item.estimatedWaitMinutes} min</strong></span>
           <StatusBadge status={item.status} />
-          {hasPermission('operations:write') && <div className="reservation-actions">{item.status === 'Waiting' && <button disabled={busy} onClick={() => void transitionWaitlist(item, 'Notified')}><BellRing size={15} /> Avisar</button>}<button disabled={busy} onClick={() => void transitionWaitlist(item, 'Seated')}><UserRoundCheck size={15} /> Sentar</button><button className="danger-text" disabled={busy} aria-label={`Remover ${item.customerName} da fila`} onClick={() => void transitionWaitlist(item, 'Cancelled')}><X size={15} /></button></div>}
+          {hasPermission('operations:write') && <div className="reservation-actions">{item.status === 'Waiting' && <button disabled={busy} onClick={() => void transitionWaitlist(item, 'Notified')}><BellRing size={15} /> Avisar</button>}<button disabled={busy} onClick={() => openSeating({ kind: 'waitlist', item })}><UserRoundCheck size={15} /> Acomodar</button><button className="danger-text" disabled={busy} aria-label={`Remover ${item.customerName} da fila`} onClick={() => void transitionWaitlist(item, 'Cancelled')}><X size={15} /></button></div>}
         </article>)}
         {!waiting.length && <EmptyState icon={<UsersRound />} title="Ninguém aguardando" description="A fila está livre neste momento." />}
       </section>}
@@ -198,6 +243,20 @@ export function ReservationsPage() {
           <label className="field-label wide">Observações<textarea value={draft.notes} maxLength={500} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} placeholder="Preferência de mesa, acessibilidade ou ocasião especial" /></label>
         </div></div>
         <div className="modal-footer"><button type="button" className="secondary-button" disabled={busy} onClick={() => setCreating(undefined)}>Cancelar</button><button type="button" className="primary-button" disabled={busy || !draft.customerName || !draft.phone || (creating === 'reservation' && (!draft.scheduledAt || (!draft.customerId && !draft.birthDate)))} onClick={() => void create()}>{busy ? 'Salvando...' : creating === 'reservation' && !draft.customerId ? 'Cadastrar e reservar' : 'Salvar'}</button></div>
+      </Modal>}
+      {seating && <Modal open title={`Acomodar ${seating.item.customerName}`} description="Selecione uma ou mais mesas livres. A comanda será aberta na mesma operação." isBusy={busy} onClose={() => setSeating(undefined)}>
+        <div className="modal-body seating-dialog-body">
+          <div className="seating-summary"><UsersRound size={20} /><span><strong>{seating.item.partySize} pessoas</strong><small>Capacidade selecionada: {selectedCapacity}</small></span></div>
+          <div className="seating-table-grid" role="group" aria-label="Mesas livres">
+            {freeTables.map((table) => <label className={`seating-table-option ${selectedTableIds.includes(table.id) ? 'selected' : ''}`} key={table.id}>
+              <input type="checkbox" checked={selectedTableIds.includes(table.id)} onChange={() => toggleTable(table.id)} />
+              <TableProperties aria-hidden="true" /><span><strong>{table.name}</strong><small>{table.area} · {table.capacity} lugares</small></span>
+            </label>)}
+            {!freeTables.length && <div className="reservation-empty compact"><TableProperties /><h2>Nenhuma mesa livre</h2><p>Finalize ou transfira um atendimento antes de acomodar este cliente.</p></div>}
+          </div>
+          {selectedTableIds.length > 0 && selectedCapacity < seating.item.partySize && <p className="field-error" role="alert">Selecione capacidade para pelo menos {seating.item.partySize} pessoas.</p>}
+        </div>
+        <div className="modal-footer"><button type="button" className="secondary-button" disabled={busy} onClick={() => setSeating(undefined)}>Cancelar</button><button type="button" className="primary-button" disabled={busy || selectedCapacity < seating.item.partySize} onClick={() => void confirmSeating()}>{busy ? 'Abrindo comanda...' : 'Acomodar e abrir comanda'}</button></div>
       </Modal>}
     </>
   )

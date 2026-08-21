@@ -1,4 +1,5 @@
 using ProjetoPizza.Domain.Core;
+using ProjetoPizza.Domain.Customers;
 using ProjetoPizza.Domain.SharedKernel;
 
 namespace ProjetoPizza.Domain.Ordering;
@@ -99,6 +100,7 @@ public sealed class Order : AggregateRoot<OrderId>
         Status = OrderStatus.Draft;
         PaymentStatus = OrderPaymentStatus.Pending;
         Subtotal = ServiceFee = DeliveryFee = Discount = Total = Money.Zero();
+        ManualDiscount = CouponDiscount = LoyaltyDiscount = Money.Zero();
         CreatedAt = UpdatedAt = DateTimeOffset.UtcNow;
     }
 
@@ -115,6 +117,12 @@ public sealed class Order : AggregateRoot<OrderId>
     public Money ServiceFee { get; private set; }
     public Money DeliveryFee { get; private set; }
     public Money Discount { get; private set; }
+    public Money ManualDiscount { get; private set; }
+    public Money CouponDiscount { get; private set; }
+    public Money LoyaltyDiscount { get; private set; }
+    public string? CouponCode { get; private set; }
+    public PromotionCouponId? PromotionCouponId { get; private set; }
+    public int LoyaltyPointsRedeemed { get; private set; }
     public Money Total { get; private set; }
     public string? Notes { get; private set; }
     public string? DeliveryAddressSnapshot { get; private set; }
@@ -302,7 +310,8 @@ public sealed class Order : AggregateRoot<OrderId>
             .Aggregate(Money.Zero(), (sum, item) => sum + item.TotalPrice);
         ServiceFee = serviceFee ?? ServiceFee;
         DeliveryFee = deliveryFee ?? DeliveryFee;
-        Discount = discount ?? Discount;
+        ManualDiscount = discount ?? ManualDiscount;
+        Discount = ManualDiscount + CouponDiscount + LoyaltyDiscount;
 
         var gross = Subtotal + ServiceFee + DeliveryFee;
         if (Discount.Amount > gross.Amount)
@@ -312,6 +321,20 @@ public sealed class Order : AggregateRoot<OrderId>
 
         Total = gross - Discount;
         Touch();
+    }
+
+    public void ApplyLoyaltyBenefits(PromotionCouponId? couponId, string? couponCode, Money couponDiscount,
+        int loyaltyPointsRedeemed, Money loyaltyDiscount, Money manualDiscount)
+    {
+        EnsureMutable();
+        if (couponDiscount.Amount < 0 || loyaltyDiscount.Amount < 0 || loyaltyPointsRedeemed < 0)
+            throw new BusinessRuleException("order.loyalty", "Order loyalty benefits are invalid.");
+        PromotionCouponId = couponId;
+        CouponCode = string.IsNullOrWhiteSpace(couponCode) ? null : Guard.Required(couponCode, nameof(couponCode), 40);
+        CouponDiscount = couponDiscount;
+        LoyaltyPointsRedeemed = loyaltyPointsRedeemed;
+        LoyaltyDiscount = loyaltyDiscount;
+        RecalculateTotals(discount: manualDiscount);
     }
 
     private void EnsureMutable()

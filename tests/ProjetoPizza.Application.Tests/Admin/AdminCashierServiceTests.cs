@@ -106,6 +106,61 @@ public sealed class AdminCashierServiceTests
     }
 
     [Fact]
+    public async Task AdjustCustomerLoyaltyPoints_ShouldUpdateBalanceLedgerAndAudit()
+    {
+        var fixture = CreateFixture();
+        var customer = new Customer(
+            CustomerId.New(),
+            fixture.Context.RestaurantUnitItems.Single().Id,
+            "Ana Souza",
+            "11999998877",
+            new DateOnly(1992, 5, 18));
+        customer.EarnLoyaltyPoints(150, DateTimeOffset.UtcNow.AddDays(120));
+        fixture.Context.CustomerItems.Add(customer);
+        var service = new AdminManagementService(fixture.Context);
+
+        var result = await service.AdjustCustomerLoyaltyPointsAsync(
+            customer.Id.Value,
+            new AdjustCustomerLoyaltyPointsCommand(-40, "Correção do pedido 1047"),
+            fixture.IdentityUserId,
+            CancellationToken.None);
+
+        result.Customer.LoyaltyPoints.Should().Be(110);
+        result.BenefitBalance.Should().Be(5.50m);
+        fixture.Context.LoyaltyTransactionItems.Should().Contain(transaction =>
+            transaction.Type == LoyaltyTransactionType.ManualAdjustment &&
+            transaction.Points == -40 &&
+            transaction.BalanceAfter == 110 &&
+            transaction.Description == "Ajuste manual: Correção do pedido 1047");
+        fixture.Context.AuditLogItems.Should().Contain(log =>
+            log.Module == "Customers" && log.Action == "AdjustLoyaltyPoints");
+        fixture.Context.SaveChangesCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task AdjustCustomerLoyaltyPoints_WithShortReason_ShouldRejectWithoutSaving()
+    {
+        var fixture = CreateFixture();
+        var customer = new Customer(
+            CustomerId.New(),
+            fixture.Context.RestaurantUnitItems.Single().Id,
+            "Ana Souza",
+            "11999998877",
+            new DateOnly(1992, 5, 18));
+        fixture.Context.CustomerItems.Add(customer);
+        var service = new AdminManagementService(fixture.Context);
+
+        var action = () => service.AdjustCustomerLoyaltyPointsAsync(
+            customer.Id.Value,
+            new AdjustCustomerLoyaltyPointsCommand(10, "Erro"),
+            fixture.IdentityUserId,
+            CancellationToken.None);
+
+        (await action.Should().ThrowAsync<BusinessRuleException>()).Which.Rule.Should().Be("loyalty.adjustment_reason");
+        fixture.Context.SaveChangesCalls.Should().Be(0);
+    }
+
+    [Fact]
     public async Task CreateOrder_Delivery_ShouldUseServerPriceFeeDiscountAndCreateTicket()
     {
         var fixture = CreateFixture();
@@ -131,10 +186,20 @@ public sealed class AdminCashierServiceTests
             "Cozinha quente",
             "HOT",
             15);
+        var inventoryItem = new InventoryItem(
+            InventoryItemId.New(), fixture.Context.RestaurantUnitItems.Single().Id,
+            "Refrigerante em lata", "EST-REFRI-01", "un", 2, new Money(4));
+        var balance = new StockBalance(StockBalanceId.New(), inventoryItem.Id);
+        balance.ApplyAdjustment(10);
+        var recipe = new Recipe(RecipeId.New(), 1, productId: product.Id);
         fixture.Context.OperationSettingItems = [settings];
         fixture.Context.CustomerItems = [customer];
         fixture.Context.ProductItems = [product];
         fixture.Context.ProductionStationItems = [station];
+        fixture.Context.InventoryItemItems = [inventoryItem];
+        fixture.Context.StockBalanceItems = [balance];
+        fixture.Context.RecipeEntities = [recipe];
+        fixture.Context.RecipeItemEntities = [new RecipeItem(RecipeItemId.New(), recipe.Id, inventoryItem.Id, 0.5m, "un")];
         var service = new AdminManagementService(fixture.Context);
         var requestId = Guid.NewGuid();
 
@@ -162,6 +227,124 @@ public sealed class AdminCashierServiceTests
         fixture.Context.KitchenTicketEntities.Should().ContainSingle();
         fixture.Context.KitchenTicketItemEntities.Should().ContainSingle();
         fixture.Context.AuditLogItems.Should().ContainSingle(log => log.Action == "CreateAdministrative");
+        fixture.Context.InventoryReservationEntities.Should().ContainSingle().Which.Status.Should().Be(InventoryReservationStatus.Reserved);
+        balance.CurrentQuantity.Should().Be(10);
+        balance.ReservedQuantity.Should().Be(1);
+
+        await service.TransitionOrderAsync(result.Id, "accept", fixture.IdentityUserId, CancellationToken.None);
+        await service.TransitionOrderAsync(result.Id, "start-production", fixture.IdentityUserId, CancellationToken.None);
+
+        balance.CurrentQuantity.Should().Be(9);
+        balance.ReservedQuantity.Should().Be(0);
+        fixture.Context.InventoryReservationEntities.Single().Status.Should().Be(InventoryReservationStatus.Consumed);
+        fixture.Context.StockMovementEntities.Should().ContainSingle(movement =>
+            movement.MovementType == StockMovementType.Consumption && movement.Quantity == 1);
+    }
+
+    [Fact]
+    public async Task SeatReservation_ShouldOpenSessionAndLinkSelectedTablesAtomically()
+    {
+        var fixture = CreateFixture();
+        var unit = fixture.Context.RestaurantUnitItems.Single();
+        var area = new DiningArea(DiningAreaId.New(), unit.Id, "Salão");
+        var firstTable = new RestaurantTable(RestaurantTableId.New(), unit.Id, area.Id, 1, 2, "Mesa 01");
+        var secondTable = new RestaurantTable(RestaurantTableId.New(), unit.Id, area.Id, 2, 4, "Mesa 02");
+        var reservation = new Reservation(
+            ReservationId.New(), unit.Id, "Família Souza", "11999998877", 5,
+            DateTimeOffset.UtcNow.AddMinutes(30), 90, "Cadeira infantil");
+        reservation.Transition(ReservationStatus.Confirmed);
+        fixture.Context.OperationSettingItems = [new OperationSettings(unit.Id)];
+        fixture.Context.DiningAreaItems = [area];
+        fixture.Context.RestaurantTableItems = [firstTable, secondTable];
+        fixture.Context.ReservationEntities.Add(reservation);
+        var service = new AdminManagementService(fixture.Context);
+
+        var result = await service.SeatReservationAsync(
+            reservation.Id.Value,
+            new SeatDiningEntryCommand([firstTable.Id.Value, secondTable.Id.Value]),
+            fixture.IdentityUserId,
+            CancellationToken.None);
+
+        reservation.Status.Should().Be(ReservationStatus.Seated);
+        reservation.TableSessionId.Should().Be(new TableSessionId(result.Id));
+        fixture.Context.TableSessionEntities.Should().ContainSingle();
+        fixture.Context.TableSessionTables.Should().HaveCount(2);
+        fixture.Context.TableSessionEntities.Single().GuestCount.Should().Be(5);
+        fixture.Context.TableSessionEntities.Single().Notes.Should().Be("Cadeira infantil");
+        fixture.Context.AuditLogItems.Should().Contain(log => log.Action == "OpenFromSeating");
+        fixture.Context.SaveChangesCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task CancelOrder_BeforeProduction_ShouldReleaseReservedInventory()
+    {
+        var fixture = CreateFixture();
+        var unit = fixture.Context.RestaurantUnitItems.Single();
+        var order = new Order(
+            OrderId.New(), unit.Id, 42, SalesChannel.Administrative, FulfillmentType.DineIn, fixture.Employee.Id);
+        var orderItem = order.AddItem(OrderItemId.New(), ProductId.New(), "Refrigerante", 2, new Money(8));
+        order.RecalculateTotals();
+        order.Submit();
+        var inventoryItem = new InventoryItem(
+            InventoryItemId.New(), unit.Id, "Refrigerante em lata", "EST-REFRI-01", "un", 2, new Money(4));
+        var balance = new StockBalance(StockBalanceId.New(), inventoryItem.Id);
+        balance.ApplyAdjustment(5);
+        balance.Reserve(2);
+        var reservation = new InventoryReservation(
+            InventoryReservationId.New(), inventoryItem.Id, orderItem.Id, 2, inventoryItem.UnitCost);
+        fixture.Context.OrderEntities.Add(order);
+        fixture.Context.InventoryItemItems = [inventoryItem];
+        fixture.Context.StockBalanceItems = [balance];
+        fixture.Context.InventoryReservationEntities.Add(reservation);
+        var service = new AdminManagementService(fixture.Context);
+
+        await service.CancelOrderAsync(
+            order.Id.Value, new CancelOrderCommand("Cliente desistiu."), fixture.IdentityUserId, CancellationToken.None);
+
+        order.Status.Should().Be(OrderStatus.Cancelled);
+        reservation.Status.Should().Be(InventoryReservationStatus.Released);
+        balance.CurrentQuantity.Should().Be(5);
+        balance.ReservedQuantity.Should().Be(0);
+        balance.AvailableQuantity.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task DeleteRestaurantTable_WithoutUsage_ShouldRemoveAndAudit()
+    {
+        var fixture = CreateFixture();
+        var unit = fixture.Context.RestaurantUnitItems.Single();
+        var area = new DiningArea(DiningAreaId.New(), unit.Id, "Salão");
+        var table = new RestaurantTable(RestaurantTableId.New(), unit.Id, area.Id, 8, 4, "Mesa 08");
+        fixture.Context.DiningAreaItems = [area];
+        fixture.Context.RestaurantTableItems = [table];
+        var service = new AdminManagementService(fixture.Context);
+
+        var result = await service.DeleteRestaurantTableAsync(table.Id.Value, fixture.IdentityUserId, CancellationToken.None);
+
+        result.Status.Should().Be("Deleted");
+        fixture.Context.RestaurantTableItems.Should().BeEmpty();
+        fixture.Context.AuditLogItems.Should().ContainSingle(log => log.Action == "Delete");
+    }
+
+    [Fact]
+    public async Task DeleteRestaurantTable_WithServiceHistory_ShouldBeRejected()
+    {
+        var fixture = CreateFixture();
+        var unit = fixture.Context.RestaurantUnitItems.Single();
+        var area = new DiningArea(DiningAreaId.New(), unit.Id, "Salão");
+        var table = new RestaurantTable(RestaurantTableId.New(), unit.Id, area.Id, 8, 4, "Mesa 08");
+        var session = TableSession.Open(
+            TableSessionId.New(), unit.Id, 1, 2, fixture.Employee.Id, new Percentage(10), [table]);
+        fixture.Context.DiningAreaItems = [area];
+        fixture.Context.RestaurantTableItems = [table];
+        fixture.Context.TableSessionEntities.Add(session);
+        var service = new AdminManagementService(fixture.Context);
+
+        var action = () => service.DeleteRestaurantTableAsync(table.Id.Value, fixture.IdentityUserId, CancellationToken.None);
+
+        (await action.Should().ThrowAsync<BusinessRuleException>())
+            .Which.Rule.Should().Be("restaurant_table.history");
+        fixture.Context.RestaurantTableItems.Should().ContainSingle();
     }
 
     [Fact]
@@ -273,16 +456,28 @@ public sealed class AdminCashierServiceTests
         public ProductionStation[] ProductionStationItems { get; set; } = [];
         public PaymentMethod[] PaymentMethodItems { get; set; } = [];
         public Device[] DeviceItems { get; set; } = [];
+        public InventoryItem[] InventoryItemItems { get; set; } = [];
+        public StockBalance[] StockBalanceItems { get; set; } = [];
+        public Recipe[] RecipeEntities { get; set; } = [];
+        public RecipeItem[] RecipeItemEntities { get; set; } = [];
+        public DiningArea[] DiningAreaItems { get; set; } = [];
+        public List<RestaurantTable> RestaurantTableItems { get; set; } = [];
         public List<CashShift> CashShiftItems { get; } = [];
         public List<Bill> BillEntities { get; } = [];
         public List<BillItem> BillItemEntities { get; } = [];
         public List<Payment> PaymentEntities { get; } = [];
         public List<PrintJob> PrintJobEntities { get; } = [];
         public List<Order> OrderEntities { get; } = [];
+        public List<InventoryReservation> InventoryReservationEntities { get; } = [];
+        public List<StockMovement> StockMovementEntities { get; } = [];
         public List<Reservation> ReservationEntities { get; } = [];
+        public List<TableSession> TableSessionEntities { get; } = [];
         public List<KitchenTicket> KitchenTicketEntities { get; } = [];
         public List<KitchenTicketItem> KitchenTicketItemEntities { get; } = [];
         public List<AuditLog> AuditLogItems { get; } = [];
+        public List<LoyaltySettings> LoyaltySettingItems { get; } = [];
+        public List<LoyaltyTransaction> LoyaltyTransactionItems { get; } = [];
+        public List<PromotionCoupon> PromotionCouponItems { get; } = [];
         public int SaveChangesCalls { get; private set; }
 
         public IQueryable<RestaurantUnit> RestaurantUnits => RestaurantUnitItems.AsQueryable();
@@ -290,6 +485,9 @@ public sealed class AdminCashierServiceTests
         public IQueryable<PizzaSettings> PizzaSettings => Array.Empty<PizzaSettings>().AsQueryable();
         public IQueryable<Employee> Employees => EmployeeItems.AsQueryable();
         public IQueryable<Customer> Customers => CustomerItems.AsQueryable();
+        public IQueryable<LoyaltySettings> LoyaltySettings => LoyaltySettingItems.AsQueryable();
+        public IQueryable<LoyaltyTransaction> LoyaltyTransactions => LoyaltyTransactionItems.AsQueryable();
+        public IQueryable<PromotionCoupon> PromotionCoupons => PromotionCouponItems.AsQueryable();
         public IQueryable<Category> Categories => Array.Empty<Category>().AsQueryable();
         public IQueryable<Product> Products => ProductItems.AsQueryable();
         public IQueryable<ProductExtra> ProductExtras => Array.Empty<ProductExtra>().AsQueryable();
@@ -302,21 +500,22 @@ public sealed class AdminCashierServiceTests
         public IQueryable<Ingredient> Ingredients => Array.Empty<Ingredient>().AsQueryable();
         public IQueryable<PizzaFlavorIngredient> PizzaFlavorIngredients => Array.Empty<PizzaFlavorIngredient>().AsQueryable();
         public IQueryable<PizzaFlavorExtra> PizzaFlavorExtras => Array.Empty<PizzaFlavorExtra>().AsQueryable();
-        public IQueryable<InventoryItem> InventoryItems => Array.Empty<InventoryItem>().AsQueryable();
-        public IQueryable<StockBalance> StockBalances => Array.Empty<StockBalance>().AsQueryable();
-        public IQueryable<StockMovement> StockMovements => Array.Empty<StockMovement>().AsQueryable();
-        public IQueryable<Recipe> Recipes => Array.Empty<Recipe>().AsQueryable();
-        public IQueryable<RecipeItem> RecipeItems => Array.Empty<RecipeItem>().AsQueryable();
-        public IQueryable<DiningArea> DiningAreas => Array.Empty<DiningArea>().AsQueryable();
-        public IQueryable<RestaurantTable> RestaurantTables => Array.Empty<RestaurantTable>().AsQueryable();
-        public IQueryable<TableSession> TableSessions => Array.Empty<TableSession>().AsQueryable();
-        public IQueryable<TableSessionTable> TableSessionTables => Array.Empty<TableSessionTable>().AsQueryable();
+        public IQueryable<InventoryItem> InventoryItems => InventoryItemItems.AsQueryable();
+        public IQueryable<StockBalance> StockBalances => StockBalanceItems.AsQueryable();
+        public IQueryable<StockMovement> StockMovements => StockMovementEntities.AsQueryable();
+        public IQueryable<InventoryReservation> InventoryReservations => InventoryReservationEntities.AsQueryable();
+        public IQueryable<Recipe> Recipes => RecipeEntities.AsQueryable();
+        public IQueryable<RecipeItem> RecipeItems => RecipeItemEntities.AsQueryable();
+        public IQueryable<DiningArea> DiningAreas => DiningAreaItems.AsQueryable();
+        public IQueryable<RestaurantTable> RestaurantTables => RestaurantTableItems.AsQueryable();
+        public IQueryable<TableSession> TableSessions => TableSessionEntities.AsQueryable();
+        public IQueryable<TableSessionTable> TableSessionTables => TableSessionEntities.SelectMany(session => session.Tables).AsQueryable();
         public IQueryable<Reservation> Reservations => ReservationEntities.AsQueryable();
         public IQueryable<WaitlistEntry> WaitlistEntries => Array.Empty<WaitlistEntry>().AsQueryable();
         public IQueryable<ServiceCallType> ServiceCallTypes => Array.Empty<ServiceCallType>().AsQueryable();
         public IQueryable<ServiceCall> ServiceCalls => Array.Empty<ServiceCall>().AsQueryable();
         public IQueryable<Order> Orders => OrderEntities.AsQueryable();
-        public IQueryable<OrderItem> OrderItems => Array.Empty<OrderItem>().AsQueryable();
+        public IQueryable<OrderItem> OrderItems => OrderEntities.SelectMany(order => order.Items).AsQueryable();
         public IQueryable<OrderItemPizza> OrderItemPizzas => Array.Empty<OrderItemPizza>().AsQueryable();
         public IQueryable<OrderItemPizzaFlavor> OrderItemPizzaFlavors => Array.Empty<OrderItemPizzaFlavor>().AsQueryable();
         public IQueryable<OrderItemModifier> OrderItemModifiers => Array.Empty<OrderItemModifier>().AsQueryable();
@@ -342,16 +541,25 @@ public sealed class AdminCashierServiceTests
             if (entity is Customer customer) CustomerItems.Add(customer);
             if (entity is Reservation reservation) ReservationEntities.Add(reservation);
             if (entity is Order order) OrderEntities.Add(order);
+            if (entity is InventoryReservation inventoryReservation) InventoryReservationEntities.Add(inventoryReservation);
+            if (entity is StockMovement stockMovement) StockMovementEntities.Add(stockMovement);
             if (entity is KitchenTicket kitchenTicket) KitchenTicketEntities.Add(kitchenTicket);
+            if (entity is TableSession tableSession) TableSessionEntities.Add(tableSession);
             if (entity is KitchenTicketItem kitchenTicketItem) KitchenTicketItemEntities.Add(kitchenTicketItem);
             if (entity is Bill bill) BillEntities.Add(bill);
             if (entity is BillItem billItem) BillItemEntities.Add(billItem);
             if (entity is Payment payment) PaymentEntities.Add(payment);
             if (entity is PrintJob printJob) PrintJobEntities.Add(printJob);
             if (entity is AuditLog auditLog) AuditLogItems.Add(auditLog);
+            if (entity is LoyaltySettings loyaltySettings) LoyaltySettingItems.Add(loyaltySettings);
+            if (entity is LoyaltyTransaction loyaltyTransaction) LoyaltyTransactionItems.Add(loyaltyTransaction);
+            if (entity is PromotionCoupon promotionCoupon) PromotionCouponItems.Add(promotionCoupon);
         }
 
-        public void Remove<TEntity>(TEntity entity) where TEntity : class { }
+        public void Remove<TEntity>(TEntity entity) where TEntity : class
+        {
+            if (entity is RestaurantTable table) RestaurantTableItems.Remove(table);
+        }
 
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

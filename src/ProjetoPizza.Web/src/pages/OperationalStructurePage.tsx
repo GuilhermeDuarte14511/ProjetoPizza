@@ -1,5 +1,7 @@
-import { Pencil, Plus, Save, Settings2 } from 'lucide-react'
+import { Pencil, Plus, Save, Settings2, Trash2 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, type ReactNode, useState } from 'react'
+import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { Modal } from '../components/ui/Modal'
 import { PageHeader } from '../components/ui/PageHeader'
 import { useToast } from '../components/ui/toast'
@@ -22,6 +24,9 @@ export function OperationalStructurePage() {
   const callTypesQuery = useAdminQuery(queryKeys.serviceCallTypes, adminService.serviceCallTypes)
   const [editing, setEditing] = useState<{ kind: StructureKind; item?: StructureItem }>()
   const [saving, setSaving] = useState(false)
+  const [tableToDelete, setTableToDelete] = useState<RestaurantTableSetting>()
+  const [deleting, setDeleting] = useState(false)
+  const queryClient = useQueryClient()
   const toast = useToast()
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -43,6 +48,7 @@ export function OperationalStructurePage() {
         case 'callType': await adminService.saveServiceCallType({ id, name: text('name'), code: text('code'), isActive: checked('isActive') }); break
       }
       await Promise.all([areasQuery.refresh(), tablesQuery.refresh(), registersQuery.refresh(), methodsQuery.refresh(), stationsQuery.refresh(), callTypesQuery.refresh()])
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tables })
       setEditing(undefined)
       toast.success('Cadastro salvo', 'A estrutura operacional foi atualizada e auditada.')
     } catch (error) {
@@ -52,17 +58,34 @@ export function OperationalStructurePage() {
     }
   }
 
+  async function deleteTable() {
+    if (!tableToDelete) return
+    setDeleting(true)
+    try {
+      await adminService.deleteTableSetting(tableToDelete.id)
+      tablesQuery.setData((current) => current.filter((table) => table.id !== tableToDelete.id))
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tables })
+      toast.success('Mesa excluída', `${tableToDelete.name} foi removida da estrutura da unidade.`)
+      setTableToDelete(undefined)
+    } catch (error) {
+      toast.error('Não foi possível excluir a mesa', getUserErrorMessage(error))
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return <>
     <PageHeader title="Estrutura operacional" description="Cadastros necessários para instalar e operar a unidade sem intervenção técnica." />
     <section className="structure-grid">
       <StructureCard title="Áreas do salão" onAdd={() => setEditing({ kind: 'area' })}>{areasQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={`Ordem ${item.displayOrder}`} active={item.isActive} onEdit={() => setEditing({ kind: 'area', item })} />)}</StructureCard>
-      <StructureCard title="Mesas" onAdd={() => setEditing({ kind: 'table' })}>{tablesQuery.data.map((item) => <StructureRow key={item.id} title={`${item.name} · nº ${item.number}`} detail={`${item.areaName} · ${item.capacity} lugares`} active={item.isActive} onEdit={() => setEditing({ kind: 'table', item })} />)}</StructureCard>
+      <StructureCard title="Mesas" onAdd={() => setEditing({ kind: 'table' })}>{tablesQuery.data.map((item) => <StructureRow key={item.id} title={`${item.name} · nº ${item.number}`} detail={`${item.areaName} · ${item.capacity} lugares`} active={item.isActive} onEdit={() => setEditing({ kind: 'table', item })} onDelete={() => setTableToDelete(item)} />)}</StructureCard>
       <StructureCard title="Caixas" onAdd={() => setEditing({ kind: 'register' })}>{registersQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={item.code} active={item.isActive} onEdit={() => setEditing({ kind: 'register', item })} />)}</StructureCard>
       <StructureCard title="Formas de pagamento" onAdd={() => setEditing({ kind: 'payment' })}>{methodsQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={item.code} active={item.isActive} onEdit={() => setEditing({ kind: 'payment', item })} />)}</StructureCard>
       <StructureCard title="Estações de produção" onAdd={() => setEditing({ kind: 'station' })}>{stationsQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={`${item.code} · meta ${item.targetPreparationMinutes} min`} active={item.isActive} onEdit={() => setEditing({ kind: 'station', item })} />)}</StructureCard>
       <StructureCard title="Tipos de chamado" onAdd={() => setEditing({ kind: 'callType' })}>{callTypesQuery.data.map((item) => <StructureRow key={item.id} title={item.name} detail={item.code} active={item.isActive} onEdit={() => setEditing({ kind: 'callType', item })} />)}</StructureCard>
     </section>
     {editing && <StructureModal editing={editing} areas={areasQuery.data} saving={saving} onClose={() => setEditing(undefined)} onSubmit={save} />}
+    <ConfirmDialog open={Boolean(tableToDelete)} title="Excluir mesa?" description="A exclusão é permanente e só será aceita se a mesa nunca tiver participado de um atendimento e não possuir tablet vinculado. Para preservar o histórico, desative mesas já utilizadas." confirmLabel="Excluir mesa" tone="danger" busy={deleting} onOpenChange={(open) => !open && setTableToDelete(undefined)} onConfirm={() => void deleteTable()} />
   </>
 }
 
@@ -70,8 +93,8 @@ function StructureCard({ title, onAdd, children }: { title: string; onAdd: () =>
   return <article className="surface-card structure-card"><div className="card-heading"><div><h2>{title}</h2><p>Cadastro ativo na unidade.</p></div>{hasPermission('admin:write') && <button className="secondary-button" onClick={onAdd}><Plus size={15} /> Adicionar</button>}</div><div className="structure-list">{children}</div></article>
 }
 
-function StructureRow({ title, detail, active, onEdit }: { title: string; detail: string; active: boolean; onEdit: () => void }) {
-  return <div><Settings2 size={18} /><span><strong>{title}</strong><small>{detail}</small></span><span className={`status-pill ${active ? 'success' : 'neutral'}`}>{active ? 'Ativo' : 'Inativo'}</span>{hasPermission('admin:write') && <button className="icon-button" aria-label={`Editar ${title}`} onClick={onEdit}><Pencil size={15} /></button>}</div>
+function StructureRow({ title, detail, active, onEdit, onDelete }: { title: string; detail: string; active: boolean; onEdit: () => void; onDelete?: () => void }) {
+  return <div><Settings2 size={18} /><span><strong>{title}</strong><small>{detail}</small></span><span className={`status-pill ${active ? 'success' : 'neutral'}`}>{active ? 'Ativo' : 'Inativo'}</span>{hasPermission('admin:write') && <><button className="icon-button" aria-label={`Editar ${title}`} onClick={onEdit}><Pencil size={15} /></button>{onDelete && <button className="icon-button danger-icon-button" aria-label={`Excluir ${title}`} onClick={onDelete}><Trash2 size={15} /></button>}</>}</div>
 }
 
 function StructureModal({ editing, areas, saving, onClose, onSubmit }: { editing: { kind: StructureKind; item?: StructureItem }; areas: DiningAreaSetting[]; saving: boolean; onClose: () => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {

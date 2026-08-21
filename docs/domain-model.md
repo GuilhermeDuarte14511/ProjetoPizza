@@ -11,7 +11,7 @@
 
 - Core: `RestaurantUnit`, `OperationSettings`, `PizzaSettings`.
 - Identity: `Employee`, desacoplado de `IdentityUser`.
-- Customers: `Customer`, perfil e fidelidade reutilizáveis por unidade.
+- Customers: `Customer`, `LoyaltySettings`, `PromotionCoupon` e `LoyaltyTransaction`, com perfil, política por unidade e razão de pontos.
 - Catalog: `Category`, `Product`, `PizzaSize`, `PizzaFlavor`, `PizzaCrust`, `Ingredient` e preços/composições.
 - Inventory: `InventoryItem`, `StockBalance`, `StockMovement`, `Recipe`.
 - Dining: `RestaurantTable`, `TableSession`, `Reservation`, `WaitlistEntry`, `ServiceCall`.
@@ -28,13 +28,15 @@
 
 ### Mesas
 
-Uma mesa inativa não inicia atendimento. `TableSession.Open` e `TableSession.OpenFromDevice` exigem pelo menos uma mesa e clientes maiores que zero. Junções e transferências usam `TableSessionTable`, encerram o vínculo anterior sem apagar histórico e impedem que o destino pertença a outra sessão ativa. O garçom principal pode ser reatribuído a um funcionário ativo da mesma unidade.
+Uma mesa inativa não inicia atendimento. `TableSession.Open` e `TableSession.OpenFromDevice` exigem pelo menos uma mesa e clientes maiores que zero. Junções e transferências usam `TableSessionTable`, encerram o vínculo anterior sem apagar histórico e impedem que o destino pertença a outra sessão ativa. O garçom principal pode ser reatribuído a um funcionário ativo da mesma unidade. Uma mesa pode ser excluída fisicamente apenas quando nunca participou de uma sessão e não possui dispositivo vinculado; mesas já utilizadas devem ser desativadas para preservar o histórico.
 
-`Reservation` impede horários passados e transições fora do ciclo pendente, confirmado, recepcionado e concluído. `WaitlistEntry` controla espera, aviso, acomodação e cancelamento. Registros finalizados são imutáveis.
+`Reservation` impede horários passados e transições fora do ciclo pendente, confirmado, recepcionado e concluído. `WaitlistEntry` controla espera, aviso, acomodação e cancelamento. A recepção exige mesas livres com capacidade total suficiente, abre uma `TableSession` e grava seu identificador e o horário de acomodação na reserva ou entrada da fila na mesma transação. Registros finalizados são imutáveis.
 
 ### Dispositivos
 
 `DeviceSession` representa a credencial persistente do aparelho, não a sessão do cliente na mesa. Ela pode ficar sem `TableSessionId` enquanto o tablet está em espera e ser vinculada a uma nova comanda quando o cliente informa a quantidade de pessoas. O acesso termina somente por logout, bloqueio, desvínculo, troca de mesa ou reprovisionamento; concluir uma comanda limpa apenas seu vínculo com a `TableSession`.
+
+Pontos são uma responsabilidade do módulo Customers: o saldo no cliente é a projeção operacional e cada mudança produz uma `LoyaltyTransaction`. `Customer.AdjustLoyaltyPoints` protege limites e saldo não negativo para correções administrativas; a Application exige o motivo e registra a auditoria. `LoyaltySettings` limita ganho, resgate e validade; `PromotionCoupon` protege período e limites de uso. O pedido guarda snapshots dos benefícios, permitindo restauração consistente no cancelamento.
 
 ```mermaid
 stateDiagram-v2
@@ -60,7 +62,7 @@ Pagamento deve ser maior que zero. Valor recebido não pode ser menor que o valo
 
 ### Estoque e fichas técnicas
 
-`InventoryItem.UnitCost` alimenta CMV e valor do estoque. `Recipe` define rendimento e ingredientes para produto ou sabor/tamanho. No envio, todas as quantidades são planejadas e validadas antes da baixa; falta de saldo rejeita o pedido inteiro. Cada `StockMovement` de consumo aponta para o `OrderItem` responsável.
+`InventoryItem.UnitCost` alimenta CMV e valor do estoque. `Recipe` define rendimento e ingredientes para produto ou sabor/tamanho. Ao enviar um pedido de qualquer canal, todas as quantidades são planejadas e reservadas por `OrderItem`; falta de saldo rejeita o pedido inteiro. O primeiro início de produção converte a reserva em consumo, reduz o saldo atual e cria um `StockMovement` com custo em snapshot. Cancelar antes da produção libera a reserva sem alterar o saldo atual. As transições são idempotentes pelo estado de `InventoryReservation`.
 
 A divisão por pessoas é persistida em `BillSplit`. Cada parte mantém nome, sequência, total, valor pago, saldo e estado próprios, e cada `Payment` referencia a pessoa correspondente. O caso de uso `POST /api/v1/admin/payments/split` valida de 2 a 50 pessoas, exige que a soma em centavos corresponda ao saldo da conta e grava todas as partes e pagamentos em uma única unidade atômica.
 

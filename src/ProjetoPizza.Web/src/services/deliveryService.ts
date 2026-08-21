@@ -1,6 +1,6 @@
 import { apiBaseUrl, ApiError } from '../api/httpClient'
 import type { SubmitClientOrder } from '../types/client'
-import type { DeliveryCatalog, DeliveryOrderPlaced, DeliveryTracking } from '../types/delivery'
+import type { DeliveryCatalog, DeliveryLoyaltyQuote, DeliveryOrderPlaced, DeliveryTracking } from '../types/delivery'
 
 async function publicRequest<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response
@@ -28,10 +28,14 @@ export const deliveryService = {
     birthDate: string
     address: string
     notes?: string
+    couponCode?: string
+    loyaltyPoints?: number
     items: SubmitClientOrder['items']
   }) => publicRequest<DeliveryOrderPlaced>('/api/v1/delivery/orders', {
     method: 'POST',
     body: JSON.stringify(command),
   }),
+  loyaltyQuote: (command: { phone: string; birthDate: string; orderAmount: number; couponCode?: string; loyaltyPoints?: number }) =>
+    publicRequest<DeliveryLoyaltyQuote>('/api/v1/delivery/loyalty/lookup', { method: 'POST', body: JSON.stringify(command) }),
   track: (token: string) => publicRequest<DeliveryTracking>(`/api/v1/delivery/tracking/${encodeURIComponent(token)}`),
 }

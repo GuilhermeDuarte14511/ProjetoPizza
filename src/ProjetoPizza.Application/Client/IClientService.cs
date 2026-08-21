@@ -38,6 +38,10 @@ public interface IClientQueryService
     Task<ClientStateDto> GetStateAsync(
         ClientSessionContext session,
         CancellationToken cancellationToken);
+    Task<ClientLoyaltyLookupDto?> LookupLoyaltyAsync(
+        ClientSessionContext session,
+        ClientLoyaltyLookupCommand command,
+        CancellationToken cancellationToken);
 }
 
 public interface IClientOrderingService

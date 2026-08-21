@@ -27,6 +27,10 @@ public sealed record ClientSessionDto(
     string? WaiterName,
     bool ClearTabletAfterTableClose);
 
+public sealed record ClientLoyaltyLookupCommand(string Phone, DateOnly BirthDate, decimal OrderAmount = 0, string? CouponCode = null, int LoyaltyPoints = 0);
+public sealed record ClientLoyaltyLookupDto(string CustomerName, int Points, DateTimeOffset? ExpiresAt,
+    decimal CouponDiscount = 0, decimal LoyaltyDiscount = 0, decimal TotalBenefits = 0);
+
 public sealed record StartClientTableSessionCommand(int GuestCount);
 
 public sealed record UpdateClientTelemetryCommand(
@@ -166,7 +170,11 @@ public sealed record RequestClientBillCommand(int? SplitCount);
 public sealed record SubmitClientOrderCommand(
     Guid RequestId,
     IReadOnlyList<SubmitClientOrderItemCommand> Items,
-    string? Notes);
+    string? Notes,
+    string? CustomerPhone = null,
+    DateOnly? CustomerBirthDate = null,
+    string? CouponCode = null,
+    int LoyaltyPoints = 0);
 
 public sealed record SubmitClientOrderItemCommand(
     Guid ProductId,

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Cake, Pencil, Phone, Plus, Search, Star, UserRound, UsersRound } from 'lucide-react'
+import { Cake, Eye, Pencil, Phone, Plus, Search, Star, UserRound, UsersRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { FieldError } from '../components/ui/FieldError'
@@ -9,6 +9,7 @@ import { PhoneInput } from '../components/ui/PhoneInput'
 import { StatusBadge } from '../components/ui/StatusBadge'
 import { useToast } from '../components/ui/toast'
 import { customerSchema, type CustomerFormData } from '../features/admin/formSchemas'
+import { CustomerDetailModal } from '../features/admin/CustomerDetailModal'
 import { useAdminQuery } from '../hooks/useAdminQuery'
 import { queryKeys } from '../lib/queryKeys'
 import { adminService } from '../services/adminService'
@@ -26,8 +27,9 @@ const emptyCustomer: CustomerFormData = {
 
 export function CustomersPage() {
   const { data: customers, setData: setCustomers } = useAdminQuery(queryKeys.customers, adminService.customers)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get('search') ?? '')
   const [editing, setEditing] = useState(false)
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>()
   const [saving, setSaving] = useState(false)
   const toast = useToast()
   const form = useForm<CustomerFormData>({
@@ -47,6 +49,7 @@ export function CustomersPage() {
       birthDate: customer.birthDate,
       isActive: customer.isActive,
     } : emptyCustomer)
+    setSelectedCustomerId(undefined)
     setEditing(true)
   }
 
@@ -81,7 +84,7 @@ export function CustomersPage() {
           </div>
           <div className="toolbar-search customer-search"><Search size={17} /><input aria-label="Buscar cliente" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nome ou celular..." /></div>
         </header>
-        {visible.length > 0 && <div className="customer-list-heading" aria-hidden="true"><span>Cliente</span><span>Celular</span><span>Nascimento</span><span>Fidelidade</span><span>Status</span><span /></div>}
+        {visible.length > 0 && <div className="customer-list-heading" aria-hidden="true"><span>Cliente</span><span>Celular</span><span>Nascimento</span><span>Fidelidade</span><span>Status</span><span>Ações</span></div>}
         <div className="customer-list">
           {visible.map((customer) => (
             <article className="customer-row" key={customer.id}>
@@ -93,12 +96,23 @@ export function CustomersPage() {
               <span className="customer-detail"><Cake size={15} /><span><small>Nascimento</small><strong>{formatBirthDate(customer.birthDate)}</strong></span></span>
               <span className="customer-detail customer-loyalty"><Star size={15} /><span><small>Fidelidade</small><strong>{customer.loyaltyPoints} pontos</strong><small>{customer.orderCount} pedidos · {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(customer.lifetimeSpend)}</small></span></span>
               <StatusBadge status={customer.isActive ? 'Ativo' : 'Inativo'} />
-              {hasPermission('admin:write') && <button className="secondary-button customer-edit" aria-label={`Editar ${customer.name}`} onClick={() => open(customer)}><Pencil size={15} /> Editar</button>}
+              <div className="customer-row-actions">
+                <button className="secondary-button customer-view" aria-label={`Ver detalhes de ${customer.name}`} onClick={() => setSelectedCustomerId(customer.id)}><Eye size={15} /> Detalhes</button>
+                {hasPermission('admin:write') && <button className="icon-button customer-edit" aria-label={`Editar ${customer.name}`} title="Editar cadastro" onClick={() => open(customer)}><Pencil size={15} /></button>}
+              </div>
             </article>
           ))}
           {!visible.length && <div className="customer-empty"><span><UserRound size={28} /></span><h2>Nenhum cliente encontrado</h2><p>{search ? 'Tente outro nome ou celular.' : 'Cadastre o primeiro cliente para começar.'}</p>{hasPermission('admin:write') && !search && <button className="secondary-button" onClick={() => open()}><Plus size={15} /> Cadastrar cliente</button>}</div>}
         </div>
       </section>
+
+      {selectedCustomerId && <CustomerDetailModal
+        customerId={selectedCustomerId}
+        canWrite={hasPermission('admin:write')}
+        onClose={() => setSelectedCustomerId(undefined)}
+        onEdit={open}
+        onCustomerChanged={(updated) => setCustomers((current) => current.map((customer) => customer.id === updated.id ? updated : customer))}
+      />}
 
       {editing && <Modal open title={form.getValues('id') ? 'Editar cliente' : 'Novo cliente'} description="O telefone identifica o cadastro durante o atendimento por ligação." isBusy={saving} onClose={() => setEditing(false)}>
         <form onSubmit={form.handleSubmit(save)} noValidate>

@@ -1,4 +1,4 @@
-import { getBlob, getJson, isApiConfigured, postForm, postJson, putJson } from '../api/httpClient'
+import { deleteJson, getBlob, getJson, isApiConfigured, postForm, postJson, putJson } from '../api/httpClient'
 import { createUuid } from '../lib/uuid'
 import {
   getMockTableDetail,
@@ -43,6 +43,7 @@ import type {
   CheckoutCounterOrder,
   CreatedOrder,
   Customer,
+  CustomerDetail,
   Reservation,
   WaitlistEntry,
   Dashboard,
@@ -54,6 +55,9 @@ import type {
   KitchenTicket,
   Ingredient,
   InventoryItem,
+  LoyaltyDashboard,
+  LoyaltySettings,
+  PromotionCoupon,
   InventoryRecipe,
   SaveInventoryRecipe,
   ManagedOrder,
@@ -92,6 +96,39 @@ function fromApiOrMock<T>(request: () => Promise<T>, fallback: T): Promise<T> {
 const demoResult = { id: createUuid(), status: 'Saved' }
 const mockCustomerStore = [...mockCustomers]
 const mockReceiptStore = new Map<string, OrderReceipt>()
+const mockLoyalty: LoyaltyDashboard = {
+  settings: { isEnabled: true, pointsPerCurrencyUnit: 1, redemptionValuePerPoint: .05, minimumRedemptionPoints: 100, maximumRedemptionPercentage: 30, pointsValidityDays: 365 },
+  coupons: [], transactions: [], activeCustomers: mockCustomerStore.filter((customer) => customer.isActive).length,
+  pointsInCirculation: mockCustomerStore.reduce((sum, customer) => sum + customer.loyaltyPoints, 0), grantedDiscount: 0,
+}
+
+function getMockCustomerDetail(id: string): CustomerDetail {
+  const customer = mockCustomerStore.find((item) => item.id === id) ?? mockCustomerStore[0]
+  const orders = mockOrders.filter((order) => order.customerId === customer.id).map((order) => ({
+    id: order.id,
+    number: order.number,
+    fulfillment: order.fulfillment,
+    status: order.status,
+    subtotal: order.subtotal,
+    discount: order.discount,
+    total: order.total,
+    loyaltyPointsRedeemed: 0,
+    createdAt: order.createdAt,
+  }))
+  return {
+    customer,
+    loyaltyPointsExpireAt: customer.loyaltyPoints > 0 ? new Date(Date.now() + 180 * 86_400_000).toISOString() : undefined,
+    benefitBalance: customer.loyaltyPoints * mockLoyalty.settings.redemptionValuePerPoint,
+    averageTicket: customer.orderCount ? customer.lifetimeSpend / customer.orderCount : 0,
+    orders,
+    coupons: mockLoyalty.coupons.map((coupon) => ({
+      ...coupon,
+      availability: coupon.isActive ? 'Available' as const : 'Inactive' as const,
+      timesUsedByCustomer: 0,
+    })),
+    loyaltyTransactions: mockLoyalty.transactions.filter((transaction) => transaction.customerId === customer.id),
+  }
+}
 
 function saveMockCustomer(command: Pick<Customer, 'name' | 'phone' | 'birthDate' | 'isActive'> & { id?: string }): Customer {
   const current = mockCustomerStore.find((item) => item.id === command.id)
@@ -266,6 +303,9 @@ export const adminService = {
   orders: (signal?: AbortSignal) => fromApiOrMock(() => getJson<ManagedOrder[]>('/api/v1/admin/orders', signal), mockOrders),
   orderCatalog: (signal?: AbortSignal) => fromApiOrMock(() => getJson<AdministrativeOrderCatalog>('/api/v1/admin/orders/catalog', signal), mockAdministrativeOrderCatalog),
   customers: (signal?: AbortSignal) => fromApiOrMock(() => getJson<Customer[]>('/api/v1/admin/customers', signal), mockCustomerStore),
+  customerDetail: (id: string, signal?: AbortSignal) =>
+    fromApiOrMock(() => getJson<CustomerDetail>(`/api/v1/admin/customers/${id}`, signal), getMockCustomerDetail(id)),
+  loyalty: (signal?: AbortSignal) => fromApiOrMock(() => getJson<LoyaltyDashboard>('/api/v1/admin/loyalty', signal), mockLoyalty),
   reservations: (signal?: AbortSignal) => fromApiOrMock(() => getJson<Reservation[]>('/api/v1/admin/reservations', signal), []),
   waitlist: (signal?: AbortSignal) => fromApiOrMock(() => getJson<WaitlistEntry[]>('/api/v1/admin/waitlist', signal), []),
   crusts: (signal?: AbortSignal) => fromApiOrMock(() => getJson<PizzaCrust[]>('/api/v1/admin/pizza-crusts', signal), mockCrusts),
@@ -351,6 +391,27 @@ export const adminService = {
         ? putJson<Customer, typeof command>(`/api/v1/admin/customers/${command.id}`, command)
         : postJson<Customer, typeof command>('/api/v1/admin/customers', command)
       : Promise.resolve(saveMockCustomer(command)),
+  adjustCustomerLoyaltyPoints: (id: string, command: { points: number; reason: string }): Promise<CustomerDetail> => {
+    if (isApiConfigured) {
+      return postJson<CustomerDetail, typeof command>(`/api/v1/admin/customers/${id}/loyalty-adjustments`, command)
+    }
+    const customer = mockCustomerStore.find((item) => item.id === id)
+    if (customer) customer.loyaltyPoints += command.points
+    mockLoyalty.transactions.unshift({
+      id: createUuid(), customerId: id, customerName: customer?.name ?? 'Cliente', type: 'ManualAdjustment',
+      points: command.points, balanceAfter: customer?.loyaltyPoints ?? 0, discount: 0,
+      description: `Ajuste manual: ${command.reason}`, occurredAt: new Date().toISOString(),
+    })
+    return Promise.resolve(getMockCustomerDetail(id))
+  },
+  saveLoyaltySettings: (command: LoyaltySettings) => isApiConfigured
+    ? putJson<void, LoyaltySettings>('/api/v1/admin/loyalty/settings', command)
+    : Promise.resolve(Object.assign(mockLoyalty.settings, command) && undefined),
+  savePromotionCoupon: (command: Omit<PromotionCoupon, 'timesRedeemed' | 'id'> & { id?: string }) => isApiConfigured
+    ? command.id
+      ? putJson(`/api/v1/admin/loyalty/coupons/${command.id}`, command)
+      : postJson('/api/v1/admin/loyalty/coupons', command)
+    : Promise.resolve(demoResult),
   createOrder: (command: CreateAdministrativeOrder): Promise<CreatedOrder> =>
     isApiConfigured
       ? postJson<CreatedOrder, CreateAdministrativeOrder>('/api/v1/admin/orders', command)
@@ -383,10 +444,14 @@ export const adminService = {
     isApiConfigured ? postJson<Reservation, typeof command>('/api/v1/admin/reservations', command) : Promise.resolve({ ...command, id: crypto.randomUUID(), status: 'Pending', createdAt: new Date().toISOString() }),
   transitionReservation: (id: string, transition: string) =>
     isApiConfigured ? postJson(`/api/v1/admin/reservations/${id}/transitions/${transition}`, {}) : Promise.resolve({ ...demoResult, id, status: transition }),
+  seatReservation: (id: string, tableIds: string[]) =>
+    isApiConfigured ? postJson<{ id: string; status: string }, { tableIds: string[] }>(`/api/v1/admin/reservations/${id}/seat`, { tableIds }) : Promise.resolve({ id: createUuid(), status: 'Seated' }),
   createWaitlistEntry: (command: Omit<WaitlistEntry, 'id' | 'status' | 'enteredAt' | 'notifiedAt'>) =>
     isApiConfigured ? postJson<WaitlistEntry, typeof command>('/api/v1/admin/waitlist', command) : Promise.resolve({ ...command, id: crypto.randomUUID(), status: 'Waiting', enteredAt: new Date().toISOString() }),
   transitionWaitlistEntry: (id: string, transition: string) =>
     isApiConfigured ? postJson(`/api/v1/admin/waitlist/${id}/transitions/${transition}`, {}) : Promise.resolve({ ...demoResult, id, status: transition }),
+  seatWaitlistEntry: (id: string, tableIds: string[]) =>
+    isApiConfigured ? postJson<{ id: string; status: string }, { tableIds: string[] }>(`/api/v1/admin/waitlist/${id}/seat`, { tableIds }) : Promise.resolve({ id: createUuid(), status: 'Seated' }),
   assignTableWaiter: (tableSessionId: string, employeeId: string) =>
     isApiConfigured ? postJson(`/api/v1/admin/table-sessions/${tableSessionId}/waiter`, { employeeId }) : Promise.resolve(demoResult),
   linkTable: (tableSessionId: string, tableId: string) =>
@@ -438,6 +503,7 @@ export const adminService = {
     isApiConfigured ? postJson('/api/v1/admin/cashier/close', { countedCashAmount, notes }) : Promise.resolve({ ...demoResult, status: 'Closed' }),
   saveDiningArea: (command: Partial<DiningAreaSetting>) => saveSetting('/api/v1/admin/settings/dining-areas', command),
   saveTableSetting: (command: Partial<RestaurantTableSetting>) => saveSetting('/api/v1/admin/settings/tables', command),
+  deleteTableSetting: (id: string) => isApiConfigured ? deleteJson(`/api/v1/admin/settings/tables/${id}`) : Promise.resolve({ id, status: 'Deleted' }),
   saveCashRegister: (command: Partial<CashRegister>) => saveSetting('/api/v1/admin/cashier/registers', command),
   savePaymentMethod: (command: Partial<PaymentMethod>) => saveSetting('/api/v1/admin/payment-methods', command),
   saveProductionStation: (command: Partial<ProductionStationSetting>) => saveSetting('/api/v1/admin/settings/production-stations', command),

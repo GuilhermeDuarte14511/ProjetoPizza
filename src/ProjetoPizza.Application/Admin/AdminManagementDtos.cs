@@ -39,10 +39,12 @@ public sealed record CustomerDto(
     DateTimeOffset CreatedAt);
 public sealed record ReservationDto(
     Guid Id, Guid? CustomerId, string CustomerName, string Phone, int PartySize,
-    DateTimeOffset ScheduledAt, int DurationMinutes, string? Notes, string Status, DateTimeOffset CreatedAt);
+    DateTimeOffset ScheduledAt, int DurationMinutes, string? Notes, string Status, DateTimeOffset CreatedAt,
+    Guid? TableSessionId, DateTimeOffset? SeatedAt);
 public sealed record WaitlistEntryDto(
     Guid Id, Guid? CustomerId, string CustomerName, string Phone, int PartySize,
-    int EstimatedWaitMinutes, string? Notes, string Status, DateTimeOffset EnteredAt, DateTimeOffset? NotifiedAt);
+    int EstimatedWaitMinutes, string? Notes, string Status, DateTimeOffset EnteredAt, DateTimeOffset? NotifiedAt,
+    Guid? TableSessionId, DateTimeOffset? SeatedAt);
 public sealed record CreatedOrderDto(Guid Id, long Number, string Status, decimal Total, OrderReceiptDto Receipt);
 public sealed record CounterCheckoutResultDto(Guid Id, long Number, string Status, decimal Total, OrderReceiptDto Receipt);
 public sealed record OrderReceiptDto(
@@ -438,6 +440,54 @@ public sealed record SaveCustomerCommand(
     DateOnly BirthDate,
     bool IsActive = true);
 
+public sealed record LoyaltySettingsDto(bool IsEnabled, decimal PointsPerCurrencyUnit, decimal RedemptionValuePerPoint,
+    int MinimumRedemptionPoints, decimal MaximumRedemptionPercentage, int PointsValidityDays);
+public sealed record PromotionCouponDto(Guid Id, string Code, string Name, string DiscountType, decimal Value,
+    decimal MinimumOrderAmount, decimal? MaximumDiscountAmount, DateTimeOffset StartsAt, DateTimeOffset EndsAt,
+    int? UsageLimit, int TimesRedeemed, bool IsActive);
+public sealed record LoyaltyTransactionDto(Guid Id, Guid CustomerId, string CustomerName, Guid? OrderId,
+    string Type, int Points, int BalanceAfter, decimal Discount, string Description, DateTimeOffset OccurredAt);
+public sealed record LoyaltyDashboardDto(LoyaltySettingsDto Settings, IReadOnlyCollection<PromotionCouponDto> Coupons,
+    IReadOnlyCollection<LoyaltyTransactionDto> Transactions, int ActiveCustomers, int PointsInCirculation, decimal GrantedDiscount);
+public sealed record CustomerDetailDto(
+    CustomerDto Customer,
+    DateTimeOffset? LoyaltyPointsExpireAt,
+    decimal BenefitBalance,
+    decimal AverageTicket,
+    IReadOnlyCollection<CustomerOrderSummaryDto> Orders,
+    IReadOnlyCollection<CustomerCouponDto> Coupons,
+    IReadOnlyCollection<LoyaltyTransactionDto> LoyaltyTransactions);
+public sealed record CustomerOrderSummaryDto(
+    Guid Id,
+    long Number,
+    string Fulfillment,
+    string Status,
+    decimal Subtotal,
+    decimal Discount,
+    decimal Total,
+    string? CouponCode,
+    int LoyaltyPointsRedeemed,
+    DateTimeOffset CreatedAt);
+public sealed record CustomerCouponDto(
+    Guid Id,
+    string Code,
+    string Name,
+    string DiscountType,
+    decimal Value,
+    decimal MinimumOrderAmount,
+    decimal? MaximumDiscountAmount,
+    DateTimeOffset StartsAt,
+    DateTimeOffset EndsAt,
+    string Availability,
+    int TimesUsedByCustomer,
+    DateTimeOffset? LastUsedAt);
+public sealed record UpdateLoyaltySettingsCommand(bool IsEnabled, decimal PointsPerCurrencyUnit, decimal RedemptionValuePerPoint,
+    int MinimumRedemptionPoints, decimal MaximumRedemptionPercentage, int PointsValidityDays);
+public sealed record SavePromotionCouponCommand(Guid? Id, string Code, string Name, string DiscountType, decimal Value,
+    decimal MinimumOrderAmount, decimal? MaximumDiscountAmount, DateTimeOffset StartsAt, DateTimeOffset EndsAt,
+    int? UsageLimit, bool IsActive = true);
+public sealed record AdjustCustomerLoyaltyPointsCommand(int Points, string Reason);
+
 public sealed record CreateAdministrativeOrderCommand(
     Guid RequestId,
     Guid CustomerId,
@@ -445,7 +495,9 @@ public sealed record CreateAdministrativeOrderCommand(
     string? DeliveryAddress,
     decimal DiscountAmount,
     string? Notes,
-    IReadOnlyList<SubmitClientOrderItemCommand> Items);
+    IReadOnlyList<SubmitClientOrderItemCommand> Items,
+    string? CouponCode = null,
+    int LoyaltyPoints = 0);
 
 public sealed record CounterPaymentCommand(
     Guid PaymentMethodId,
@@ -468,6 +520,7 @@ public sealed record CreateReservationCommand(
     DateTimeOffset ScheduledAt, int DurationMinutes, string? Notes, DateOnly? CustomerBirthDate = null);
 public sealed record CreateWaitlistEntryCommand(
     Guid? CustomerId, string CustomerName, string Phone, int PartySize, int EstimatedWaitMinutes, string? Notes);
+public sealed record SeatDiningEntryCommand(IReadOnlyCollection<Guid> TableIds);
 public sealed record AssignTableWaiterCommand(Guid EmployeeId);
 public sealed record LinkTableCommand(Guid TableId);
 public sealed record TransferTableCommand(Guid CurrentTableId, Guid TargetTableId);

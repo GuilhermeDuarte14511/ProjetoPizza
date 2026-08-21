@@ -61,6 +61,16 @@ public static class AdminEndpoints
             service.GetOrderCatalogAsync(cancellationToken));
         group.MapGet("/customers", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.ListCustomersAsync(cancellationToken));
+        group.MapGet("/customers/{id:guid}", async (
+            Guid id,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+        {
+            var customer = await service.GetCustomerDetailAsync(id, cancellationToken);
+            return customer is null ? Results.NotFound() : Results.Ok(customer);
+        });
+        group.MapGet("/loyalty", (IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.GetLoyaltyDashboardAsync(cancellationToken)).RequireAuthorization("AdminAccess");
         group.MapGet("/reservations", (IAdminManagementService service, CancellationToken cancellationToken) =>
             service.ListReservationsAsync(cancellationToken));
         group.MapGet("/waitlist", (IAdminManagementService service, CancellationToken cancellationToken) =>
@@ -163,6 +173,10 @@ public static class AdminEndpoints
             Guid id, string transition, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
             service.TransitionReservationAsync(id, transition, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("OperationsWrite");
+        group.MapPost("/reservations/{id:guid}/seat", (
+            Guid id, SeatDiningEntryCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SeatReservationAsync(id, command, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("OperationsWrite");
         group.MapPost("/waitlist", (
             CreateWaitlistEntryCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
             service.CreateWaitlistEntryAsync(command, GetIdentityUserId(user), cancellationToken))
@@ -171,6 +185,10 @@ public static class AdminEndpoints
             Guid id, string transition, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
             service.TransitionWaitlistEntryAsync(id, transition, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("OperationsWrite");
+        group.MapPost("/waitlist/{id:guid}/seat", (
+            Guid id, SeatDiningEntryCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SeatWaitlistEntryAsync(id, command, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("OperationsWrite");
         group.MapPut("/customers/{id:guid}", (
             Guid id,
             SaveCustomerCommand command,
@@ -178,6 +196,29 @@ public static class AdminEndpoints
             IAdminManagementService service,
             CancellationToken cancellationToken) =>
             service.SaveCustomerAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPost("/customers/{id:guid}/loyalty-adjustments", (
+            Guid id,
+            AdjustCustomerLoyaltyPointsCommand command,
+            ClaimsPrincipal user,
+            IAdminManagementService service,
+            CancellationToken cancellationToken) =>
+            service.AdjustCustomerLoyaltyPointsAsync(id, command, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+
+        group.MapPut("/loyalty/settings", async (
+            UpdateLoyaltySettingsCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+        {
+            await service.UpdateLoyaltySettingsAsync(command, GetIdentityUserId(user), cancellationToken);
+            return Results.NoContent();
+        }).RequireAuthorization("AdminWrite");
+        group.MapPost("/loyalty/coupons", (
+            SavePromotionCouponCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SavePromotionCouponAsync(command with { Id = null }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapPut("/loyalty/coupons/{id:guid}", (
+            Guid id, SavePromotionCouponCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.SavePromotionCouponAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
 
         group.MapPut("/settings/unit", async (
@@ -361,6 +402,10 @@ public static class AdminEndpoints
         group.MapPut("/settings/tables/{id:guid}", (
             Guid id, SaveRestaurantTableCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
             service.SaveRestaurantTableAsync(command with { Id = id }, GetIdentityUserId(user), cancellationToken))
+            .RequireAuthorization("AdminWrite");
+        group.MapDelete("/settings/tables/{id:guid}", (
+            Guid id, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>
+            service.DeleteRestaurantTableAsync(id, GetIdentityUserId(user), cancellationToken))
             .RequireAuthorization("AdminWrite");
         group.MapPost("/cashier/registers", (
             SaveCashRegisterCommand command, ClaimsPrincipal user, IAdminManagementService service, CancellationToken cancellationToken) =>

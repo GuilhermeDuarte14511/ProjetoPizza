@@ -2,6 +2,8 @@ using System.Security.Cryptography;
 using System.Text;
 using ProjetoPizza.Application.Abstractions.Persistence;
 using ProjetoPizza.Application.Client;
+using ProjetoPizza.Application.Customers;
+using ProjetoPizza.Application.Inventory;
 using ProjetoPizza.Domain.Audit;
 using ProjetoPizza.Domain.Cashier;
 using ProjetoPizza.Domain.Customers;
@@ -71,6 +73,8 @@ public sealed class DeliveryService(
         }
         else
         {
+            if (customer.BirthDate != command.BirthDate)
+                throw new BusinessRuleException("delivery.customer_identity", "Phone and birth date do not match the customer registration.");
             customer.Update(command.CustomerName, command.Phone, command.BirthDate, isActive: true);
         }
 
@@ -92,6 +96,8 @@ public sealed class DeliveryService(
             composition.AddAdministrativeOrderItem(order, item, unit.Id, stationItems);
         }
         order.RecalculateTotals(deliveryFee: settings.DefaultDeliveryFee);
+        LoyaltyProgramService.ApplyBenefits(context, order, customer, Money.Zero(), command.CouponCode, command.LoyaltyPoints);
+        InventoryAllocation.Reserve(context, order, items);
         order.Submit();
         context.Add(order);
         await composition.CreateAdministrativeKitchenTicketsAsync(order, stationItems, cancellationToken);
@@ -128,6 +134,36 @@ public sealed class DeliveryService(
             order.DeliveredAt,
             order.Total.Amount,
             items));
+    }
+
+    public async Task<LoyaltyLookupDto?> LookupLoyaltyAsync(LoyaltyLookupCommand command, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var unit = context.RestaurantUnits.Single(unit => unit.IsActive);
+        var phone = Customer.NormalizePhone(command.Phone);
+        var customer = context.Customers.SingleOrDefault(candidate => candidate.UnitId == unit.Id && candidate.Phone == phone &&
+            candidate.BirthDate == command.BirthDate && candidate.IsActive);
+        if (customer is null) return null;
+        LoyaltyProgramService.ExpirePoints(context, customer);
+        var eligible = new Money(command.OrderAmount);
+        var couponDiscount = Money.Zero();
+        if (!string.IsNullOrWhiteSpace(command.CouponCode))
+        {
+            var code = command.CouponCode.Trim().ToUpperInvariant();
+            var coupon = context.PromotionCoupons.SingleOrDefault(candidate => candidate.UnitId == unit.Id && candidate.Code == code)
+                ?? throw new BusinessRuleException("coupon.not_found", "Coupon was not found.");
+            couponDiscount = coupon.CalculateDiscount(eligible, DateTimeOffset.UtcNow);
+        }
+        var loyaltyDiscount = Money.Zero();
+        if (command.LoyaltyPoints > 0)
+        {
+            if (command.LoyaltyPoints > customer.LoyaltyPoints) throw new BusinessRuleException("loyalty.balance", "Insufficient loyalty point balance.");
+            loyaltyDiscount = LoyaltyProgramService.GetOrCreateSettings(context, unit.Id)
+                .CalculateRedemption(command.LoyaltyPoints, eligible - couponDiscount);
+        }
+        await context.SaveChangesAsync(cancellationToken);
+        return new LoyaltyLookupDto(customer.Name, customer.LoyaltyPoints, customer.LoyaltyPointsExpireAt,
+            couponDiscount.Amount, loyaltyDiscount.Amount, couponDiscount.Amount + loyaltyDiscount.Amount);
     }
 
     private static string HashTrackingToken(string token) =>

@@ -111,6 +111,7 @@ internal sealed class ReservationConfiguration : IEntityTypeConfiguration<Reserv
         builder.Property(entity => entity.Id).HasConversion(id => id.Value, value => new ReservationId(value));
         builder.Property(entity => entity.UnitId).HasConversion(id => id.Value, value => new RestaurantUnitId(value));
         builder.Property(entity => entity.CustomerId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new CustomerId(value.Value) : null);
+        builder.Property(entity => entity.TableSessionId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new TableSessionId(value.Value) : null);
         builder.Property(entity => entity.CustomerName).HasMaxLength(120);
         builder.Property(entity => entity.Phone).HasMaxLength(15);
         builder.Property(entity => entity.Notes).HasMaxLength(500);
@@ -118,6 +119,7 @@ internal sealed class ReservationConfiguration : IEntityTypeConfiguration<Reserv
         builder.HasIndex(entity => new { entity.UnitId, entity.ScheduledAt, entity.Status });
         builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Customer>().WithMany().HasForeignKey(entity => entity.CustomerId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne<TableSession>().WithMany().HasForeignKey(entity => entity.TableSessionId).OnDelete(DeleteBehavior.Restrict);
         builder.Property<uint>("xmin").IsRowVersion();
     }
 }
@@ -131,6 +133,7 @@ internal sealed class WaitlistEntryConfiguration : IEntityTypeConfiguration<Wait
         builder.Property(entity => entity.Id).HasConversion(id => id.Value, value => new WaitlistEntryId(value));
         builder.Property(entity => entity.UnitId).HasConversion(id => id.Value, value => new RestaurantUnitId(value));
         builder.Property(entity => entity.CustomerId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new CustomerId(value.Value) : null);
+        builder.Property(entity => entity.TableSessionId).HasConversion<Guid?>(id => id.HasValue ? id.Value.Value : null, value => value.HasValue ? new TableSessionId(value.Value) : null);
         builder.Property(entity => entity.CustomerName).HasMaxLength(120);
         builder.Property(entity => entity.Phone).HasMaxLength(15);
         builder.Property(entity => entity.Notes).HasMaxLength(500);
@@ -138,6 +141,7 @@ internal sealed class WaitlistEntryConfiguration : IEntityTypeConfiguration<Wait
         builder.HasIndex(entity => new { entity.UnitId, entity.Status, entity.EnteredAt });
         builder.HasOne<RestaurantUnit>().WithMany().HasForeignKey(entity => entity.UnitId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Customer>().WithMany().HasForeignKey(entity => entity.CustomerId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne<TableSession>().WithMany().HasForeignKey(entity => entity.TableSessionId).OnDelete(DeleteBehavior.Restrict);
         builder.Property<uint>("xmin").IsRowVersion();
     }
 }

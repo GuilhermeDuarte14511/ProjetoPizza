@@ -20,6 +20,11 @@ public static class DeliveryEndpoints
             var order = await service.PlaceOrderAsync(command, cancellationToken);
             return Results.Created($"/api/v1/delivery/tracking/{order.TrackingToken}", order);
         }).RequireRateLimiting("PublicDelivery");
+        group.MapPost("/loyalty/lookup", async (LoyaltyLookupCommand command, IDeliveryService service, CancellationToken cancellationToken) =>
+        {
+            var result = await service.LookupLoyaltyAsync(command, cancellationToken);
+            return result is null ? Results.NotFound() : Results.Ok(result);
+        }).RequireRateLimiting("PublicDelivery");
         group.MapGet("/tracking/{token}", async (
             string token,
             IDeliveryService service,

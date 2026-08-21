@@ -1,6 +1,7 @@
 using System.Globalization;
 using ProjetoPizza.Application.Abstractions.Persistence;
 using ProjetoPizza.Application.Client;
+using ProjetoPizza.Application.Customers;
 using ProjetoPizza.Application.Catalog;
 using ProjetoPizza.Application.Devices;
 using ProjetoPizza.Application.Inventory;
@@ -88,6 +89,118 @@ public sealed class AdminManagementService(
             .Select(ToCustomerDto)
             .ToArray();
         return Task.FromResult<IReadOnlyCollection<CustomerDto>>(result);
+    }
+
+    public async Task<CustomerDetailDto?> GetCustomerDetailAsync(Guid id, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var unit = GetUnit();
+        var customer = context.Customers.SingleOrDefault(candidate =>
+            candidate.Id == new CustomerId(id) && candidate.UnitId == unit.Id);
+        if (customer is null) return null;
+
+        LoyaltyProgramService.ExpirePoints(context, customer);
+        var detail = CreateCustomerDetail(customer, LoyaltyProgramService.GetOrCreateSettings(context, unit.Id));
+        await context.SaveChangesAsync(cancellationToken);
+        return detail;
+    }
+
+    public async Task<LoyaltyDashboardDto> GetLoyaltyDashboardAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var unit = GetUnit();
+        var settings = LoyaltyProgramService.GetOrCreateSettings(context, unit.Id);
+        foreach (var customer in context.Customers.Where(candidate => candidate.UnitId == unit.Id).ToArray())
+            LoyaltyProgramService.ExpirePoints(context, customer);
+        var customers = context.Customers.Where(candidate => candidate.UnitId == unit.Id).ToArray();
+        var names = customers.ToDictionary(customer => customer.Id, customer => customer.Name);
+        var transactions = context.LoyaltyTransactions.Where(candidate => candidate.UnitId == unit.Id)
+            .OrderByDescending(candidate => candidate.OccurredAt).Take(100).ToArray();
+        var dashboard = new LoyaltyDashboardDto(
+            new LoyaltySettingsDto(settings.IsEnabled, settings.PointsPerCurrencyUnit, settings.RedemptionValuePerPoint.Amount,
+                settings.MinimumRedemptionPoints, settings.MaximumRedemptionPercentage, settings.PointsValidityDays),
+            context.PromotionCoupons.Where(candidate => candidate.UnitId == unit.Id).OrderBy(candidate => candidate.Code).ToArray()
+                .Select(coupon => new PromotionCouponDto(coupon.Id.Value, coupon.Code, coupon.Name, coupon.DiscountType.ToString(), coupon.Value,
+                    coupon.MinimumOrderAmount.Amount, coupon.MaximumDiscountAmount.HasValue ? coupon.MaximumDiscountAmount.Value.Amount : null,
+                    coupon.StartsAt, coupon.EndsAt, coupon.UsageLimit, coupon.TimesRedeemed, coupon.IsActive)).ToArray(),
+            transactions.Select(transaction => new LoyaltyTransactionDto(transaction.Id.Value, transaction.CustomerId.Value,
+                names.GetValueOrDefault(transaction.CustomerId, "Cliente"), transaction.OrderId?.Value, transaction.Type.ToString(),
+                transaction.Points, transaction.BalanceAfter, transaction.Discount.Amount, transaction.Description, transaction.OccurredAt)).ToArray(),
+            customers.Count(customer => customer.IsActive), customers.Sum(customer => customer.LoyaltyPoints),
+            transactions.Where(transaction => transaction.Type == LoyaltyTransactionType.Redeemed).Sum(transaction => transaction.Discount.Amount));
+        await context.SaveChangesAsync(cancellationToken);
+        return dashboard;
+    }
+
+    public async Task<CustomerDetailDto> AdjustCustomerLoyaltyPointsAsync(
+        Guid id,
+        AdjustCustomerLoyaltyPointsCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var reason = command.Reason?.Trim() ?? string.Empty;
+        if (reason.Length is < 5 or > 160)
+            throw new BusinessRuleException("loyalty.adjustment_reason", "The adjustment reason must contain between 5 and 160 characters.");
+
+        var unit = GetUnit();
+        var employee = GetEmployee(identityUserId);
+        var customer = context.Customers.SingleOrDefault(candidate =>
+            candidate.Id == new CustomerId(id) && candidate.UnitId == unit.Id)
+            ?? throw new BusinessRuleException("customer.not_found", "Customer was not found.");
+        if (!customer.IsActive)
+            throw new BusinessRuleException("customer.inactive", "Loyalty points cannot be adjusted for an inactive customer.");
+
+        var settings = LoyaltyProgramService.GetOrCreateSettings(context, unit.Id);
+        LoyaltyProgramService.ExpirePoints(context, customer);
+        customer.AdjustLoyaltyPoints(command.Points, DateTimeOffset.UtcNow.AddDays(settings.PointsValidityDays));
+        context.Add(new LoyaltyTransaction(
+            LoyaltyTransactionId.New(),
+            unit.Id,
+            customer.Id,
+            null,
+            LoyaltyTransactionType.ManualAdjustment,
+            command.Points,
+            customer.LoyaltyPoints,
+            Money.Zero(),
+            $"Ajuste manual: {reason}"));
+        AddAudit(unit.Id, employee.Id, "Customers", "AdjustLoyaltyPoints", nameof(Customer), customer.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return CreateCustomerDetail(customer, settings);
+    }
+
+    public async Task UpdateLoyaltySettingsAsync(UpdateLoyaltySettingsCommand command, Guid identityUserId, CancellationToken cancellationToken)
+    {
+        var unit = GetUnit();
+        var employee = GetEmployee(identityUserId);
+        LoyaltyProgramService.GetOrCreateSettings(context, unit.Id).Update(command.IsEnabled, command.PointsPerCurrencyUnit,
+            command.RedemptionValuePerPoint, command.MinimumRedemptionPoints, command.MaximumRedemptionPercentage, command.PointsValidityDays);
+        AddAudit(unit.Id, employee.Id, "Customers", "UpdateLoyaltySettings", nameof(LoyaltySettings), unit.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<CommandResultDto> SavePromotionCouponAsync(SavePromotionCouponCommand command, Guid identityUserId, CancellationToken cancellationToken)
+    {
+        var unit = GetUnit();
+        var employee = GetEmployee(identityUserId);
+        if (!Enum.TryParse<CouponDiscountType>(command.DiscountType, true, out var discountType))
+            throw new BusinessRuleException("coupon.type", "Coupon discount type is invalid.");
+        PromotionCoupon coupon;
+        if (command.Id.HasValue)
+        {
+            coupon = context.PromotionCoupons.Single(candidate => candidate.Id == new PromotionCouponId(command.Id.Value) && candidate.UnitId == unit.Id);
+            coupon.Update(command.Code, command.Name, discountType, command.Value, command.MinimumOrderAmount,
+                command.MaximumDiscountAmount, command.StartsAt, command.EndsAt, command.UsageLimit, command.IsActive);
+        }
+        else
+        {
+            coupon = new PromotionCoupon(PromotionCouponId.New(), unit.Id, command.Code, command.Name, discountType,
+                command.Value, command.MinimumOrderAmount, command.MaximumDiscountAmount, command.StartsAt, command.EndsAt, command.UsageLimit, command.IsActive);
+            context.Add(coupon);
+        }
+        AddAudit(unit.Id, employee.Id, "Customers", command.Id.HasValue ? "UpdateCoupon" : "CreateCoupon", nameof(PromotionCoupon), coupon.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(coupon.Id.Value, coupon.IsActive ? "Active" : "Inactive");
     }
 
     public Task<IReadOnlyCollection<ReservationDto>> ListReservationsAsync(CancellationToken cancellationToken)
@@ -223,6 +336,28 @@ public sealed class AdminManagementService(
         return new CommandResultDto(reservation.Id.Value, reservation.Status.ToString());
     }
 
+    public async Task<CommandResultDto> SeatReservationAsync(
+        Guid id,
+        SeatDiningEntryCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var reservation = context.Reservations.Single(item => item.Id == new ReservationId(id));
+        reservation.EnsureCanSeat();
+        var session = await OpenDiningEntrySessionAsync(
+            reservation.UnitId,
+            reservation.PartySize,
+            reservation.Notes,
+            command.TableIds,
+            employee,
+            cancellationToken);
+        reservation.Seat(session.Id);
+        AddAudit(reservation.UnitId, employee.Id, "Dining", "SeatReservation", nameof(Reservation), reservation.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(session.Id.Value, reservation.Status.ToString());
+    }
+
     public async Task<WaitlistEntryDto> CreateWaitlistEntryAsync(
         CreateWaitlistEntryCommand command, Guid identityUserId, CancellationToken cancellationToken)
     {
@@ -253,6 +388,28 @@ public sealed class AdminManagementService(
         AddAudit(entry.UnitId, employee.Id, "Dining", status.ToString(), nameof(WaitlistEntry), entry.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return new CommandResultDto(entry.Id.Value, entry.Status.ToString());
+    }
+
+    public async Task<CommandResultDto> SeatWaitlistEntryAsync(
+        Guid id,
+        SeatDiningEntryCommand command,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var entry = context.WaitlistEntries.Single(item => item.Id == new WaitlistEntryId(id));
+        entry.EnsureCanSeat();
+        var session = await OpenDiningEntrySessionAsync(
+            entry.UnitId,
+            entry.PartySize,
+            entry.Notes,
+            command.TableIds,
+            employee,
+            cancellationToken);
+        entry.Seat(session.Id);
+        AddAudit(entry.UnitId, employee.Id, "Dining", "SeatWaitlist", nameof(WaitlistEntry), entry.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(session.Id.Value, entry.Status.ToString());
     }
 
     public async Task<CreatedOrderDto> CreateOrderAsync(
@@ -369,6 +526,7 @@ public sealed class AdminManagementService(
         }
 
         AddAudit(unit.Id, employee.Id, "Billing", "CounterCheckout", nameof(Bill), bill.Id.Value);
+        LoyaltyProgramService.AwardCompletedOrder(context, order);
         await context.SaveChangesAsync(cancellationToken);
         return new CounterCheckoutResultDto(
             order.Id.Value,
@@ -442,12 +600,10 @@ public sealed class AdminManagementService(
             composition.AddAdministrativeOrderItem(order, requestedItem, unit.Id, stationItems);
         }
 
-        order.RecalculateTotals(
-            deliveryFee: fulfillment == FulfillmentType.Delivery ? settings.DefaultDeliveryFee : Money.Zero(),
-            discount: new Money(command.DiscountAmount));
-        InventoryConsumption.Apply(context, order, requestedItems, employee.Id);
+        order.RecalculateTotals(deliveryFee: fulfillment == FulfillmentType.Delivery ? settings.DefaultDeliveryFee : Money.Zero());
+        LoyaltyProgramService.ApplyBenefits(context, order, customer, new Money(command.DiscountAmount), command.CouponCode, command.LoyaltyPoints);
+        InventoryAllocation.Reserve(context, order, requestedItems);
         order.Submit();
-        customer.RegisterPurchase(order.Total);
         context.Add(order);
         await composition.CreateAdministrativeKitchenTicketsAsync(order, stationItems, cancellationToken);
         AddAudit(unit.Id, employee.Id, "Ordering", "CreateAdministrative", nameof(Order), order.Id.Value);
@@ -1641,6 +1797,39 @@ public sealed class AdminManagementService(
         return new CommandResultDto(table.Id.Value, action == "Create" ? "Created" : "Updated");
     }
 
+    public async Task<CommandResultDto> DeleteRestaurantTableAsync(
+        Guid id,
+        Guid identityUserId,
+        CancellationToken cancellationToken)
+    {
+        var employee = GetEmployee(identityUserId);
+        var unit = GetUnit();
+        var table = context.RestaurantTables.Single(candidate => candidate.Id == new RestaurantTableId(id));
+        if (table.UnitId != unit.Id)
+        {
+            throw new BusinessRuleException("restaurant_table.unit", "The table does not belong to this restaurant unit.");
+        }
+
+        if (context.TableSessionTables.Any(link => link.RestaurantTableId == table.Id))
+        {
+            throw new BusinessRuleException(
+                "restaurant_table.history",
+                "A table with service history cannot be deleted. Deactivate it to preserve the audit trail.");
+        }
+
+        if (context.Devices.Any(device => device.LinkedTableId == table.Id))
+        {
+            throw new BusinessRuleException(
+                "restaurant_table.device",
+                "Unlink all devices from the table before deleting it.");
+        }
+
+        context.Remove(table);
+        AddAudit(unit.Id, employee.Id, "Dining", "Delete", nameof(RestaurantTable), table.Id.Value);
+        await context.SaveChangesAsync(cancellationToken);
+        return new CommandResultDto(table.Id.Value, "Deleted");
+    }
+
     public async Task<CommandResultDto> SaveCashRegisterAsync(
         SaveCashRegisterCommand command,
         Guid identityUserId,
@@ -1960,6 +2149,57 @@ public sealed class AdminManagementService(
         return new CommandResultDto(session.Id.Value, session.Status.ToString());
     }
 
+    private async Task<TableSession> OpenDiningEntrySessionAsync(
+        RestaurantUnitId unitId,
+        int guestCount,
+        string? notes,
+        IReadOnlyCollection<Guid> requestedTableIds,
+        Employee employee,
+        CancellationToken cancellationToken)
+    {
+        var tableIds = requestedTableIds.Distinct().Select(value => new RestaurantTableId(value)).ToArray();
+        if (tableIds.Length == 0)
+        {
+            throw new BusinessRuleException("dining.seating_tables", "Select at least one table for seating.");
+        }
+
+        var tables = context.RestaurantTables
+            .Where(table => tableIds.Contains(table.Id) && table.UnitId == unitId)
+            .OrderBy(table => table.DisplayOrder)
+            .ThenBy(table => table.Number)
+            .ToArray();
+        if (tables.Length != tableIds.Length)
+        {
+            throw new BusinessRuleException("dining.seating_tables", "One or more selected tables are unavailable.");
+        }
+        if (tables.Sum(table => table.Capacity) < guestCount)
+        {
+            throw new BusinessRuleException("dining.seating_capacity", "Selected tables do not have enough capacity for this party.");
+        }
+        if (tables.Any(table => HasOpenTableSession(table.Id)))
+        {
+            throw new BusinessRuleException("table.already_in_open_session", "One or more selected tables already belong to an open session.");
+        }
+
+        var sessionNumber = numberGenerator is null
+            ? context.TableSessions.Any() ? context.TableSessions.Max(session => session.SessionNumber) + 1 : 1
+            : await numberGenerator.NextTableSessionNumberAsync(cancellationToken);
+        var settings = context.OperationSettings.Single(candidate => candidate.UnitId == unitId);
+        var session = TableSession.Open(
+            TableSessionId.New(),
+            unitId,
+            sessionNumber,
+            guestCount,
+            employee.Id,
+            settings.ServiceFeePercentage,
+            tables);
+        session.AssignWaiter(employee.Id);
+        session.SetNotes(notes);
+        context.Add(session);
+        AddAudit(unitId, employee.Id, "Dining", "OpenFromSeating", nameof(TableSession), session.Id.Value);
+        return session;
+    }
+
     public async Task<CommandResultDto> AssignTableWaiterAsync(
         Guid tableSessionId,
         AssignTableWaiterCommand command,
@@ -2075,11 +2315,17 @@ public sealed class AdminManagementService(
         switch (transition.ToLowerInvariant())
         {
             case "accept": order.Accept(); break;
-            case "start-production": order.StartProduction(); break;
+            case "start-production":
+                InventoryAllocation.Consume(context, order.Id, order.OrderNumber, employee.Id);
+                order.StartProduction();
+                break;
             case "ready": order.MarkReady(); break;
             case "complete" when order.FulfillmentType == FulfillmentType.Delivery:
                 throw new BusinessRuleException("order.delivery_dispatch", "Delivery orders must be dispatched before completion.");
-            case "complete": order.Complete(); break;
+            case "complete":
+                order.Complete();
+                LoyaltyProgramService.AwardCompletedOrder(context, order);
+                break;
             default: throw new BusinessRuleException("order.transition", "Unknown order transition.");
         }
 
@@ -2104,10 +2350,8 @@ public sealed class AdminManagementService(
         }
 
         order.Cancel(command.Reason);
-        if (order.CustomerId.HasValue)
-        {
-            context.Customers.SingleOrDefault(customer => customer.Id == order.CustomerId.Value)?.ReversePurchase(order.Total);
-        }
+        InventoryAllocation.Release(context, order.Id);
+        LoyaltyProgramService.RestoreCancelledOrder(context, order);
         foreach (var ticket in context.KitchenTickets.Where(ticket => ticket.OrderId == order.Id).ToArray())
         {
             if (ticket.Status != KitchenTicketStatus.Dispatched && ticket.Status != KitchenTicketStatus.Cancelled) ticket.Cancel();
@@ -2195,6 +2439,7 @@ public sealed class AdminManagementService(
         var employee = GetEmployee(identityUserId);
         var order = context.Orders.Single(item => item.Id == new OrderId(id));
         order.CompleteDelivery();
+        LoyaltyProgramService.AwardCompletedOrder(context, order);
         AddAudit(order.UnitId, employee.Id, "Ordering", "CompleteDelivery", nameof(Order), order.Id.Value);
         await context.SaveChangesAsync(cancellationToken);
         return new CommandResultDto(order.Id.Value, order.DeliveryStatus!.Value.ToString());
@@ -2232,6 +2477,7 @@ public sealed class AdminManagementService(
                 QueueKitchenTicketIfConfigured(ticket, order);
                 break;
             case "start":
+                InventoryAllocation.Consume(context, order.Id, order.OrderNumber, employee.Id);
                 ticket.StartPreparation();
                 if (order.Status == OrderStatus.Accepted) order.StartProduction();
                 break;
@@ -3012,14 +3258,102 @@ public sealed class AdminManagementService(
         customer.LastOrderAt,
         customer.CreatedAt);
 
+    private CustomerDetailDto CreateCustomerDetail(Customer customer, LoyaltySettings settings)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var customerOrders = context.Orders
+            .Where(order => order.CustomerId == customer.Id)
+            .OrderByDescending(order => order.CreatedAt)
+            .ToArray();
+        var validCouponOrders = customerOrders
+            .Where(order => order.Status != OrderStatus.Cancelled && order.PromotionCouponId.HasValue)
+            .ToArray();
+        var customerName = customer.Name;
+        var transactions = context.LoyaltyTransactions
+            .Where(transaction => transaction.CustomerId == customer.Id)
+            .OrderByDescending(transaction => transaction.OccurredAt)
+            .Take(100)
+            .ToArray()
+            .Select(transaction => new LoyaltyTransactionDto(
+                transaction.Id.Value,
+                transaction.CustomerId.Value,
+                customerName,
+                transaction.OrderId?.Value,
+                transaction.Type.ToString(),
+                transaction.Points,
+                transaction.BalanceAfter,
+                transaction.Discount.Amount,
+                transaction.Description,
+                transaction.OccurredAt))
+            .ToArray();
+        var coupons = context.PromotionCoupons
+            .Where(coupon => coupon.UnitId == customer.UnitId)
+            .OrderBy(coupon => coupon.EndsAt)
+            .ToArray()
+            .Select(coupon =>
+            {
+                var uses = validCouponOrders.Where(order => order.PromotionCouponId == coupon.Id).ToArray();
+                var availability = !coupon.IsActive ? "Inactive"
+                    : now < coupon.StartsAt ? "Scheduled"
+                    : now > coupon.EndsAt ? "Expired"
+                    : coupon.UsageLimit.HasValue && coupon.TimesRedeemed >= coupon.UsageLimit ? "UsageLimitReached"
+                    : "Available";
+                return new CustomerCouponDto(
+                    coupon.Id.Value,
+                    coupon.Code,
+                    coupon.Name,
+                    coupon.DiscountType.ToString(),
+                    coupon.Value,
+                    coupon.MinimumOrderAmount.Amount,
+                    coupon.MaximumDiscountAmount?.Amount,
+                    coupon.StartsAt,
+                    coupon.EndsAt,
+                    availability,
+                    uses.Length,
+                    uses.Length == 0 ? null : uses.Max(order => order.CreatedAt));
+            })
+            .ToArray();
+        var orders = customerOrders
+            .Take(30)
+            .Select(order => new CustomerOrderSummaryDto(
+                order.Id.Value,
+                order.OrderNumber,
+                order.FulfillmentType.ToString(),
+                order.Status.ToString(),
+                order.Subtotal.Amount,
+                order.Discount.Amount,
+                order.Total.Amount,
+                order.CouponCode,
+                order.LoyaltyPointsRedeemed,
+                order.CreatedAt))
+            .ToArray();
+        var averageTicket = customer.OrderCount == 0
+            ? 0
+            : decimal.Round(customer.LifetimeSpend.Amount / customer.OrderCount, 2, MidpointRounding.AwayFromZero);
+        var benefitBalance = decimal.Round(
+            customer.LoyaltyPoints * settings.RedemptionValuePerPoint.Amount,
+            2,
+            MidpointRounding.ToZero);
+
+        return new CustomerDetailDto(
+            ToCustomerDto(customer),
+            customer.LoyaltyPointsExpireAt,
+            benefitBalance,
+            averageTicket,
+            orders,
+            coupons,
+            transactions);
+    }
+
     private static ReservationDto ToReservationDto(Reservation reservation) => new(
         reservation.Id.Value, reservation.CustomerId?.Value, reservation.CustomerName, reservation.Phone,
         reservation.PartySize, reservation.ScheduledAt, reservation.DurationMinutes, reservation.Notes,
-        reservation.Status.ToString(), reservation.CreatedAt);
+        reservation.Status.ToString(), reservation.CreatedAt, reservation.TableSessionId?.Value, reservation.SeatedAt);
 
     private static WaitlistEntryDto ToWaitlistEntryDto(WaitlistEntry entry) => new(
         entry.Id.Value, entry.CustomerId?.Value, entry.CustomerName, entry.Phone, entry.PartySize,
-        entry.EstimatedWaitMinutes, entry.Notes, entry.Status.ToString(), entry.EnteredAt, entry.NotifiedAt);
+        entry.EstimatedWaitMinutes, entry.Notes, entry.Status.ToString(), entry.EnteredAt, entry.NotifiedAt,
+        entry.TableSessionId?.Value, entry.SeatedAt);
 
     private OrderReceiptDto CreateOrderReceipt(Order order)
     {

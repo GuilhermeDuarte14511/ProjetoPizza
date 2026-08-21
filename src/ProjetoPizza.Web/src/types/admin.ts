@@ -235,6 +235,87 @@ export interface Customer {
   createdAt: string
 }
 
+export interface LoyaltySettings {
+  isEnabled: boolean
+  pointsPerCurrencyUnit: number
+  redemptionValuePerPoint: number
+  minimumRedemptionPoints: number
+  maximumRedemptionPercentage: number
+  pointsValidityDays: number
+}
+export interface PromotionCoupon {
+  id: string
+  code: string
+  name: string
+  discountType: 'FixedAmount' | 'Percentage'
+  value: number
+  minimumOrderAmount: number
+  maximumDiscountAmount?: number
+  startsAt: string
+  endsAt: string
+  usageLimit?: number
+  timesRedeemed: number
+  isActive: boolean
+}
+export interface LoyaltyTransaction {
+  id: string
+  customerId: string
+  customerName: string
+  orderId?: string
+  type: 'OpeningBalance' | 'Earned' | 'Redeemed' | 'Restored' | 'Expired' | 'ManualAdjustment'
+  points: number
+  balanceAfter: number
+  discount: number
+  description: string
+  occurredAt: string
+}
+export interface LoyaltyDashboard {
+  settings: LoyaltySettings
+  coupons: PromotionCoupon[]
+  transactions: LoyaltyTransaction[]
+  activeCustomers: number
+  pointsInCirculation: number
+  grantedDiscount: number
+}
+
+export interface CustomerOrderSummary {
+  id: string
+  number: number
+  fulfillment: string
+  status: string
+  subtotal: number
+  discount: number
+  total: number
+  couponCode?: string
+  loyaltyPointsRedeemed: number
+  createdAt: string
+}
+
+export interface CustomerCoupon {
+  id: string
+  code: string
+  name: string
+  discountType: 'FixedAmount' | 'Percentage'
+  value: number
+  minimumOrderAmount: number
+  maximumDiscountAmount?: number
+  startsAt: string
+  endsAt: string
+  availability: 'Available' | 'Scheduled' | 'Expired' | 'Inactive' | 'UsageLimitReached'
+  timesUsedByCustomer: number
+  lastUsedAt?: string
+}
+
+export interface CustomerDetail {
+  customer: Customer
+  loyaltyPointsExpireAt?: string
+  benefitBalance: number
+  averageTicket: number
+  orders: CustomerOrderSummary[]
+  coupons: CustomerCoupon[]
+  loyaltyTransactions: LoyaltyTransaction[]
+}
+
 export interface Reservation {
   id: string
   customerId?: string
@@ -247,6 +328,8 @@ export interface Reservation {
   customerBirthDate?: string
   status: string
   createdAt: string
+  tableSessionId?: string
+  seatedAt?: string
 }
 
 export interface WaitlistEntry {
@@ -260,6 +343,8 @@ export interface WaitlistEntry {
   status: string
   enteredAt: string
   notifiedAt?: string
+  tableSessionId?: string
+  seatedAt?: string
 }
 
 export interface AdministrativeOrderCatalog {
@@ -272,6 +357,8 @@ export interface CreateAdministrativeOrder extends SubmitClientOrder {
   fulfillment: 'Pickup' | 'Delivery'
   deliveryAddress?: string
   discountAmount: number
+  couponCode?: string
+  loyaltyPoints?: number
 }
 
 export interface CreatedOrder {

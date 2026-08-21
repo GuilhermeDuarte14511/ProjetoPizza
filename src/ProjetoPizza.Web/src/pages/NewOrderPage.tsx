@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Cake, MapPin, Minus, PackageCheck, Phone, Plus, Search, ShoppingCart, Trash2, Truck, UserPlus } from 'lucide-react'
+import { ArrowLeft, Award, Cake, MapPin, Minus, PackageCheck, Phone, Plus, Search, ShoppingCart, Ticket, Trash2, Truck, UserPlus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useLocation } from 'wouter'
@@ -33,6 +33,7 @@ export function NewOrderPage() {
   const { data: orderCatalog } = useAdminQuery(queryKeys.orderCatalog, adminService.orderCatalog)
   const { data: customers, setData: setCustomers } = useAdminQuery(queryKeys.customers, adminService.customers)
   const { data: paymentMethods } = useAdminQuery(queryKeys.paymentMethods, adminService.paymentMethods)
+  const { data: loyalty } = useAdminQuery(queryKeys.loyalty, adminService.loyalty)
   const [requestId] = useState(createUuid)
   const [fulfillment, setFulfillment] = useState<'Pickup' | 'Delivery'>('Pickup')
   const [customerId, setCustomerId] = useState('')
@@ -42,6 +43,8 @@ export function NewOrderPage() {
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [notes, setNotes] = useState('')
   const [discountAmount, setDiscountAmount] = useState(0)
+  const [couponCode, setCouponCode] = useState('')
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0)
   const [cart, setCart] = useState<ClientCartItem[]>([])
   const [builderProduct, setBuilderProduct] = useState<ClientProduct>()
   const [saving, setSaving] = useState(false)
@@ -49,6 +52,7 @@ export function NewOrderPage() {
   const [savingCustomer, setSavingCustomer] = useState(false)
   const [createdReceipt, setCreatedReceipt] = useState<OrderReceipt>()
   const [checkoutOpen, setCheckoutOpen] = useState(false)
+  const [couponReferenceTime] = useState(() => Date.now())
   const customerForm = useForm<CustomerFormData>({ resolver: zodResolver(customerSchema), defaultValues: emptyCustomer })
   const activeCustomers = customers.filter((customer) => customer.isActive)
   const customerMatches = useMemo(() => {
@@ -63,8 +67,15 @@ export function NewOrderPage() {
   [categoryId, orderCatalog.catalog.products, productSearch])
   const subtotal = cart.reduce((total, item) => total + item.unitPrice * item.quantity, 0)
   const deliveryFee = fulfillment === 'Delivery' ? orderCatalog.defaultDeliveryFee : 0
-  const total = Math.max(0, subtotal + deliveryFee - discountAmount)
   const selectedCustomer = customers.find((customer) => customer.id === customerId)
+  const gross = subtotal + deliveryFee
+  const selectedCoupon = loyalty.coupons.find((coupon) => coupon.code === couponCode.trim().toUpperCase() && coupon.isActive &&
+    new Date(coupon.startsAt).getTime() <= couponReferenceTime && new Date(coupon.endsAt).getTime() >= couponReferenceTime && (!coupon.usageLimit || coupon.timesRedeemed < coupon.usageLimit))
+  const couponDiscount = selectedCoupon && gross >= selectedCoupon.minimumOrderAmount
+    ? Math.min(selectedCoupon.maximumDiscountAmount ?? gross, selectedCoupon.discountType === 'Percentage' ? Math.floor(gross * selectedCoupon.value) / 100 : selectedCoupon.value)
+    : 0
+  const loyaltyDiscount = loyaltyPoints * loyalty.settings.redemptionValuePerPoint
+  const total = Math.max(0, gross - discountAmount - couponDiscount - loyaltyDiscount)
 
   function addProduct(product: ClientProduct) {
     if (product.productType === 'Pizza') {
@@ -128,6 +139,18 @@ export function NewOrderPage() {
       toast.error('Desconto inválido', 'O desconto não pode ultrapassar o valor do pedido.')
       return false
     }
+    if (loyaltyPoints > (selectedCustomer?.loyaltyPoints ?? 0)) {
+      toast.error('Saldo insuficiente', 'Reduza a quantidade de pontos para continuar.')
+      return false
+    }
+    if (loyaltyPoints > 0 && loyaltyPoints < loyalty.settings.minimumRedemptionPoints) {
+      toast.error('Mínimo não atingido', `Use ao menos ${loyalty.settings.minimumRedemptionPoints} pontos.`)
+      return false
+    }
+    if (loyaltyDiscount > (gross - couponDiscount) * loyalty.settings.maximumRedemptionPercentage / 100) {
+      toast.error('Limite de resgate', `Os pontos podem cobrir até ${loyalty.settings.maximumRedemptionPercentage}% do pedido.`)
+      return false
+    }
     if (total <= 0) {
       toast.error('Total inválido', 'O pedido de balcão precisa ter um valor positivo para registrar o pagamento.')
       return false
@@ -142,6 +165,8 @@ export function NewOrderPage() {
       fulfillment,
       deliveryAddress: fulfillment === 'Delivery' ? deliveryAddress.trim() : undefined,
       discountAmount,
+      couponCode: couponCode.trim() || undefined,
+      loyaltyPoints,
       notes: notes.trim() || undefined,
       items: cart.map((item) => ({
         productId: item.productId,
@@ -235,7 +260,7 @@ export function NewOrderPage() {
                 <button type="button" role="radio" aria-checked={fulfillment === 'Delivery'} className={fulfillment === 'Delivery' ? 'selected' : ''} onClick={() => setFulfillment('Delivery')}><Truck /><span><strong>Entrega</strong><small>Pedido recebido por telefone</small></span></button>
               </div>
             </div>
-            {selectedCustomer && <div className="selected-customer"><strong>{selectedCustomer.name}</strong><span><Phone size={14} /> {formatPhone(selectedCustomer.phone)}</span><span><Cake size={14} /> {new Date(`${selectedCustomer.birthDate}T00:00:00`).toLocaleDateString('pt-BR')}</span></div>}
+            {selectedCustomer && <div className="selected-customer"><strong>{selectedCustomer.name}</strong><span><Phone size={14} /> {formatPhone(selectedCustomer.phone)}</span><span><Cake size={14} /> {new Date(`${selectedCustomer.birthDate}T00:00:00`).toLocaleDateString('pt-BR')}</span><span><Award size={14} /> {selectedCustomer.loyaltyPoints} pontos</span></div>}
             {fulfillment === 'Delivery' && <label className="field-label delivery-address"><MapPin size={15} /> Endereço completo<textarea value={deliveryAddress} maxLength={500} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Rua, número, bairro, complemento e referência" /></label>}
           </article>
 
@@ -266,7 +291,8 @@ export function NewOrderPage() {
           </div>
           <label className="field-label">Observações<textarea value={notes} maxLength={1000} onChange={(event) => setNotes(event.target.value)} placeholder="Ex.: retirar no balcão às 20h" /></label>
           <label className="field-label order-discount-field">Desconto<CurrencyInput value={discountAmount} onCurrencyValueChange={setDiscountAmount} /></label>
-          <div className="order-summary-lines"><div><span>Subtotal</span><strong>{currency.format(subtotal)}</strong></div>{fulfillment === 'Delivery' && <div><span>Taxa de entrega</span><strong>{currency.format(deliveryFee)}</strong></div>}<div><span>Desconto</span><strong>- {currency.format(discountAmount)}</strong></div><div className="total"><span>Total</span><strong>{currency.format(total)}</strong></div></div>
+          <div className="order-benefits"><label><Ticket size={15} /><span>Cupom</span><input value={couponCode} maxLength={40} onChange={(event) => setCouponCode(event.target.value.toUpperCase())} placeholder="EX.: VOLTE10" /></label><label><Award size={15} /><span>Pontos <small>saldo {selectedCustomer?.loyaltyPoints ?? 0}</small></span><input type="number" min="0" max={selectedCustomer?.loyaltyPoints ?? 0} step="1" value={loyaltyPoints} onChange={(event) => setLoyaltyPoints(Math.max(0, event.target.valueAsNumber || 0))} /></label></div>
+          <div className="order-summary-lines"><div><span>Subtotal</span><strong>{currency.format(subtotal)}</strong></div>{fulfillment === 'Delivery' && <div><span>Taxa de entrega</span><strong>{currency.format(deliveryFee)}</strong></div>}<div><span>Desconto manual</span><strong>- {currency.format(discountAmount)}</strong></div>{couponDiscount > 0 && <div className="benefit-line"><span>Cupom {selectedCoupon?.code}</span><strong>- {currency.format(couponDiscount)}</strong></div>}{loyaltyDiscount > 0 && <div className="benefit-line"><span>{loyaltyPoints} pontos</span><strong>- {currency.format(loyaltyDiscount)}</strong></div>}<div className="total"><span>Total</span><strong>{currency.format(total)}</strong></div></div>
           <button className="primary-button full" disabled={saving || !cart.length || !selectedCustomer} onClick={() => fulfillment === 'Pickup' ? reviewAndReceive() : void submit()}>{saving ? 'Confirmando...' : fulfillment === 'Pickup' ? 'Revisar e receber pagamento' : 'Confirmar e enviar para produção'}</button>
           <small className="order-price-note">Preço, disponibilidade e taxa são confirmados novamente pelo servidor.</small>
         </aside>

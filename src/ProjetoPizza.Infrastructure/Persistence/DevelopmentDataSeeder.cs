@@ -39,7 +39,8 @@ public sealed class DevelopmentDataSeeder(
 
         var unit = new RestaurantUnit(UnitId, "[DEV] Unidade Principal", "Projeto Pizza Desenvolvimento LTDA", "Forno 27", "00.000.000/0001-00");
         unit.UpdateContactInformation("(11) 99999-0000", "dev@projetopizza.local");
-        context.AddRange(unit, new OperationSettings(UnitId), new PizzaSettings(UnitId));
+        context.AddRange(unit, new OperationSettings(UnitId), new PizzaSettings(UnitId),
+            new LoyaltySettings(LoyaltySettingsId.New(), UnitId));
 
         var employee = new Employee(
             EmployeeId,

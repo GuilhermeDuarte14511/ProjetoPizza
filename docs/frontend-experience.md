@@ -51,7 +51,7 @@ O Vitest cobre componentes, apresentações, carrinho isolado por sessão, acess
 
 O modal de pagamento alterna entre recebimento único, divisão por 2 a 50 pessoas e divisão por consumo. A divisão igualitária distribui centavos sem perder ou criar valor; a divisão por consumo atribui cada item da comanda a uma pessoa e calcula sua parte. Ambas coletam forma de pagamento, valor recebido, troco e referência individual e enviam todos os pagamentos em uma única operação.
 
-O histórico administrativo traduz ação, módulo e entidade para português. Para tickets de cozinha, a API projeta o número operacional (`Ticket #1024`) no lugar do GUID, mantendo o identificador técnico no contrato e na exportação CSV.
+O histórico administrativo traduz ação, módulo e entidade para português, e a busca reconhece tanto os termos traduzidos quanto os valores técnicos preservados no contrato. A apresentação central também traduz os estados e tipos enumerados do domínio. Para tickets de cozinha, a API projeta o número operacional (`Ticket #1024`) no lugar do GUID, mantendo o identificador técnico no contrato e na exportação CSV.
 
 ## Pedido administrativo e impressão térmica
 
@@ -63,9 +63,11 @@ O detalhe da mesa apresenta cada pedido com data, canal, itens, quantidade, desc
 
 ## Clientes e navegação administrativa
 
-A rota `/admin/customers` organiza busca, contagem e registros em uma única superfície operacional. Nome, celular formatado, nascimento, fidelidade, situação e edição seguem colunas estáveis no desktop e se reorganizam em blocos legíveis no mobile. Cada real de pedido administrativo válido rende um ponto e cancelamentos revertem pontos, valor acumulado e quantidade de pedidos.
+A rota `/admin/customers` organiza busca, contagem e registros em uma única superfície operacional. Nome, celular formatado, nascimento, fidelidade e situação seguem colunas estáveis no desktop e se reorganizam em blocos legíveis no mobile. A ação `Detalhes` abre uma central responsiva com passaporte do cliente, bilhete de benefícios, validade, equivalente em descontos, valor acumulado, ticket médio e visões alternáveis de movimentações, pedidos e cupons. Ajustes manuais exigem motivo, exibem a projeção do novo saldo e são auditáveis. `/admin/loyalty` reúne as regras globais, edita cupons e apresenta o razão consolidado. Créditos automáticos ocorrem somente em pedidos pagos ou concluídos.
 
-A rota `/admin/reservations` combina agenda e lista de espera. O campo de cliente funciona como combobox acessível, pesquisa por nome ou telefone e preenche telefone e nascimento do cadastro selecionado. Quando a busca não encontra o cliente, a data de nascimento passa a ser obrigatória e a API cria cliente e reserva na mesma transação, evitando registros incompletos. Reservas seguem estados pendente, confirmado, recepcionado e concluído, com cancelamento ou ausência; a fila mantém posição, previsão, aviso e acomodação. Os dois fluxos têm regras e auditoria no servidor, estados vazios, responsividade e permissões operacionais.
+A rota `/admin/reservations` combina agenda e lista de espera. O campo de cliente funciona como combobox acessível, pesquisa por nome ou telefone e preenche telefone e nascimento do cadastro selecionado. Quando a busca não encontra o cliente, a data de nascimento passa a ser obrigatória e a API cria cliente e reserva na mesma transação, evitando registros incompletos. Na acomodação, o operador seleciona uma ou mais mesas livres com capacidade suficiente; a API abre a comanda, vincula as mesas e conclui a recepção atomicamente. Reservas seguem estados pendente, confirmado, recepcionado e concluído, com cancelamento ou ausência; a fila mantém posição, previsão, aviso e acomodação.
+
+A busca do cabeçalho abre `/admin/search`, consulta simultaneamente pedidos, mesas e clientes e agrupa os resultados com destino contextual. O termo aceita número de pedido/mesa, nome, produto, área, estado e telefone. A tela de mesas expõe o acesso direto à gestão estrutural, onde mesas podem ser adicionadas, editadas, desativadas ou excluídas quando ainda não possuem histórico nem tablet vinculado.
 
 A sidebar mantém marca e ação principal no topo, navegação com rolagem independente no centro e saída no rodapé. Essa divisão evita que “Sair” cubra “Configurações” em telas de menor altura e preserva a versão compacta e o drawer mobile.
 
@@ -81,7 +83,7 @@ O cabeçalho também oferece um teste local do som de notificações. Pedidos cr
 
 A tela de caixa apresenta a abertura quando não existe turno corrente. O modal acessível seleciona um caixa ativo, recebe o fundo inicial com máscara monetária e mostra sucesso ou erro tratado. A resposta da abertura e o fechamento atualizam imediatamente a chave compartilhada, mantendo página e cabeçalho consistentes sem recarregar o navegador.
 
-O dashboard segue os blocos gerenciais do Stitch: situação detalhada das mesas, Top 5 do dia, receitas por forma de pagamento e alertas vindos dos saldos reais de estoque. Os alertas têm contenção própria e textos quebráveis, sem ultrapassar a superfície em larguras menores. A rota `/admin/inventory` usa uma tabela operacional com rolagem horizontal contida, separa nome, saldo atual e reservado e mantém as ações legíveis; também cadastra custo e saldo, registra ajustes e mantém fichas técnicas por produto ou sabor/tamanho. Ao enviar um pedido, a Application consome os ingredientes da receita de forma atômica, associa os movimentos aos itens e impede estoque negativo.
+O dashboard segue os blocos gerenciais do Stitch: situação detalhada das mesas, Top 5 do dia, receitas por forma de pagamento e alertas vindos dos saldos reais de estoque. Os alertas têm contenção própria e textos quebráveis, sem ultrapassar a superfície em larguras menores. A rota `/admin/inventory` usa uma tabela operacional com rolagem horizontal contida, separa nome, saldo atual e reservado e mantém as ações legíveis; também cadastra custo e saldo, registra ajustes e mantém fichas técnicas por produto ou sabor/tamanho. Ao enviar um pedido, a Application reserva atomicamente os ingredientes; o primeiro início de produção consome a reserva e o cancelamento anterior ao preparo a libera, sempre associado ao item do pedido.
 
 ## Tablet do cliente
 
@@ -95,7 +97,7 @@ O carrinho fica em armazenamento local, separado pelo `tableSessionId`, e sobrev
 
 ## Delivery externo
 
-`/delivery` oferece cardápio, montagem de pizza, checkout sem adquirência, endereço, taxa calculada pelo servidor e rastreio. O admin despacha somente pedidos prontos, informa o entregador e confirma a entrega. O token público é aleatório/idempotente no cliente e somente seu hash é gravado no banco.
+`/delivery` oferece cardápio, montagem de pizza, checkout sem adquirência, endereço, taxa calculada pelo servidor, cotação de pontos/cupons e rastreio. Telefone e nascimento protegem a consulta do saldo. O admin despacha somente pedidos prontos, informa o entregador e confirma a entrega. O token público é aleatório/idempotente no cliente e somente seu hash é gravado no banco.
 
 Enquanto autenticado, o tablet publica telemetria a cada minuto e em mudanças relevantes. A leitura de bateria usa a Battery Status API quando disponível; em navegadores ou contextos que não a expõem, a API mantém o percentual como desconhecido e ainda registra presença, conectividade, versão e último contato.
 

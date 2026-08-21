@@ -11,7 +11,9 @@ public sealed record PlaceDeliveryOrderCommand(
     DateOnly BirthDate,
     string Address,
     string? Notes,
-    IReadOnlyList<SubmitClientOrderItemCommand> Items);
+    IReadOnlyList<SubmitClientOrderItemCommand> Items,
+    string? CouponCode = null,
+    int LoyaltyPoints = 0);
 
 public sealed record DeliveryOrderPlacedDto(
     Guid Id,
@@ -19,6 +21,10 @@ public sealed record DeliveryOrderPlacedDto(
     string TrackingToken,
     string Status,
     decimal Total);
+
+public sealed record LoyaltyLookupCommand(string Phone, DateOnly BirthDate, decimal OrderAmount = 0, string? CouponCode = null, int LoyaltyPoints = 0);
+public sealed record LoyaltyLookupDto(string CustomerName, int Points, DateTimeOffset? ExpiresAt,
+    decimal CouponDiscount, decimal LoyaltyDiscount, decimal TotalBenefits);
 
 public sealed record DeliveryTrackingDto(
     long Number,

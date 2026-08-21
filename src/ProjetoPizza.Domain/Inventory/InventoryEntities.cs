@@ -13,6 +13,13 @@ public enum StockMovementType
     ReservationRelease
 }
 
+public enum InventoryReservationStatus
+{
+    Reserved,
+    Consumed,
+    Released
+}
+
 public sealed class InventoryItem : AggregateRoot<InventoryItemId>
 {
     private InventoryItem() : base(default) { }
@@ -74,6 +81,101 @@ public sealed class StockBalance : AggregateRoot<StockBalanceId>
 
         CurrentQuantity = next;
         UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Reserve(decimal quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new BusinessRuleException("stock_reservation.quantity", "Reserved quantity must be greater than zero.");
+        }
+
+        if (AvailableQuantity < quantity)
+        {
+            throw new BusinessRuleException("stock_balance.insufficient", "Available stock balance is insufficient for this reservation.");
+        }
+
+        ReservedQuantity += quantity;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void ConsumeReserved(decimal quantity)
+    {
+        EnsureReservedQuantity(quantity);
+        ReservedQuantity -= quantity;
+        CurrentQuantity -= quantity;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void ReleaseReserved(decimal quantity)
+    {
+        EnsureReservedQuantity(quantity);
+        ReservedQuantity -= quantity;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    private void EnsureReservedQuantity(decimal quantity)
+    {
+        if (quantity <= 0 || quantity > ReservedQuantity)
+        {
+            throw new BusinessRuleException("stock_reservation.invalid_quantity", "Reserved stock quantity is invalid.");
+        }
+    }
+}
+
+public sealed class InventoryReservation : AggregateRoot<InventoryReservationId>
+{
+    private InventoryReservation() : base(default) { }
+
+    public InventoryReservation(
+        InventoryReservationId id,
+        InventoryItemId inventoryItemId,
+        OrderItemId orderItemId,
+        decimal quantity,
+        Money unitCost) : base(id)
+    {
+        if (quantity <= 0)
+        {
+            throw new BusinessRuleException("stock_reservation.quantity", "Reserved quantity must be greater than zero.");
+        }
+
+        InventoryItemId = inventoryItemId;
+        OrderItemId = orderItemId;
+        Quantity = quantity;
+        UnitCost = unitCost;
+        Status = InventoryReservationStatus.Reserved;
+        ReservedAt = DateTimeOffset.UtcNow;
+    }
+
+    public InventoryItemId InventoryItemId { get; private set; }
+    public OrderItemId OrderItemId { get; private set; }
+    public decimal Quantity { get; private set; }
+    public Money UnitCost { get; private set; }
+    public InventoryReservationStatus Status { get; private set; }
+    public DateTimeOffset ReservedAt { get; private set; }
+    public DateTimeOffset? ConsumedAt { get; private set; }
+    public DateTimeOffset? ReleasedAt { get; private set; }
+
+    public void Consume()
+    {
+        EnsureReserved();
+        Status = InventoryReservationStatus.Consumed;
+        ConsumedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void Release()
+    {
+        EnsureReserved();
+        Status = InventoryReservationStatus.Released;
+        ReleasedAt = DateTimeOffset.UtcNow;
+    }
+
+    private void EnsureReserved()
+    {
+        if (Status != InventoryReservationStatus.Reserved)
+        {
+            throw new BusinessRuleException("stock_reservation.finished", "Only a pending stock reservation can be changed.");
+        }
     }
 }
 
